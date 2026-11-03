@@ -1,0 +1,19 @@
+# Old system material: holds real secrets (.env, scripts with passwords),
+# uploaded IDs and documents, and personal records. Never commit it.
+docs/existing-source-code/
+docs/existing-database/
+
+# Environment files with keys and passwords, anywhere in the project.
+.env
+.env.*
+!.env.example
+
+# Dependencies, builds, logs, OS and editor files.
+node_modules/
+vendor/
+dist/
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
