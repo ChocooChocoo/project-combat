@@ -17,7 +17,6 @@ import { Form } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Radio, RadioGroup } from '@/components/ui/radio-group'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Spinner } from '@/components/ui/spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { toastManager } from '@/components/ui/toast'
 import { api, ApiError, type FieldErrors } from '@/lib/api'
@@ -32,6 +31,7 @@ import {
   typesFor,
   useRequirements,
 } from '@/lib/gyms'
+import { fileProblem, phoneRule } from '@/lib/validation'
 
 type Hours = Record<Day, { on: boolean; open: string; close: string }>
 
@@ -144,6 +144,14 @@ function missingFor(step: StepKey, form: FormState, app: Application | null, req
   }
 }
 
+/** Backend: at most 30 lines of up to 100 characters each. */
+function listProblem(text: string): string | null {
+  const items = lines(text)
+  if (items.length > 30) return 'List at most 30 items.'
+  if (items.some((item) => item.length > 100)) return 'Keep each line under 100 characters.'
+  return null
+}
+
 /** S-11, R-11 to R-13: the gym application as five steps, saved as a draft along the way. */
 export default function GymApply() {
   const { id } = useParams()
@@ -224,6 +232,13 @@ export default function GymApply() {
 
   async function saveAndContinue(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    // Native rules already passed (Base UI blocks submit otherwise); these are the parts without an input.
+    const missing = requirements ? missingFor(step, form, app, requirements) : []
+    if (missing.length > 0) {
+      setErrors({ step: missing })
+      window.scrollTo({ top: 0 })
+      return
+    }
     setBusy('next')
     const saved = await save()
     setBusy('')
@@ -343,14 +358,14 @@ export default function GymApply() {
                 <CardPanel className="flex flex-col gap-6">
                   {step === 'details' && (
                     <>
-                      <TextField name="name" label="Gym name" value={form.name} onChange={(e) => set('name', e.target.value)} required />
+                      <TextField name="name" label="Gym name" maxLength={120} value={form.name} onChange={(e) => set('name', e.target.value)} required />
                       <Fieldset className="flex flex-col gap-4">
                         <FieldsetLegend className="font-medium text-sm">Address</FieldsetLegend>
-                        <TextField name="address_line" label="Street address" value={form.address_line} onChange={(e) => set('address_line', e.target.value)} />
+                        <TextField name="address_line" label="Street address" maxLength={255} required value={form.address_line} onChange={(e) => set('address_line', e.target.value)} />
                         <div className="grid gap-4 sm:grid-cols-3">
-                          <TextField name="barangay" label="Barangay" value={form.barangay} onChange={(e) => set('barangay', e.target.value)} />
-                          <TextField name="city" label="City or municipality" value={form.city} onChange={(e) => set('city', e.target.value)} />
-                          <TextField name="province" label="Province" value={form.province} onChange={(e) => set('province', e.target.value)} />
+                          <TextField name="barangay" label="Barangay" maxLength={120} required value={form.barangay} onChange={(e) => set('barangay', e.target.value)} />
+                          <TextField name="city" label="City or municipality" maxLength={120} required value={form.city} onChange={(e) => set('city', e.target.value)} />
+                          <TextField name="province" label="Province" maxLength={120} required value={form.province} onChange={(e) => set('province', e.target.value)} />
                         </div>
                       </Fieldset>
                       <Fieldset className="flex flex-col gap-3">
@@ -358,15 +373,15 @@ export default function GymApply() {
                         <LocationPicker value={form.location} onChange={(value) => set('location', value)} />
                       </Fieldset>
                       <div className="grid gap-4 sm:grid-cols-2">
-                        <TextField name="contact_phone" label="Contact number" type="tel" autoComplete="tel" value={form.contact_phone} onChange={(e) => set('contact_phone', e.target.value)} />
-                        <TextField name="contact_email" label="Contact email" type="email" autoComplete="email" value={form.contact_email} onChange={(e) => set('contact_email', e.target.value)} />
+                        <TextField name="contact_phone" label="Contact number" type="tel" autoComplete="tel" maxLength={30} validate={phoneRule} required value={form.contact_phone} onChange={(e) => set('contact_phone', e.target.value)} />
+                        <TextField name="contact_email" label="Contact email" type="email" autoComplete="email" maxLength={255} required value={form.contact_email} onChange={(e) => set('contact_email', e.target.value)} />
                       </div>
                     </>
                   )}
 
                   {step === 'offer' && (
                     <>
-                      <Fieldset className="flex flex-col gap-1">
+                      <Fieldset className="flex min-w-0 flex-col gap-1">
                         <FieldsetLegend className="mb-2 font-medium text-sm">Operating hours</FieldsetLegend>
                         <div className="divide-y rounded-lg border">
                           {DAYS.map(({ key, label }) => (
@@ -376,14 +391,22 @@ export default function GymApply() {
                                 {label}
                               </label>
                               {form.hours[key].on ? (
-                                <div className="flex flex-wrap items-start gap-2">
-                                  <Field name={`operating_hours.${key}.open`} className="w-36">
-                                    <Input type="time" aria-label={`${label} opens`} value={form.hours[key].open} onChange={(e) => setDay(key, { open: e.target.value })} />
+                                <div className="grid w-full grid-cols-[auto_1fr] items-start gap-x-3 gap-y-2 sm:flex sm:w-auto sm:gap-2">
+                                  <span className="pt-2 text-muted-foreground text-sm sm:hidden">Opens</span>
+                                  <Field name={`operating_hours.${key}.open`} className="min-w-0 sm:w-36">
+                                    <Input type="time" required aria-label={`${label} opens`} value={form.hours[key].open} onChange={(e) => setDay(key, { open: e.target.value })} />
                                     <FieldError />
                                   </Field>
-                                  <span className="pt-1.5 text-muted-foreground text-sm">to</span>
-                                  <Field name={`operating_hours.${key}.close`} className="w-36">
-                                    <Input type="time" aria-label={`${label} closes`} value={form.hours[key].close} onChange={(e) => setDay(key, { close: e.target.value })} />
+                                  <span className="pt-2 text-muted-foreground text-sm sm:pt-1.5">
+                                    <span className="sm:hidden">Closes</span>
+                                    <span className="max-sm:hidden">to</span>
+                                  </span>
+                                  <Field
+                                    name={`operating_hours.${key}.close`}
+                                    className="min-w-0 sm:w-36"
+                                    validate={(value) => (value && String(value) <= form.hours[key].open ? 'Must be after opening time.' : null)}
+                                  >
+                                    <Input type="time" required aria-label={`${label} closes`} value={form.hours[key].close} onChange={(e) => setDay(key, { close: e.target.value })} />
                                     <FieldError />
                                   </Field>
                                 </div>
@@ -396,7 +419,7 @@ export default function GymApply() {
                       </Fieldset>
                       <Fieldset>
                         <FieldsetLegend className="mb-3 font-medium text-sm">Combat sports offered</FieldsetLegend>
-                        <CheckboxGroup value={form.disciplines} onValueChange={(value) => set('disciplines', value)} className="grid gap-x-4 gap-y-3 sm:grid-cols-3">
+                        <CheckboxGroup value={form.disciplines} onValueChange={(value) => set('disciplines', value)} className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
                           {Object.entries(requirements.disciplines).map(([key, label]) => (
                             <label key={key} className="flex items-center gap-2 text-sm">
                               <Checkbox value={key} />
@@ -406,13 +429,13 @@ export default function GymApply() {
                         </CheckboxGroup>
                       </Fieldset>
                       <div className="grid gap-4 sm:grid-cols-2">
-                        <Field name="services">
+                        <Field name="services" validate={() => listProblem(form.services)}>
                           <FieldLabel>Services</FieldLabel>
                           <Textarea value={form.services} onChange={(e) => set('services', e.target.value)} rows={4} />
                           <FieldDescription>One per line, for example "Private coaching".</FieldDescription>
                           <FieldError />
                         </Field>
-                        <Field name="facilities">
+                        <Field name="facilities" validate={() => listProblem(form.facilities)}>
                           <FieldLabel>Facilities</FieldLabel>
                           <Textarea value={form.facilities} onChange={(e) => set('facilities', e.target.value)} rows={4} />
                           <FieldDescription>One per line, for example "Boxing ring".</FieldDescription>
@@ -495,8 +518,9 @@ function Documents({ app, requirements, onChange }: { app: Application; requirem
     const failed: string[] = []
     const maxKb = requirements.kinds[requirements.documents[type].kind ?? 'document'].max_kb
     for (const file of Array.from(files)) {
-      if (file.size > maxKb * 1024) {
-        failed.push(`${file.name}: This file is too big. The largest accepted size is ${Math.round(maxKb / 1024)} MB.`)
+      const problem = fileProblem(file, accept(type), maxKb)
+      if (problem) {
+        failed.push(`${file.name}: ${problem}`)
         continue
       }
       const body = new FormData()
@@ -575,8 +599,8 @@ function Documents({ app, requirements, onChange }: { app: Application; requirem
                           <label
                             className={`${buttonVariants({ variant: 'outline', size: 'sm' })} has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-ring ${uploading === type ? 'pointer-events-none opacity-64' : ''}`}
                           >
-                            {uploading === type ? <Spinner /> : <Upload aria-hidden />}
-                            {files.length > 0 ? 'Add more' : 'Choose file'}
+                            <Upload aria-hidden />
+                            {uploading === type ? 'Uploading…' : files.length > 0 ? 'Add more' : 'Choose file'}
                             <input
                               type="file"
                               className="sr-only"
@@ -597,6 +621,7 @@ function Documents({ app, requirements, onChange }: { app: Application; requirem
                           {uploadErrors[type]}
                         </p>
                       )}
+                      {uploading === type && <Skeleton className="h-14" aria-label="Uploading" />}
                       {files.length > 0 && (
                         <ul className={files.length > 2 ? 'grid gap-2 sm:grid-cols-2' : 'grid gap-2'}>
                           {files.map((file) => <FileTile key={file.id} gymId={app.id} file={file} onRemove={remove} />)}

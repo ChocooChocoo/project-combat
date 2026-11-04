@@ -98,6 +98,7 @@ export function AddEmployeeDialog({
               label="Email"
               type="email"
               autoComplete="email"
+              maxLength={255}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -112,6 +113,7 @@ export function AddEmployeeDialog({
                 name="first_name"
                 label="First name"
                 autoComplete="given-name"
+                maxLength={100}
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 description="Needed when this email has no account yet."
@@ -120,6 +122,7 @@ export function AddEmployeeDialog({
                 name="last_name"
                 label="Last name"
                 autoComplete="family-name"
+                maxLength={100}
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 description="Needed when this email has no account yet."
@@ -129,6 +132,7 @@ export function AddEmployeeDialog({
             <TextField
               name="job_title"
               label="Job title"
+              maxLength={100}
               value={jobTitle}
               onChange={(e) => setJobTitle(e.target.value)}
               placeholder="Coach"

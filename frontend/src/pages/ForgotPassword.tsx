@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
 import { toastManager } from '@/components/ui/toast'
 import { api, ApiError, formValues, type FieldErrors } from '@/lib/api'
+import { passwordRule, sameAs } from '@/lib/validation'
 
 /** S-08, R-04: ask for a code, then set a new password with it. */
 export default function ForgotPassword() {
@@ -48,7 +49,7 @@ export default function ForgotPassword() {
     return (
       <AuthCard title="Reset your password" description="Enter your email and we will send you a code.">
         <Form className="flex flex-col gap-4" onSubmit={requestCode}>
-          <TextField name="email" label="Email" type="email" autoComplete="email" required />
+          <TextField name="email" label="Email" type="email" maxLength={255} autoComplete="email" required />
           <Button type="submit" loading={busy}>Send code</Button>
           <Link className="text-center text-sm underline" to="/sign-in">Back to sign in</Link>
         </Form>
@@ -65,8 +66,8 @@ export default function ForgotPassword() {
           <CodeInput value={code} onChange={setCode} />
           {errors.code && <p className="text-destructive-foreground text-xs">{errors.code[0]}</p>}
         </div>
-        <TextField name="password" label="New password" type="password" autoComplete="new-password" required />
-        <TextField name="password_confirmation" label="Confirm new password" type="password" autoComplete="new-password" required />
+        <TextField name="password" label="New password" type="password" autoComplete="new-password" validate={passwordRule} required />
+        <TextField name="password_confirmation" label="Confirm new password" type="password" autoComplete="new-password" validate={sameAs('password')} required />
         <Button type="submit" loading={busy} disabled={code.length !== 6}>Change password</Button>
       </Form>
     </AuthCard>

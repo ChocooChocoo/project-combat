@@ -1,7 +1,8 @@
-import { Bell, Building2, Check, ChevronsUpDown, ClipboardCheck, FilePlus2, FileText, House, LogOut, UserRound } from 'lucide-react'
+import { Building2, Check, ChevronsUpDown, ClipboardCheck, FilePlus2, FileText, House, LogOut, UserRound } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { myWorkNav, workspaceNav } from '@/components/gym-nav'
+import { NotificationsMenu } from '@/components/notifications-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Menu, MenuGroup, MenuGroupLabel, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
 import {
@@ -14,7 +15,6 @@ import {
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
@@ -25,7 +25,7 @@ import { api } from '@/lib/api'
 import { useAuth, type GymAccess } from '@/lib/auth'
 import { approvedGym, canManage } from '@/lib/gym-access'
 
-type Item = { to: string; label: string; icon: React.ComponentType; end?: boolean; badge?: number }
+type Item = { to: string; label: string; icon: React.ComponentType; end?: boolean }
 
 /** Where a gym's card in the switcher leads: workspace when allowed, public page otherwise. */
 function gymEntry(gym: GymAccess): string {
@@ -43,7 +43,7 @@ function NavGroup({ label, items }: { label?: string; items: Item[] }) {
       {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
       <SidebarGroupContent>
         <SidebarMenu>
-          {items.map(({ to, label: text, icon: Icon, end, badge }) => {
+          {items.map(({ to, label: text, icon: Icon, end }) => {
             const active = end ? pathname === to : pathname === to || pathname.startsWith(`${to}/`)
             return (
               <SidebarMenuItem key={to}>
@@ -55,7 +55,6 @@ function NavGroup({ label, items }: { label?: string; items: Item[] }) {
                   <Icon />
                   <span>{text}</span>
                 </SidebarMenuButton>
-                {badge ? <SidebarMenuBadge aria-label={`${badge} unread`}>{badge}</SidebarMenuBadge> : null}
               </SidebarMenuItem>
             )
           })}
@@ -152,10 +151,7 @@ export function AppShell() {
   const approvedGyms = user?.gyms.filter((gym) => gym.status === 'approved') ?? []
   const currentGym = approvedGym(user, Number(pathname.match(/^\/gyms\/(\d+)(?:\/|$)/)?.[1]))
 
-  const general: Item[] = [
-    { to: '/', label: 'Home', icon: House, end: true },
-    { to: '/notifications', label: 'Notifications', icon: Bell, badge: unread },
-  ]
+  const general: Item[] = [{ to: '/', label: 'Home', icon: House, end: true }]
   if (currentGym?.roles.includes('employee')) general.push(myWorkNav(currentGym.id))
 
   const workspace = currentGym ? workspaceNav(currentGym) : []
@@ -199,14 +195,14 @@ export function AppShell() {
       </Sidebar>
 
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-12 items-center gap-2 border-b bg-background/95 px-3 backdrop-blur-sm md:hidden">
-          <SidebarTrigger aria-label="Open navigation" />
-          <span className="font-semibold text-sm">Combat Platform</span>
+        <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-background px-3 md:px-4">
+          <SidebarTrigger aria-label="Toggle navigation" />
+          <span className="font-semibold text-sm md:hidden">Combat Platform</span>
+          <div className="ms-auto flex items-center gap-1">
+            <NotificationsMenu unread={unread} onUnreadChange={setUnread} />
+          </div>
         </header>
-        <div className="hidden px-3 pt-3 md:block">
-          <SidebarTrigger aria-label="Collapse navigation" />
-        </div>
-        <div className="mx-auto w-full max-w-6xl px-4 pt-4 pb-16 md:px-8 md:pt-2">
+        <div className="mx-auto w-full max-w-6xl px-4 pt-6 pb-16 md:px-8">
           <Outlet context={{ setUnread }} />
         </div>
       </SidebarInset>

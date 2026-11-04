@@ -84,7 +84,7 @@ export function LocationPicker({ value, onChange }: { value: LatLng | null; onCh
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="h-72 overflow-hidden rounded-lg border">
+      <div className="isolate h-72 overflow-hidden rounded-lg border">
         <MapContainer ref={setMap} center={[start.lat, start.lng]} zoom={value ? 16 : 11} className="size-full">
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

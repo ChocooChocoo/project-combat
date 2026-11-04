@@ -84,7 +84,7 @@ export default function AdminHome() {
           setFilter(value as Filter)
         }}
       >
-        <TabsList variant="underline" aria-label="Show applications">
+        <TabsList variant="underline" aria-label="Show applications" className="max-w-full overflow-x-auto overflow-y-hidden [scrollbar-width:none]">
           <TabsTab value="open">Waiting{count(stats?.applications_pending)}</TabsTab>
           <TabsTab value="returned">Returned{count(stats?.applications_returned)}</TabsTab>
           <TabsTab value="approved">Approved{count(stats?.gyms_verified)}</TabsTab>
@@ -137,12 +137,12 @@ export default function AdminHome() {
                           <span className="block pt-1 text-muted-foreground text-xs">{row.applicant.email}</span>
                         </>
                       ) : (
-                        '—'
+                        <span className="text-muted-foreground">Unknown</span>
                       )}
                     </TableCell>
-                    <TableCell className="tabular-nums">{row.tier ? `Tier ${row.tier}` : '—'}</TableCell>
+                    <TableCell className="tabular-nums">{row.tier ? `Tier ${row.tier}` : <span className="text-muted-foreground">Not chosen</span>}</TableCell>
                     <TableCell className="tabular-nums">
-                      {row.submitted_at ? (filter === 'open' ? waited(row.submitted_at) : new Date(row.submitted_at).toLocaleDateString()) : '—'}
+                      {row.submitted_at ? (filter === 'open' ? waited(row.submitted_at) : new Date(row.submitted_at).toLocaleDateString()) : 'Not sent'}
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={row.status} />

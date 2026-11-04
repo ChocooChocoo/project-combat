@@ -22,6 +22,7 @@ import { approvedGym, can } from '@/lib/gym-access'
 import { DAYS, type Day } from '@/lib/gyms'
 import type { WorkspaceOptions, WorkspaceSetup } from '@/lib/workspace'
 import { cn } from '@/lib/utils'
+import { phoneRule } from '@/lib/validation'
 
 type DayHours = Record<Day, { open: boolean; start: string; end: string }>
 
@@ -226,13 +227,14 @@ export default function GymSettings() {
                 <CardDescription>The name, address and contacts members see.</CardDescription>
               </CardHeader>
               <CardPanel className="flex flex-col gap-6">
-                <TextField name="name" label="Gym name" value={form.name} onChange={(e) => set('name', e.target.value)} required />
+                <TextField name="name" label="Gym name" maxLength={120} value={form.name} onChange={(e) => set('name', e.target.value)} required />
 
                 <Fieldset className="flex flex-col gap-4">
                   <FieldsetLegend className="font-medium text-sm">Address</FieldsetLegend>
                   <TextField
                     name="address_line"
                     label="Street address"
+                    maxLength={255}
                     value={form.address_line}
                     onChange={(e) => set('address_line', e.target.value)}
                   />
@@ -240,18 +242,21 @@ export default function GymSettings() {
                     <TextField
                       name="barangay"
                       label="Barangay"
+                      maxLength={120}
                       value={form.barangay}
                       onChange={(e) => set('barangay', e.target.value)}
                     />
                     <TextField
                       name="city"
                       label="City or municipality"
+                      maxLength={120}
                       value={form.city}
                       onChange={(e) => set('city', e.target.value)}
                     />
                     <TextField
                       name="province"
                       label="Province"
+                      maxLength={120}
                       value={form.province}
                       onChange={(e) => set('province', e.target.value)}
                     />
@@ -271,6 +276,8 @@ export default function GymSettings() {
                     label="Contact number"
                     type="tel"
                     autoComplete="tel"
+                    maxLength={30}
+                    validate={phoneRule}
                     value={form.contact_phone}
                     onChange={(e) => set('contact_phone', e.target.value)}
                   />
@@ -279,6 +286,7 @@ export default function GymSettings() {
                     label="Contact email"
                     type="email"
                     autoComplete="email"
+                    maxLength={255}
                     value={form.contact_email}
                     onChange={(e) => set('contact_email', e.target.value)}
                   />
@@ -298,7 +306,7 @@ export default function GymSettings() {
                     <CheckboxGroup
                       value={form.disciplines}
                       onValueChange={(value) => set('disciplines', value)}
-                      className="grid gap-x-4 gap-y-3 sm:grid-cols-3"
+                      className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3"
                     >
                       {Object.entries(options.disciplines).map(([key, label]) => (
                         <label key={key} className="flex items-center gap-2 text-sm">
@@ -317,7 +325,7 @@ export default function GymSettings() {
                     <CheckboxGroup
                       value={form.activity_types}
                       onValueChange={(value) => set('activity_types', value)}
-                      className="grid gap-x-4 gap-y-3 sm:grid-cols-3"
+                      className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3"
                     >
                       {Object.entries(options.activity_types).map(([key, label]) => (
                         <label key={key} className="flex items-center gap-2 text-sm">
@@ -338,7 +346,7 @@ export default function GymSettings() {
                 <CardDescription>When the gym is open, and which days count as working days for leave.</CardDescription>
               </CardHeader>
               <CardPanel className="flex flex-col gap-6">
-                <Fieldset className="flex flex-col gap-1">
+                <Fieldset className="flex min-w-0 flex-col gap-1">
                   <FieldsetLegend className="mb-2 font-medium text-sm">Operating hours</FieldsetLegend>
                   <div className="divide-y rounded-lg border">
                     {DAYS.map(({ key, label }) => (
@@ -348,20 +356,30 @@ export default function GymSettings() {
                           {label}
                         </label>
                         {form.hours[key].open ? (
-                          <div className="flex flex-wrap items-start gap-2">
-                            <Field name={`operating_hours.${key}.open`} className="w-36">
+                          <div className="grid w-full grid-cols-[auto_1fr] items-start gap-x-3 gap-y-2 sm:flex sm:w-auto sm:gap-2">
+                            <span className="pt-2 text-muted-foreground text-sm sm:hidden">Opens</span>
+                            <Field name={`operating_hours.${key}.open`} className="min-w-0 sm:w-36">
                               <Input
                                 type="time"
+                                required
                                 aria-label={`${label} opens`}
                                 value={form.hours[key].start}
                                 onChange={(e) => setDay(key, { start: e.target.value })}
                               />
                               <FieldError />
                             </Field>
-                            <span className="pt-1.5 text-muted-foreground text-sm">to</span>
-                            <Field name={`operating_hours.${key}.close`} className="w-36">
+                            <span className="pt-2 text-muted-foreground text-sm sm:pt-1.5">
+                              <span className="sm:hidden">Closes</span>
+                              <span className="max-sm:hidden">to</span>
+                            </span>
+                            <Field
+                              name={`operating_hours.${key}.close`}
+                              className="min-w-0 sm:w-36"
+                              validate={(value) => (value && String(value) <= form.hours[key].start ? 'Must be after opening time.' : null)}
+                            >
                               <Input
                                 type="time"
+                                required
                                 aria-label={`${label} closes`}
                                 value={form.hours[key].end}
                                 onChange={(e) => setDay(key, { end: e.target.value })}
@@ -383,7 +401,7 @@ export default function GymSettings() {
                     <CheckboxGroup
                       value={form.working_days}
                       onValueChange={(value) => set('working_days', value as Day[])}
-                      className="grid gap-x-4 gap-y-3 sm:grid-cols-4"
+                      className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4"
                     >
                       {DAYS.map(({ key, label }) => (
                         <label key={key} className="flex items-center gap-2 text-sm">
@@ -411,6 +429,7 @@ export default function GymSettings() {
                   <Textarea
                     name="policies"
                     rows={6}
+                    maxLength={5000}
                     value={form.policies}
                     onChange={(e) => set('policies', e.target.value)}
                     placeholder="For example: Bring your own wraps. Cancel a session at least 12 hours ahead."

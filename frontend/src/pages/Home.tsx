@@ -1,4 +1,4 @@
-import { FilePlus2, LocateFixed, MapPin, Search, Sparkles, X } from 'lucide-react'
+import { FilePlus2, LocateFixed, MapPin, Search, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { GymMap, distanceLabel, type GymMapGym } from '@/components/gym-map'
@@ -10,11 +10,11 @@ import { Card, CardAction, CardDescription, CardHeader, CardPanel, CardTitle } f
 import { Checkbox } from '@/components/ui/checkbox'
 import { CheckboxGroup } from '@/components/ui/checkbox-group'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
-import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
+import { Form } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Spinner } from '@/components/ui/spinner'
 import { toastManager } from '@/components/ui/toast'
 import { api, ApiError } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
@@ -392,12 +392,11 @@ export default function Home() {
             </Button>
           )
         }
-        actionsClassName="max-sm:w-full max-sm:justify-end"
       />
 
       {user && user.gyms.length > 0 && (
         <section className="flex flex-col gap-3" aria-labelledby="your-gyms">
-          <h2 id="your-gyms" className="font-semibold">Your gyms</h2>
+          <h2 id="your-gyms" className="font-semibold text-xl tracking-tight">Your gyms</h2>
           <ul className="flex flex-col divide-y rounded-xl border">
             {user.gyms.map((gym) => {
               const approved = gym.status === 'approved'
@@ -429,31 +428,35 @@ export default function Home() {
 
       <section className="flex flex-col gap-4" aria-labelledby="find-gym">
         <div className="flex flex-wrap items-baseline gap-2">
-          <h2 id="find-gym" className="font-semibold">Find a gym</h2>
+          <h2 id="find-gym" className="font-semibold text-xl tracking-tight">Find a gym</h2>
           <span className="text-muted-foreground text-sm">Search by place, sport, service, tier or opening day.</span>
         </div>
 
         <Card>
           <CardPanel className="flex flex-col gap-5">
-            <form className="flex flex-col gap-4" onSubmit={search}>
+            <Form className="flex flex-col gap-4" onSubmit={search}>
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <Field name="q" className="w-full sm:col-span-2 xl:col-span-2">
                   <FieldLabel>Search</FieldLabel>
                   <Input
                     type="search"
+                    maxLength={120}
                     value={filters.q}
                     onChange={(event) => setFilters({ ...filters, q: event.target.value })}
                     placeholder="Gym name or service"
                   />
+                  <FieldError />
                 </Field>
                 <Field name="location" className="w-full">
                   <FieldLabel>City or province</FieldLabel>
                   <Input
+                    maxLength={120}
                     value={filters.location}
                     onChange={(event) => setFilters({ ...filters, location: event.target.value })}
                     placeholder="City, or city, province"
                   />
                   <FieldDescription>Add a comma to give the city and province together.</FieldDescription>
+                  <FieldError />
                 </Field>
                 <Field name="discipline" className="w-full">
                   <FieldLabel>Combat sport</FieldLabel>
@@ -483,10 +486,12 @@ export default function Home() {
                 <Field name="service" className="w-full">
                   <FieldLabel>Service</FieldLabel>
                   <Input
+                    maxLength={100}
                     value={filters.service}
                     onChange={(event) => setFilters({ ...filters, service: event.target.value })}
                     placeholder="For example, sparring"
                   />
+                  <FieldError />
                 </Field>
                 <Field name="tier" className="w-full">
                   <FieldLabel>Tier</FieldLabel>
@@ -583,13 +588,16 @@ export default function Home() {
                   <AlertDescription>{locationError}</AlertDescription>
                 </Alert>
               )}
-            </form>
+            </Form>
 
-            <form className="flex flex-col gap-2 border-t pt-5" onSubmit={findAddress}>
+            <Form className="flex flex-col gap-2 border-t pt-5" onSubmit={findAddress}>
               <Field name="address" className="w-full">
                 <FieldLabel>Or find an address</FieldLabel>
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Input
+                    required
+                    minLength={2}
+                    maxLength={120}
                     value={address}
                     onChange={(event) => setAddress(event.target.value)}
                     placeholder="Street, barangay, city or landmark"
@@ -599,6 +607,7 @@ export default function Home() {
                   </Button>
                 </div>
                 <FieldDescription>Pick a result to put it on the map and sort gyms by distance from it.</FieldDescription>
+                <FieldError />
               </Field>
               {geoError && (
                 <Alert variant="error">
@@ -630,7 +639,7 @@ export default function Home() {
                   )}
                 </div>
               )}
-            </form>
+            </Form>
 
             {optionsError && (
               <Alert variant="warning">
@@ -651,15 +660,14 @@ export default function Home() {
         <section className="flex min-w-0 flex-col gap-3" aria-labelledby="gym-results">
           <div className="flex flex-wrap items-baseline gap-2" aria-live="polite">
             <h3 id="gym-results" className="font-semibold">Results</h3>
-            {results && (
-              <span className="text-muted-foreground text-sm tabular-nums">
-                {results.total} {results.total === 1 ? 'gym' : 'gyms'}
-              </span>
-            )}
-            {searching && (
-              <span className="flex items-center gap-1.5 text-muted-foreground text-sm">
-                <Spinner className="size-3.5" /> Searching…
-              </span>
+            {searching ? (
+              <Skeleton className="h-4 w-16" aria-label="Searching" />
+            ) : (
+              results && (
+                <span className="text-muted-foreground text-sm tabular-nums">
+                  {results.total} {results.total === 1 ? 'gym' : 'gyms'}
+                </span>
+              )
             )}
           </div>
 
@@ -675,7 +683,7 @@ export default function Home() {
             </Alert>
           )}
 
-          {!results && searching ? (
+          {searching ? (
             <div className="grid gap-3" aria-busy="true">
               <Skeleton className="h-36" />
               <Skeleton className="h-36" />
@@ -689,7 +697,7 @@ export default function Home() {
               </EmptyHeader>
             </Empty>
           ) : (
-            <ul className="grid min-w-0 gap-3" aria-busy={searching}>
+            <ul className="grid min-w-0 gap-3">
               {(results?.gyms ?? []).map((gym) => {
                 const services = serviceNames(gym)
                 return (
@@ -732,7 +740,7 @@ export default function Home() {
           )}
         </section>
 
-        <section className="flex min-w-0 flex-col gap-3" aria-labelledby="gym-map">
+        <section className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-20 lg:self-start" aria-labelledby="gym-map">
           <div className="flex flex-wrap items-baseline gap-2">
             <h3 id="gym-map" className="font-semibold">Map</h3>
             <span className="text-muted-foreground text-sm tabular-nums">{mapGyms.length} with a pin</span>
@@ -752,17 +760,17 @@ export default function Home() {
 
       <section className="flex flex-col gap-4" aria-labelledby="best-matches">
         <div className="flex flex-wrap items-baseline gap-2">
-          <h2 id="best-matches" className="font-semibold">Best matches</h2>
-          <span className="text-muted-foreground text-sm">Weighs your sport, price range and distance. Preferred times count once sessions exist.</span>
+          <h2 id="best-matches" className="font-semibold text-xl tracking-tight">Best matches</h2>
+          <span className="text-muted-foreground text-sm">Gyms ranked by your sport, price range and distance.</span>
         </div>
 
         <Card>
           <CardHeader className="max-sm:grid-cols-1!">
             <CardTitle render={<h3 />}>What you want</CardTitle>
-            <CardDescription>Saved to your account. Sport, price and location count now; preferred times count once sessions exist.</CardDescription>
+            <CardDescription>Saved to your account. Preferred times count once gyms publish session times.</CardDescription>
             <CardAction className="max-sm:col-start-1 max-sm:row-span-1 max-sm:row-start-3 max-sm:mt-2 max-sm:justify-self-stretch">
               <Button className="max-sm:w-full" size="sm" variant="outline" loading={matchesLoading} onClick={findMatches}>
-                <Sparkles aria-hidden /> Find best matches
+                Find best matches
               </Button>
             </CardAction>
           </CardHeader>
@@ -786,7 +794,7 @@ export default function Home() {
                 <Skeleton className="h-16" />
               </div>
             ) : (
-              <form className="flex flex-col gap-4" onSubmit={savePreferences}>
+              <Form className="flex flex-col gap-4" onSubmit={savePreferences}>
                 <div className="grid gap-4 sm:grid-cols-3">
                   <Field name="discipline" className="w-full">
                     <FieldLabel>Combat sport</FieldLabel>
@@ -827,8 +835,17 @@ export default function Home() {
                       onChange={(event) => setPreferenceForm({ ...preferenceForm, min_price: event.target.value })}
                       placeholder="No minimum"
                     />
+                    <FieldError />
                   </Field>
-                  <Field name="max_price" className="w-full">
+                  <Field
+                    name="max_price"
+                    className="w-full"
+                    validate={(value, values) =>
+                      value && values.min_price && Number(value) < Number(values.min_price)
+                        ? 'Must be at least the lowest price.'
+                        : null
+                    }
+                  >
                     <FieldLabel>Highest price</FieldLabel>
                     <Input
                       type="number"
@@ -839,6 +856,7 @@ export default function Home() {
                       onChange={(event) => setPreferenceForm({ ...preferenceForm, max_price: event.target.value })}
                       placeholder="No maximum"
                     />
+                    <FieldError />
                   </Field>
                 </div>
 
@@ -874,7 +892,7 @@ export default function Home() {
                   </Button>
                   <span className="text-muted-foreground text-sm">Saving also refreshes your best matches.</span>
                 </div>
-              </form>
+              </Form>
             )}
 
             {matchesError && (

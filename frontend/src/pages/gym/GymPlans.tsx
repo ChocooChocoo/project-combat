@@ -171,7 +171,6 @@ export default function GymPlans() {
             </Button>
           )
         }
-        actionsClassName="max-sm:w-full max-sm:justify-end"
       />
 
       {loadError ? (

@@ -245,7 +245,14 @@ export default function ReviewApplication() {
                 {decision && (
                   <Form errors={errors} onSubmit={submitDecision} className="flex flex-col gap-4 border-t pt-4">
                     {decision === 'return' && (
-                      <Field name="items">
+                      <Field
+                        name="items"
+                        validate={(value) => {
+                          const items = String(value ?? '').split('\n').map((line) => line.trim()).filter(Boolean)
+                          if (items.length > 30) return 'List at most 30 items.'
+                          return items.some((item) => item.length > 255) ? 'Keep each item under 255 characters.' : null
+                        }}
+                      >
                         <FieldLabel>What to fix</FieldLabel>
                         <Textarea name="items" rows={4} required autoFocus />
                         <FieldDescription>One item per line, for example "Barangay clearance is blurry".</FieldDescription>
@@ -254,7 +261,7 @@ export default function ReviewApplication() {
                     )}
                     <Field name="reason">
                       <FieldLabel>{decision === 'reject' ? 'Reason for rejecting' : 'Note to the applicant (optional)'}</FieldLabel>
-                      <Textarea name="reason" rows={3} required={decision === 'reject'} autoFocus={decision === 'reject'} />
+                      <Textarea name="reason" rows={3} maxLength={2000} required={decision === 'reject'} autoFocus={decision === 'reject'} />
                       {decision === 'reject' && <FieldDescription>The applicant sees this. A rejected application cannot be sent again.</FieldDescription>}
                       <FieldError />
                     </Field>

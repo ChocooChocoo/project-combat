@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
 import { api, ApiError, formValues, type FieldErrors } from '@/lib/api'
+import { passwordRule, sameAs } from '@/lib/validation'
 
 /** S-06 follow-on: an invited employee sets their own password with the emailed code. */
 export default function AcceptInvite() {
@@ -79,6 +80,7 @@ export default function AcceptInvite() {
           label="Password"
           type="password"
           autoComplete="new-password"
+          validate={passwordRule}
           minLength={8}
           description="At least 8 characters, with upper and lower case letters and a number."
           required
@@ -88,6 +90,7 @@ export default function AcceptInvite() {
           label="Confirm password"
           type="password"
           autoComplete="new-password"
+          validate={sameAs('password')}
           minLength={8}
           required
         />

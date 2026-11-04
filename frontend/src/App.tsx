@@ -2,7 +2,7 @@ import { Navigate, Outlet, Route, Routes, useLocation, useParams } from 'react-r
 import { AppShell } from '@/components/app-shell'
 import { workspaceHome } from '@/components/gym-nav'
 import { GymWorkspaceLayout } from '@/components/gym-workspace-layout'
-import { Spinner } from '@/components/ui/spinner'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/lib/auth'
 import { approvedGym, homePath } from '@/lib/gym-access'
 import AcceptInvite from '@/pages/AcceptInvite'
@@ -38,7 +38,19 @@ function Guard({ need }: { need: 'guest' | 'signed-in' | 'first-password' }) {
   const location = useLocation()
 
   if (loading) {
-    return <div className="flex min-h-svh items-center justify-center"><Spinner /></div>
+    return (
+      <div className="flex min-h-svh" aria-busy="true" aria-label="Loading">
+        <Skeleton className="hidden w-64 shrink-0 rounded-none md:block" />
+        <div className="flex flex-1 flex-col">
+          <Skeleton className="h-14 rounded-none" />
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 pt-6 md:px-8">
+            <Skeleton className="h-9 w-64" />
+            <Skeleton className="h-40" />
+            <Skeleton className="h-64" />
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (need === 'guest') return user ? <Navigate to={homePath(user)} replace /> : <Outlet />
