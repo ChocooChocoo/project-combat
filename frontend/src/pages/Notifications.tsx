@@ -1,16 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router'
+import type { Notice, NoticeList } from '@/components/notifications-menu'
+import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
-import { Spinner } from '@/components/ui/spinner'
+import { Skeleton } from '@/components/ui/skeleton'
 import { api } from '@/lib/api'
-
-type Notice = {
-  id: string
-  data: { title?: string; message?: string }
-  read_at: string | null
-  created_at: string
-}
 
 /** S-15, R-10: the person's own notices. Later features add the notices themselves. */
 export default function Notifications() {
@@ -18,7 +13,7 @@ export default function Notifications() {
   const [notices, setNotices] = useState<Notice[] | null>(null)
 
   const load = useCallback(async () => {
-    const result = await api<{ unread_count: number; notifications: { data: Notice[] } }>('/notifications')
+    const result = await api<NoticeList>('/notifications')
     setNotices(result.notifications.data)
     setUnread(result.unread_count)
   }, [setUnread])
@@ -32,17 +27,26 @@ export default function Notifications() {
     await load()
   }
 
-  if (!notices) return <Spinner />
-
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 className="mr-auto font-semibold text-2xl">Notifications</h1>
-        <Button variant="outline" size="sm" onClick={() => act('/notifications/read-all')}>Mark all as read</Button>
-        <Button variant="ghost" size="sm" onClick={() => act('/notifications/read', 'DELETE')}>Clear read</Button>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Notifications"
+        description="Updates about your account, gyms and bookings."
+        actions={
+          <>
+            <Button variant="outline" size="sm" onClick={() => act('/notifications/read-all')}>Mark all as read</Button>
+            <Button variant="ghost" size="sm" onClick={() => act('/notifications/read', 'DELETE')}>Clear read</Button>
+          </>
+        }
+      />
 
-      {notices.length === 0 ? (
+      {!notices ? (
+        <div className="flex flex-col gap-2" aria-busy="true">
+          <Skeleton className="h-20" />
+          <Skeleton className="h-20" />
+          <Skeleton className="h-20" />
+        </div>
+      ) : notices.length === 0 ? (
         <Empty className="rounded-xl border bg-background">
           <EmptyHeader>
             <EmptyTitle>No notifications</EmptyTitle>

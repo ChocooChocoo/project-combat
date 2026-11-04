@@ -12,6 +12,7 @@ import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '@/c
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { toastManager } from '@/components/ui/toast'
+import { Skeleton } from '@/components/ui/skeleton'
 import { api, ApiError, type FieldErrors } from '@/lib/api'
 import { type PublicService, type PublicServicePhoto } from '@/lib/discovery'
 import type { WorkspaceOptions } from '@/lib/workspace'
@@ -87,6 +88,11 @@ function priceLabel(value: string): string {
   const amount = Number(value)
   if (!Number.isFinite(amount)) return 'Not priced'
   return `₱${amount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+/** Backend: each list line is at most 255 characters. */
+function longLine(text: string): string | null {
+  return text.split('\n').some((line) => line.trim().length > 255) ? 'Keep each line under 255 characters.' : null
 }
 
 /** R-28: the full service editor, including photos, publishing and server errors. */
@@ -312,7 +318,6 @@ export function ServiceEditor({
             <ArrowLeft aria-hidden /> Back to services
           </Button>
         }
-        actionsClassName="max-sm:w-full max-sm:justify-end"
       />
 
       <Form errors={errors} onSubmit={save} className="flex flex-col gap-6">
@@ -340,6 +345,8 @@ export function ServiceEditor({
                 <Field name="name" className="w-full sm:col-span-2">
                   <FieldLabel>Service name</FieldLabel>
                   <Input
+                    required
+                    maxLength={120}
                     value={form.name}
                     onChange={(event) => set('name', event.target.value)}
                     placeholder="Boxing fundamentals"
@@ -347,7 +354,7 @@ export function ServiceEditor({
                   <FieldError />
                 </Field>
 
-                <Field name="discipline" className="w-full">
+                <Field name="discipline" className="w-full" validate={() => (form.discipline ? null : 'Choose a combat sport.')}>
                   <FieldLabel>Combat sport</FieldLabel>
                   <Select
                     value={form.discipline || 'none'}
@@ -372,7 +379,7 @@ export function ServiceEditor({
                   <FieldError />
                 </Field>
 
-                <Field name="activity_type" className="w-full">
+                <Field name="activity_type" className="w-full" validate={() => (form.activity_type ? null : 'Choose an activity type.')}>
                   <FieldLabel>Activity type</FieldLabel>
                   <Select
                     value={form.activity_type || 'none'}
@@ -397,7 +404,7 @@ export function ServiceEditor({
                   <FieldError />
                 </Field>
 
-                <Field name="level" className="w-full">
+                <Field name="level" className="w-full" validate={() => (form.level ? null : 'Choose a level.')}>
                   <FieldLabel>Level</FieldLabel>
                   <Select
                     value={form.level || 'none'}
@@ -428,6 +435,8 @@ export function ServiceEditor({
                     type="number"
                     min="1"
                     max="600"
+                    step="1"
+                    required
                     inputMode="numeric"
                     value={form.duration_minutes}
                     onChange={(event) => set('duration_minutes', event.target.value)}
@@ -436,7 +445,7 @@ export function ServiceEditor({
                   <FieldError />
                 </Field>
 
-                <Field name="frequency" className="w-full sm:col-span-2">
+                <Field name="frequency" className="w-full sm:col-span-2" validate={() => (form.frequency ? null : 'Choose how often it runs.')}>
                   <FieldLabel>How often it runs</FieldLabel>
                   <Select
                     value={form.frequency || 'none'}
@@ -473,6 +482,9 @@ export function ServiceEditor({
                   <FieldLabel>Overview</FieldLabel>
                   <Textarea
                     rows={6}
+                    required
+                    minLength={40}
+                    maxLength={5000}
                     value={form.overview}
                     onChange={(event) => set('overview', event.target.value)}
                     placeholder="Learn the stance, footwork and basic punches in a small group. Every session ends with supervised pad work."
@@ -491,10 +503,11 @@ export function ServiceEditor({
                 <CardDescription>One item per line. Both lists need at least one item before publishing.</CardDescription>
               </CardHeader>
               <CardPanel className="grid gap-5 sm:grid-cols-2">
-                <Field name="included" className="w-full">
+                <Field name="included" className="w-full" validate={() => longLine(form.included)}>
                   <FieldLabel>Included</FieldLabel>
                   <Textarea
                     rows={5}
+                    required
                     value={form.included}
                     onChange={(event) => set('included', event.target.value)}
                     placeholder={'Coach-led warm-up\nGloves and wraps on loan\nPad work'}
@@ -502,10 +515,11 @@ export function ServiceEditor({
                   <FieldError />
                 </Field>
 
-                <Field name="bring" className="w-full">
+                <Field name="bring" className="w-full" validate={() => longLine(form.bring)}>
                   <FieldLabel>What to bring</FieldLabel>
                   <Textarea
                     rows={5}
+                    required
                     value={form.bring}
                     onChange={(event) => set('bring', event.target.value)}
                     placeholder={'Water bottle\nComfortable shoes'}
@@ -538,6 +552,7 @@ export function ServiceEditor({
                     type="number"
                     min="0"
                     step="0.01"
+                    required={!form.price_included}
                     inputMode="decimal"
                     value={form.price}
                     onChange={(event) => set('price', event.target.value)}
@@ -592,7 +607,7 @@ export function ServiceEditor({
                   </FieldDescription>
                   <FieldError />
                 </Field>
-                {mediaBusy === 'cover' && <p className="text-muted-foreground text-sm">Uploading cover…</p>}
+                {mediaBusy === 'cover' && <Skeleton className="aspect-video w-full max-w-sm" aria-label="Uploading cover" />}
               </CardPanel>
             </Card>
 
@@ -645,7 +660,7 @@ export function ServiceEditor({
                   </FieldDescription>
                   <FieldError />
                 </Field>
-                {mediaBusy === 'gallery' && <p className="text-muted-foreground text-sm">Uploading photo…</p>}
+                {mediaBusy === 'gallery' && <Skeleton className="size-24" aria-label="Uploading photo" />}
               </CardPanel>
             </Card>
 

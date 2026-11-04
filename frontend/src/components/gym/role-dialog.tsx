@@ -113,7 +113,7 @@ export function RoleDialog({
 
             <Field name="name" className="w-full">
               <FieldLabel>Role name</FieldLabel>
-              <Input name="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Head coach" required autoFocus />
+              <Input name="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Head coach" maxLength={60} required autoFocus />
               <FieldError />
             </Field>
 

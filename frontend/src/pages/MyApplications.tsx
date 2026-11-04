@@ -91,7 +91,7 @@ export default function MyApplications() {
                     <StatusBadge status={row.status} />
                   </TableCell>
                   <TableCell className="text-muted-foreground">{NEXT[row.status]}</TableCell>
-                  <TableCell className="tabular-nums">{row.tier ? `Tier ${row.tier}` : '—'}</TableCell>
+                  <TableCell className="tabular-nums">{row.tier ? `Tier ${row.tier}` : <span className="text-muted-foreground">Not chosen</span>}</TableCell>
                   <TableCell className="text-muted-foreground tabular-nums">
                     {row.submitted_at ? new Date(row.submitted_at).toLocaleDateString() : 'Not sent'}
                   </TableCell>

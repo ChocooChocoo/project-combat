@@ -378,14 +378,14 @@ export default function GymLeave() {
         meta={canDecide ? <Badge variant="outline">HR manager</Badge> : null}
       />
 
-      <Tabs value={tab} onValueChange={setTab} className="gap-4">
-        <TabsList className="w-full max-w-md">
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList variant="underline" aria-label="Leave sections">
           <TabsTab value="requests">Requests</TabsTab>
           <TabsTab value="calendar">Calendar</TabsTab>
           <TabsTab value="balances">Balances</TabsTab>
         </TabsList>
 
-        <TabsPanel value="requests">
+        <TabsPanel value="requests" className="pt-4">
           <Card>
             <CardHeader>
               <CardTitle render={<h2 />}>Leave requests</CardTitle>
@@ -397,9 +397,13 @@ export default function GymLeave() {
             </CardHeader>
             <CardPanel className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center gap-3">
-                <p className="mr-auto text-muted-foreground text-sm">
-                  {requests === null ? 'Loading requests…' : `${requests.length} ${requests.length === 1 ? 'request' : 'requests'}`}
-                </p>
+                {requests === null ? (
+                  <Skeleton className="mr-auto h-4 w-20" aria-label="Loading requests" />
+                ) : (
+                  <p className="mr-auto text-muted-foreground text-sm">
+                    {requests.length} {requests.length === 1 ? 'request' : 'requests'}
+                  </p>
+                )}
                 <Select
                   items={STATUS_ITEMS}
                   value={filter}
@@ -524,7 +528,7 @@ export default function GymLeave() {
           </Card>
         </TabsPanel>
 
-        <TabsPanel value="calendar">
+        <TabsPanel value="calendar" className="pt-4">
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
             <Card>
               <CardHeader>
@@ -619,7 +623,7 @@ export default function GymLeave() {
           </div>
         </TabsPanel>
 
-        <TabsPanel value="balances">
+        <TabsPanel value="balances" className="pt-4">
           <Card>
             <CardHeader>
               <CardTitle render={<h2 />}>Leave balances</CardTitle>

@@ -1,4 +1,4 @@
-import { DoorOpen, Pencil, Plus, RotateCcw } from 'lucide-react'
+import { Plus, RotateCcw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { PageHeader } from '@/components/page-header'
@@ -160,10 +160,7 @@ export default function GymRooms() {
               {rooms.map((room) => (
                 <TableRow key={room.id} className={room.is_active ? undefined : 'text-muted-foreground'}>
                   <TableCell>
-                    <span className="flex items-center gap-2 font-medium">
-                      <DoorOpen className="size-4 text-muted-foreground" aria-hidden />
-                      {room.name}
-                    </span>
+                    <span className="font-medium">{room.name}</span>
                     {!room.is_active && <span className="block pt-1 text-xs">Not available for new sessions</span>}
                   </TableCell>
                   <TableCell>
@@ -173,7 +170,7 @@ export default function GymRooms() {
                     <TableCell className="text-right">
                       <div className="flex flex-wrap justify-end gap-1">
                         <Button size="xs" variant="ghost" onClick={() => setDialog({ room })}>
-                          <Pencil aria-hidden /> Rename
+                          Rename
                         </Button>
                         {room.is_active ? (
                           <Button size="xs" variant="destructive-outline" onClick={() => setTarget({ room, action: 'retire' })}>
@@ -289,6 +286,7 @@ function RoomDialog({
             <TextField
               name="name"
               label="Room name"
+              maxLength={80}
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Main mat"

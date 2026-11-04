@@ -35,6 +35,7 @@ import type {
   StaffMember,
   WorkspaceOptions,
 } from '@/lib/workspace'
+import { fileProblem } from '@/lib/validation'
 
 const LEAVE_STATUS: Record<LeaveRequestStatus, { label: string; variant: 'warning' | 'success' | 'error' | 'secondary' }> = {
   pending: { label: 'Pending', variant: 'warning' },
@@ -168,7 +169,7 @@ export default function EmployeeRecord() {
       />
 
       <Tabs value={tab} onValueChange={(value) => setTab(String(value))}>
-        <TabsList variant="underline" aria-label="Employee record sections">
+        <TabsList variant="underline" aria-label="Employee record sections" className="max-w-full overflow-x-auto overflow-y-hidden [scrollbar-width:none]">
           <TabsTab value="employment">Employment</TabsTab>
           <TabsTab value="coach">Coach profile</TabsTab>
           <TabsTab value="schedule">Schedule</TabsTab>
@@ -304,6 +305,7 @@ function EmploymentSection({
             <TextField
               name="job_title"
               label="Job title"
+              maxLength={100}
               value={jobTitle}
               onChange={(e) => setJobTitle(e.target.value)}
               placeholder="Head coach"
@@ -357,6 +359,7 @@ function EmploymentSection({
                 label="Monthly rate"
                 type="number"
                 min="0"
+                max="9999999999.99"
                 step="0.01"
                 inputMode="decimal"
                 value={monthlyRate}
@@ -368,6 +371,7 @@ function EmploymentSection({
                 label="Rate per session"
                 type="number"
                 min="0"
+                max="9999999999.99"
                 step="0.01"
                 inputMode="decimal"
                 value={sessionRate}
@@ -421,6 +425,11 @@ function CoachSection({
   }, [preview])
 
   function choosePhoto(file: File | null) {
+    const problem = file && fileProblem(file, 'image/*', 2048)
+    if (problem) {
+      toastManager.add({ title: problem, type: 'error' })
+      return
+    }
     setPhoto(file)
     setPreview(file ? URL.createObjectURL(file) : null)
   }
@@ -524,6 +533,7 @@ function CoachSection({
             <TextField
               name="coach_rank"
               label="Rank"
+              maxLength={100}
               value={rank}
               onChange={(e) => setRank(e.target.value)}
               placeholder="Black belt"
@@ -532,6 +542,7 @@ function CoachSection({
             <TextField
               name="coach_specialisation"
               label="Specialisation"
+              maxLength={150}
               value={specialisation}
               onChange={(e) => setSpecialisation(e.target.value)}
               placeholder="Boxing, strength and conditioning"
@@ -544,6 +555,7 @@ function CoachSection({
             <Textarea
               name="coach_experience"
               rows={3}
+              maxLength={5000}
               value={experience}
               onChange={(e) => setExperience(e.target.value)}
               disabled={!canEdit}
@@ -553,7 +565,7 @@ function CoachSection({
 
           <Field name="coach_bio" className="w-full">
             <FieldLabel>Short profile</FieldLabel>
-            <Textarea name="coach_bio" rows={5} value={bio} onChange={(e) => setBio(e.target.value)} disabled={!canEdit} />
+            <Textarea name="coach_bio" rows={5} maxLength={5000} value={bio} onChange={(e) => setBio(e.target.value)} disabled={!canEdit} />
             <FieldDescription>Two or three sentences athletes will read before booking.</FieldDescription>
             <FieldError />
           </Field>
@@ -703,7 +715,7 @@ function ScheduleSection({
             )}
 
             <div className="divide-y rounded-lg border">
-              {DAYS.map(({ key }) => (
+              {DAYS.map(({ key }, index) => (
                 <div key={key} className="flex min-h-14 flex-wrap items-center gap-3 px-3 py-2">
                   <label className="flex w-36 items-center gap-2 text-sm">
                     <Checkbox
@@ -714,26 +726,38 @@ function ScheduleSection({
                     {options.weekdays[key] ?? key}
                   </label>
                   {days[key].working ? (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Input
-                        type="time"
-                        className="w-32"
-                        aria-label={`${options.weekdays[key] ?? key} starts`}
-                        value={days[key].start}
-                        onChange={(e) => setDay(key, { start: e.target.value })}
-                        disabled={!canEdit}
-                        required
-                      />
-                      <span className="text-muted-foreground text-sm">to</span>
-                      <Input
-                        type="time"
-                        className="w-32"
-                        aria-label={`${options.weekdays[key] ?? key} ends`}
-                        value={days[key].end}
-                        onChange={(e) => setDay(key, { end: e.target.value })}
-                        disabled={!canEdit}
-                        required
-                      />
+                    <div className="grid w-full grid-cols-[auto_1fr] items-start gap-x-3 gap-y-2 sm:flex sm:w-auto sm:gap-2">
+                      <span className="pt-2 text-muted-foreground text-sm sm:hidden">Starts</span>
+                      <Field name={`schedule.${index}.start_time`} className="min-w-0 sm:w-36">
+                        <Input
+                          type="time"
+                          aria-label={`${options.weekdays[key] ?? key} starts`}
+                          value={days[key].start}
+                          onChange={(e) => setDay(key, { start: e.target.value })}
+                          disabled={!canEdit}
+                          required
+                        />
+                        <FieldError />
+                      </Field>
+                      <span className="pt-2 text-muted-foreground text-sm sm:pt-1.5">
+                        <span className="sm:hidden">Ends</span>
+                        <span className="max-sm:hidden">to</span>
+                      </span>
+                      <Field
+                        name={`schedule.${index}.end_time`}
+                        className="min-w-0 sm:w-36"
+                        validate={(value) => (value && String(value) <= days[key].start ? 'Must be after the start time.' : null)}
+                      >
+                        <Input
+                          type="time"
+                          aria-label={`${options.weekdays[key] ?? key} ends`}
+                          value={days[key].end}
+                          onChange={(e) => setDay(key, { end: e.target.value })}
+                          disabled={!canEdit}
+                          required
+                        />
+                        <FieldError />
+                      </Field>
                     </div>
                   ) : (
                     <span className="text-muted-foreground text-sm">Day off</span>

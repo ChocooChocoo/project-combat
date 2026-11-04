@@ -266,7 +266,6 @@ export function PlanEditor({
             <ArrowLeft aria-hidden /> Back to plans
           </Button>
         }
-        actionsClassName="max-sm:w-full max-sm:justify-end"
       />
 
       <Form errors={errors} onSubmit={save} className="flex flex-col gap-6">
@@ -304,6 +303,8 @@ export function PlanEditor({
                 <Field name="name" className="w-full sm:col-span-2">
                   <FieldLabel>Plan name</FieldLabel>
                   <Input
+                    required
+                    maxLength={120}
                     value={form.name}
                     onChange={(event) => set('name', event.target.value)}
                     placeholder="Monthly unlimited"
@@ -339,6 +340,8 @@ export function PlanEditor({
                       type="number"
                       min="1"
                       max="365"
+                      step="1"
+                      required
                       inputMode="numeric"
                       value={form.session_count}
                       onChange={(event) => set('session_count', event.target.value)}
@@ -353,6 +356,8 @@ export function PlanEditor({
                       type="number"
                       min="1"
                       max="120"
+                      step="1"
+                      required
                       inputMode="numeric"
                       value={form.duration_months}
                       onChange={(event) => set('duration_months', event.target.value)}
@@ -368,6 +373,7 @@ export function PlanEditor({
                     type="number"
                     min="0"
                     step="0.01"
+                    required
                     inputMode="decimal"
                     value={form.total_fee}
                     onChange={(event) => set('total_fee', event.target.value)}
@@ -399,9 +405,16 @@ export function PlanEditor({
                 <CardDescription>One inclusion per line. At least one is required.</CardDescription>
               </CardHeader>
               <CardPanel>
-                <Field name="inclusions" className="w-full">
+                <Field
+                  name="inclusions"
+                  className="w-full"
+                  validate={() =>
+                    form.inclusions.split('\n').some((line) => line.trim().length > 255) ? 'Keep each line under 255 characters.' : null
+                  }
+                >
                   <Textarea
                     rows={5}
+                    required
                     value={form.inclusions}
                     onChange={(event) => set('inclusions', event.target.value)}
                     placeholder={'Unlimited classes\nOpen mat access\nLocker room'}
@@ -441,7 +454,11 @@ export function PlanEditor({
                       return (
                         <li key={`${addon.service_id}-${index}`} className="rounded-lg border p-3">
                           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_9rem_auto] sm:items-end">
-                            <Field name={`addons.${index}.service_id`} className="w-full">
+                            <Field
+                              name={`addons.${index}.service_id`}
+                              className="w-full"
+                              validate={() => (addon.service_id ? null : 'Choose a service.')}
+                            >
                               <FieldLabel>Service</FieldLabel>
                               <Select
                                 value={addon.service_id || 'none'}
@@ -477,6 +494,7 @@ export function PlanEditor({
                                 type="number"
                                 min="0"
                                 step="0.01"
+                                required
                                 inputMode="decimal"
                                 value={addon.price}
                                 onChange={(event) => updateAddon(index, { price: event.target.value })}
@@ -525,6 +543,8 @@ export function PlanEditor({
                   <FieldLabel>Validity</FieldLabel>
                   <Textarea
                     rows={4}
+                    required
+                    maxLength={5000}
                     value={form.policy_validity}
                     onChange={(event) => set('policy_validity', event.target.value)}
                     placeholder="Valid for 30 days from the first visit."
@@ -536,6 +556,8 @@ export function PlanEditor({
                   <FieldLabel>Freezing</FieldLabel>
                   <Textarea
                     rows={4}
+                    required
+                    maxLength={5000}
                     value={form.policy_freezing}
                     onChange={(event) => set('policy_freezing', event.target.value)}
                     placeholder="How and when a membership may be paused."
@@ -547,6 +569,8 @@ export function PlanEditor({
                   <FieldLabel>Renewal</FieldLabel>
                   <Textarea
                     rows={4}
+                    required
+                    maxLength={5000}
                     value={form.policy_renewal}
                     onChange={(event) => set('policy_renewal', event.target.value)}
                     placeholder="How the plan renews or ends."
@@ -558,6 +582,8 @@ export function PlanEditor({
                   <FieldLabel>Cancellation and refunds</FieldLabel>
                   <Textarea
                     rows={4}
+                    required
+                    maxLength={5000}
                     value={form.policy_cancellation}
                     onChange={(event) => set('policy_cancellation', event.target.value)}
                     placeholder="How cancellation and refunds work."

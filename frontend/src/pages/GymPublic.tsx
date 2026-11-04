@@ -1,11 +1,13 @@
-import { ArrowLeft, Check, Clock, Dumbbell, Mail, MapPin, Phone, Users } from 'lucide-react'
+import { ArrowLeft, Check, ChevronDown, Clock, Dumbbell, Mail, MapPin, Phone, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
+import { NotificationsMenu, type NoticeList } from '@/components/notifications-menu'
 import { PageHeader } from '@/components/page-header'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardPanel, CardTitle } from '@/components/ui/card'
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Dialog, DialogDescription, DialogHeader, DialogPanel, DialogPopup, DialogTitle } from '@/components/ui/dialog'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -102,15 +104,24 @@ function planLength(plan: PublicPlan): string {
 }
 
 function BrandBar({ signedIn }: { signedIn: boolean }) {
+  const [unread, setUnread] = useState(0)
+
+  useEffect(() => {
+    if (signedIn) api<NoticeList>('/notifications').then((r) => setUnread(r.unread_count)).catch(() => undefined)
+  }, [signedIn])
+
   return (
     <header className="flex flex-wrap items-center gap-3">
       <Link className="flex items-center gap-2 font-semibold" to="/">
         <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm">CP</span>
         Combat Platform
       </Link>
-      <Button className="ms-auto" size="sm" variant="outline" render={<Link to={signedIn ? '/' : '/sign-in'} />}>
-        {signedIn ? 'Home' : 'Sign in'}
-      </Button>
+      <div className="ms-auto flex items-center gap-2">
+        {signedIn && <NotificationsMenu unread={unread} onUnreadChange={setUnread} />}
+        <Button size="sm" variant="outline" render={<Link to={signedIn ? '/' : '/sign-in'} />}>
+          {signedIn ? 'Home' : 'Sign in'}
+        </Button>
+      </div>
     </header>
   )
 }
@@ -312,7 +323,6 @@ export default function GymPublic() {
             )}
           </>
         }
-        actionsClassName="max-sm:w-full max-sm:justify-end"
       />
 
       {(gym.disciplines.length > 0 || gym.activity_types.length > 0) && (
@@ -390,9 +400,9 @@ export default function GymPublic() {
         </div>
       </div>
 
-      <section className="flex flex-col gap-3" aria-labelledby="gym-services">
+      <section className="flex flex-col gap-4" aria-labelledby="gym-services">
         <div className="flex flex-wrap items-baseline gap-2">
-          <h2 id="gym-services" className="font-semibold">Services</h2>
+          <h2 id="gym-services" className="font-semibold text-xl tracking-tight">Services</h2>
           <span className="text-muted-foreground text-sm tabular-nums">
             {services.length} {services.length === 1 ? 'published service' : 'published services'}
           </span>
@@ -464,37 +474,51 @@ export default function GymPublic() {
                         </div>
                       </dl>
 
-                      {(service.included ?? []).length > 0 && (
-                        <div>
-                          <h4 className="mb-1.5 font-medium text-sm">Included</h4>
-                          <ul className="flex flex-col gap-1 text-sm">
-                            {(service.included ?? []).map((item) => (
-                              <li key={item} className="flex items-start gap-2">
-                                <Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
-                                {item}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {(service.bring ?? []).length > 0 && (
-                        <div>
-                          <h4 className="mb-1.5 font-medium text-sm">What to bring</h4>
-                          <ul className="flex flex-col gap-1 text-sm">
-                            {(service.bring ?? []).map((item) => (
-                              <li key={item} className="flex items-start gap-2">
-                                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-muted-foreground" aria-hidden />
-                                {item}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      <p className="font-medium text-sm">
+                      <p className="font-semibold tabular-nums">
                         {service.price_included || service.price == null ? 'Included in membership' : money(service.price)}
                       </p>
+
+                      {((service.included ?? []).length > 0 || (service.bring ?? []).length > 0) && (
+                        <Collapsible className="border-t pt-3">
+                          <CollapsibleTrigger
+                            render={<Button variant="ghost" size="sm" className="-ms-2 group" />}
+                          >
+                            What is included and what to bring
+                            <ChevronDown className="transition-transform group-data-panel-open:rotate-180" aria-hidden />
+                          </CollapsibleTrigger>
+                          <CollapsiblePanel>
+                            <div className="flex flex-col gap-4 pt-3">
+                            {(service.included ?? []).length > 0 && (
+                              <div>
+                                <h4 className="mb-1.5 font-medium text-sm">Included</h4>
+                                <ul className="flex flex-col gap-1 text-sm">
+                                  {(service.included ?? []).map((item) => (
+                                    <li key={item} className="flex items-start gap-2">
+                                      <Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
+                                      {item}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {(service.bring ?? []).length > 0 && (
+                              <div>
+                                <h4 className="mb-1.5 font-medium text-sm">What to bring</h4>
+                                <ul className="flex flex-col gap-1 text-sm">
+                                  {(service.bring ?? []).map((item) => (
+                                    <li key={item} className="flex items-start gap-2">
+                                      <span className="mt-2 size-1.5 shrink-0 rounded-full bg-muted-foreground" aria-hidden />
+                                      {item}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            </div>
+                          </CollapsiblePanel>
+                        </Collapsible>
+                      )}
 
                       {images.length > 1 && (
                         <div className="flex flex-wrap gap-2 border-t pt-3">
@@ -520,9 +544,9 @@ export default function GymPublic() {
         )}
       </section>
 
-      <section className="flex flex-col gap-3" aria-labelledby="gym-plans">
+      <section className="flex flex-col gap-4" aria-labelledby="gym-plans">
         <div className="flex flex-wrap items-baseline gap-2">
-          <h2 id="gym-plans" className="font-semibold">Membership plans</h2>
+          <h2 id="gym-plans" className="font-semibold text-xl tracking-tight">Membership plans</h2>
           <span className="text-muted-foreground text-sm tabular-nums">
             {plans.length} {plans.length === 1 ? 'published plan' : 'published plans'}
           </span>
@@ -591,17 +615,22 @@ export default function GymPublic() {
                       </div>
                     )}
 
-                    <div>
-                      <h4 className="mb-2 font-medium text-sm">Plan policies</h4>
-                      <dl className="grid gap-3 sm:grid-cols-2">
-                        {POLICY_LABELS.map((policy) => (
-                          <div key={policy.key} className="rounded-lg border px-3 py-2">
-                            <dt className="font-medium text-xs">{policy.label}</dt>
-                            <dd className="mt-1 whitespace-pre-line text-muted-foreground text-sm">{plan[policy.key] || 'Not stated.'}</dd>
-                          </div>
-                        ))}
-                      </dl>
-                    </div>
+                    <Collapsible className="border-t pt-3">
+                      <CollapsibleTrigger render={<Button variant="ghost" size="sm" className="-ms-2 group" />}>
+                        Plan policies
+                        <ChevronDown className="transition-transform group-data-panel-open:rotate-180" aria-hidden />
+                      </CollapsibleTrigger>
+                      <CollapsiblePanel>
+                        <dl className="grid gap-3 pt-3 sm:grid-cols-2">
+                          {POLICY_LABELS.map((policy) => (
+                            <div key={policy.key} className="rounded-lg border px-3 py-2">
+                              <dt className="font-medium text-xs">{policy.label}</dt>
+                              <dd className="mt-1 whitespace-pre-line text-muted-foreground text-sm">{plan[policy.key] || 'Not stated.'}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      </CollapsiblePanel>
+                    </Collapsible>
                   </CardPanel>
                 </Card>
               </li>
@@ -610,9 +639,9 @@ export default function GymPublic() {
         )}
       </section>
 
-      <section className="flex flex-col gap-3" aria-labelledby="gym-coaches">
+      <section className="flex flex-col gap-4" aria-labelledby="gym-coaches">
         <div className="flex flex-wrap items-baseline gap-2">
-          <h2 id="gym-coaches" className="font-semibold">Coaches</h2>
+          <h2 id="gym-coaches" className="font-semibold text-xl tracking-tight">Coaches</h2>
           <span className="text-muted-foreground text-sm tabular-nums">
             {coaches.length} {coaches.length === 1 ? 'coach' : 'coaches'}
           </span>

@@ -22,6 +22,7 @@ import { useAuth } from '@/lib/auth'
 import { approvedGym } from '@/lib/gym-access'
 import { cn } from '@/lib/utils'
 import type { GymOptions, LeaveRequestStatus } from '@/lib/workspace'
+import { fileProblem, notBefore } from '@/lib/validation'
 
 type WorkDay = {
   weekday: string
@@ -285,7 +286,7 @@ export default function MyWork() {
         </div>
       ) : (
         <>
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle render={<h2 />}>Your week</CardTitle>
@@ -299,7 +300,7 @@ export default function MyWork() {
                       <li key={day.weekday} className={cn('flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2', isToday && 'bg-muted/50')}>
                         <span className="w-24 font-medium text-sm">{day.label}</span>
                         <span className={day.is_day_off ? 'text-muted-foreground text-sm' : 'text-sm tabular-nums'}>
-                          {day.is_day_off ? 'Day off' : `${day.start_time ?? '—'} – ${day.end_time ?? '—'}`}
+                          {day.is_day_off ? 'Day off' : `${day.start_time ?? 'Not set'} – ${day.end_time ?? 'Not set'}`}
                         </span>
                         {isToday && (
                           <Badge size="sm" variant="secondary" className="ms-auto">
@@ -392,6 +393,7 @@ export default function MyWork() {
                 <Form errors={errors} onSubmit={requestLeave} className="flex flex-col gap-4">
                   <Field name="type">
                     <FieldLabel>Leave type</FieldLabel>
+                    {!options && <Skeleton className="h-9 w-full sm:h-8" aria-label="Loading leave types" />}
                     <Select
                       items={typeItems}
                       name="type"
@@ -403,8 +405,8 @@ export default function MyWork() {
                       required
                       disabled={!options}
                     >
-                      <SelectTrigger aria-label="Leave type" aria-invalid={errors.type ? true : undefined}>
-                        <SelectValue placeholder={options ? 'Choose a leave type' : 'Loading leave types…'} />
+                      <SelectTrigger className={options ? undefined : 'hidden'} aria-label="Leave type" aria-invalid={errors.type ? true : undefined}>
+                        <SelectValue placeholder="Choose a leave type" />
                       </SelectTrigger>
                       <SelectPopup>
                         {typeItems.map((item) => (
@@ -439,6 +441,7 @@ export default function MyWork() {
                       label="Last day"
                       type="date"
                       min={start || undefined}
+                      validate={notBefore('starts_on', 'The last day must be on or after the first day.')}
                       value={end}
                       onChange={(event) => {
                         setSent(null)
@@ -447,11 +450,7 @@ export default function MyWork() {
                       required
                     />
                   </div>
-                  {start && end && (
-                    <p className={end < start ? 'text-destructive-foreground text-sm' : 'text-muted-foreground text-sm'}>
-                      {end < start ? 'The last day must be on or after the first day.' : formatDateRange(start, end)}
-                    </p>
-                  )}
+                  {start && end && end >= start && <p className="text-muted-foreground text-sm">{formatDateRange(start, end)}</p>}
 
                   <Field name="reason">
                     <FieldLabel>Reason</FieldLabel>
@@ -489,7 +488,14 @@ export default function MyWork() {
                           aria-label="Attach a supporting file"
                           onChange={(event) => {
                             setSent(null)
-                            setAttachment(event.target.files?.[0] ?? null)
+                            const file = event.target.files?.[0] ?? null
+                            const problem = file && fileProblem(file, accept, options?.attachment.max_kb)
+                            if (problem) {
+                              toastManager.add({ title: problem, type: 'error' })
+                              event.target.value = ''
+                              return
+                            }
+                            setAttachment(file)
                           }}
                         />
                       </label>

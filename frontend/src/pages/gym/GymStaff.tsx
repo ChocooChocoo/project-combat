@@ -215,11 +215,11 @@ export default function GymStaff() {
                             </span>
                             <span className="block pt-1 text-muted-foreground text-xs">{owner.email}</span>
                           </TableCell>
-                          <TableCell>—</TableCell>
+                          <TableCell className="text-muted-foreground">Not set</TableCell>
                           <TableCell>
                             <Badge variant="secondary">Owner</Badge>
                           </TableCell>
-                          <TableCell>—</TableCell>
+                          <TableCell />
                           {canManage && (
                             <TableCell className="text-right">
                               <span className="text-muted-foreground text-xs">Owner</span>
@@ -241,7 +241,7 @@ export default function GymStaff() {
                               </Link>
                               <span className="block pt-1 text-muted-foreground text-xs">{employee.email}</span>
                             </TableCell>
-                            <TableCell>{employee.profile?.job_title || '—'}</TableCell>
+                            <TableCell>{employee.profile?.job_title || <span className="text-muted-foreground">Not set</span>}</TableCell>
                             <TableCell>
                               {employee.roles.length > 0 ? (
                                 <div className="flex flex-wrap gap-1">
@@ -252,10 +252,10 @@ export default function GymStaff() {
                                   ))}
                                 </div>
                               ) : (
-                                '—'
+                                <span className="text-muted-foreground">No roles</span>
                               )}
                             </TableCell>
-                            <TableCell>{isCoach(employee) ? <Badge variant="info">Coach</Badge> : '—'}</TableCell>
+                            <TableCell>{isCoach(employee) && <Badge variant="info">Coach</Badge>}</TableCell>
                             {canManage && (
                               <TableCell className="text-right">
                                 {isOwner ? (

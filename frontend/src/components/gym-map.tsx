@@ -72,7 +72,7 @@ export function GymMap({
   const start = points[0] ?? MANILA
 
   return (
-    <div className={cn('h-72 overflow-hidden rounded-xl border sm:h-96', className)} role="region" aria-label="Gyms on a map">
+    <div className={cn('isolate h-72 overflow-hidden rounded-xl border sm:h-96', className)} role="region" aria-label="Gyms on a map">
       <MapContainer center={start} zoom={points.length > 1 ? 10 : 13} className="size-full">
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
