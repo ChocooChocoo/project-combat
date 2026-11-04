@@ -28,7 +28,7 @@ A workspace exists only for an approved gym (R-18 in [PHASE 2](../phase-2/PHASE%
 
 | Waits for | Why | Status |
 |---|---|---|
-| R-18 in [PHASE 2](../phase-2/PHASE%202.md) | Only an approved gym gets a workspace | ⭕ |
+| R-18 in [PHASE 2](../phase-2/PHASE%202.md) | Only an approved gym gets a workspace | ✅ |
 | R-08, R-09 in [PHASE 1](../phase-1/PHASE%201.md) | Employees get module permissions inside one gym | ⭕ |
 | R-06 in [PHASE 1](../phase-1/PHASE%201.md) | New employees must set their own password | ⭕ |
 | Q-19 and Q-21 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) | Leave types and working days shape leave and schedules | ⭕ |
