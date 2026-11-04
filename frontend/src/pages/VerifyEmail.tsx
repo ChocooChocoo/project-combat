@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { api, ApiError } from '@/lib/api'
 import { useAuth, type User } from '@/lib/auth'
+import { homePath } from '@/lib/gym-access'
 
 /** S-06, R-02: enter the emailed code. A correct code signs the person in and lands them home. */
 export default function VerifyEmail() {
@@ -24,7 +25,7 @@ export default function VerifyEmail() {
     try {
       const result = await api<{ token: string; user: User }>('/auth/verify', { body: { email, code } })
       signIn(result.token, result.user)
-      navigate('/', { replace: true })
+      navigate(homePath(result.user), { replace: true })
     } catch (e) {
       setError(e instanceof ApiError ? (e.errors.code?.[0] ?? e.message) : 'Something went wrong.')
       setCode('')

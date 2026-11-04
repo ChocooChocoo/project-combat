@@ -116,9 +116,29 @@ class AccessTest extends TestCase
         ])->assertOk();
         $this->assertSame(AccessLevel::View, $this->employee->accessLevel($this->gym, Module::Finance));
 
-        // Deleting a role takes its access away.
-        $this->actingAs($this->owner)->deleteJson($this->url("roles/{$cashier->id}"))->assertOk();
+        // Taking a role away removes its access; the emptied role can then be deleted.
+        $this->actingAs($this->owner)->putJson($this->url("staff/{$this->employee->id}/roles"), [
+            'role_ids' => [$desk->id],
+        ])->assertOk();
         $this->assertNull($this->employee->accessLevel($this->gym, Module::Finance));
+
+        $this->actingAs($this->owner)->deleteJson($this->url("roles/{$cashier->id}"))->assertOk();
+    }
+
+    public function test_a_role_still_given_to_employees_cannot_be_deleted(): void
+    {
+        $inUse = $this->role(['finance' => 'view'], name: 'Cashier');
+        $unused = $this->role(['members' => 'view'], name: 'Unused');
+        $this->give($this->employee, $inUse);
+
+        $this->actingAs($this->owner)->deleteJson($this->url("roles/{$inUse->id}"))
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'This role is still given to employees. Take it away from them before deleting it.');
+
+        $this->assertSame(1, $inUse->users()->count());
+
+        $this->actingAs($this->owner)->deleteJson($this->url("roles/{$unused->id}"))->assertOk();
+        $this->assertNull(GymRole::withoutGlobalScope('gym')->find($unused->id));
     }
 
     public function test_employee_without_hr_access_is_refused_on_the_server(): void

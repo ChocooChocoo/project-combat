@@ -1,13 +1,26 @@
-import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
+import { Navigate, Outlet, Route, Routes, useLocation, useParams } from 'react-router'
 import { AppShell } from '@/components/app-shell'
+import { workspaceHome } from '@/components/gym-nav'
+import { GymWorkspaceLayout } from '@/components/gym-workspace-layout'
 import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/lib/auth'
+import { approvedGym, homePath } from '@/lib/gym-access'
+import AcceptInvite from '@/pages/AcceptInvite'
 import AdminHome from '@/pages/admin/AdminHome'
 import ReviewApplication from '@/pages/admin/ReviewApplication'
 import ApplicationDetail from '@/pages/ApplicationDetail'
 import FirstPassword from '@/pages/FirstPassword'
 import ForgotPassword from '@/pages/ForgotPassword'
 import GymApply from '@/pages/GymApply'
+import GymPublic from '@/pages/GymPublic'
+import EmployeeRecord from '@/pages/gym/EmployeeRecord'
+import GymLeave from '@/pages/gym/GymLeave'
+import GymPlans from '@/pages/gym/GymPlans'
+import GymRooms from '@/pages/gym/GymRooms'
+import GymServices from '@/pages/gym/GymServices'
+import GymSettings from '@/pages/gym/GymSettings'
+import GymStaff from '@/pages/gym/GymStaff'
+import MyWork from '@/pages/gym/MyWork'
 import Home from '@/pages/Home'
 import MyApplications from '@/pages/MyApplications'
 import Notifications from '@/pages/Notifications'
@@ -28,7 +41,7 @@ function Guard({ need }: { need: 'guest' | 'signed-in' | 'first-password' }) {
     return <div className="flex min-h-svh items-center justify-center"><Spinner /></div>
   }
 
-  if (need === 'guest') return user ? <Navigate to="/" replace /> : <Outlet />
+  if (need === 'guest') return user ? <Navigate to={homePath(user)} replace /> : <Outlet />
   if (!user) return <Navigate to="/sign-in" replace state={{ from: location }} />
   if (user.password_change_required) return need === 'first-password' ? <Outlet /> : <Navigate to="/first-password" replace />
   if (need === 'first-password') return <Navigate to="/" replace />
@@ -43,6 +56,21 @@ function AdminOnly() {
   return user?.is_platform_admin ? <Outlet /> : <Navigate to="/" replace />
 }
 
+/** The workspace belongs to one approved gym the person actually belongs to. */
+function GymMember() {
+  const { user } = useAuth()
+  const { gymId } = useParams()
+  return approvedGym(user, Number(gymId)) ? <Outlet /> : <Navigate to="/" replace />
+}
+
+/** Opens the first workspace section this person may view. Owners start at Setup. */
+function WorkspaceHome() {
+  const { user } = useAuth()
+  const { pathname } = useLocation()
+  const gym = approvedGym(user, Number(pathname.match(/^\/gyms\/(\d+)(?:\/|$)/)?.[1]))
+  return <Navigate to={gym ? workspaceHome(gym) : '/'} replace />
+}
+
 export default function App() {
   return (
     <Routes>
@@ -50,8 +78,10 @@ export default function App() {
         <Route path="/sign-in" element={<SignIn />} />
         <Route path="/sign-up" element={<SignUp />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/accept-invite" element={<AcceptInvite />} />
       </Route>
       <Route path="/verify-email" element={<VerifyEmail />} />
+      <Route path="/gyms/:gymId" element={<GymPublic />} />
       <Route element={<Guard need="first-password" />}>
         <Route path="/first-password" element={<FirstPassword />} />
       </Route>
@@ -64,6 +94,19 @@ export default function App() {
           <Route path="/applications" element={<MyApplications />} />
           <Route path="/applications/:id" element={<ApplicationDetail />} />
           <Route path="/applications/:id/edit" element={<GymApply />} />
+          <Route element={<GymMember />}>
+            <Route path="/gyms/:gymId/manage" element={<GymWorkspaceLayout />}>
+              <Route index element={<WorkspaceHome />} />
+              <Route path="settings" element={<GymSettings />} />
+              <Route path="rooms" element={<GymRooms />} />
+              <Route path="staff" element={<GymStaff />} />
+              <Route path="staff/:userId" element={<EmployeeRecord />} />
+              <Route path="leave" element={<GymLeave />} />
+              <Route path="services" element={<GymServices />} />
+              <Route path="plans" element={<GymPlans />} />
+              <Route path="my-work" element={<MyWork />} />
+            </Route>
+          </Route>
           <Route element={<AdminOnly />}>
             <Route path="/admin" element={<AdminHome />} />
             <Route path="/admin/applications/:id" element={<ReviewApplication />} />

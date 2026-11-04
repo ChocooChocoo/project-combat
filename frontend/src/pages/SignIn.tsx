@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
 import { api, ApiError, formValues, type FieldErrors } from '@/lib/api'
 import { useAuth, type User } from '@/lib/auth'
+import { homePath } from '@/lib/gym-access'
 
 /** S-07, R-03. */
 export default function SignIn() {
@@ -23,7 +24,7 @@ export default function SignIn() {
     try {
       const result = await api<{ token: string; user: User }>('/auth/login', { body: values })
       signIn(result.token, result.user)
-      navigate('/', { replace: true })
+      navigate(homePath(result.user), { replace: true })
     } catch (error) {
       if (!(error instanceof ApiError)) return
       if (error.data.needs_verification) {

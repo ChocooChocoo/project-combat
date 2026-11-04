@@ -1,14 +1,18 @@
+import { cn } from '@/lib/utils'
+
 /** The one heading pattern every signed-in screen uses: title, optional line of context, actions on the right. */
 export function PageHeader({
   title,
   description,
   actions,
   meta,
+  actionsClassName,
 }: {
   title: React.ReactNode
   description?: React.ReactNode
   actions?: React.ReactNode
   meta?: React.ReactNode
+  actionsClassName?: string
 }) {
   return (
     <header className="flex flex-wrap items-end gap-x-6 gap-y-3 border-b pb-6">
@@ -19,7 +23,7 @@ export function PageHeader({
         </div>
         {description && <div className="max-w-prose text-muted-foreground text-sm">{description}</div>}
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      {actions && <div className={cn('flex flex-wrap items-center gap-2', actionsClassName)}>{actions}</div>}
     </header>
   )
 }

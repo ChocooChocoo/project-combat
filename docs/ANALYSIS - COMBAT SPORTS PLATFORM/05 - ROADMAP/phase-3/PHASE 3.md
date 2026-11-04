@@ -1,10 +1,10 @@
-# PHASE 3
+﻿# PHASE 3
 
 **Each approved gym runs its own workspace, staff and offer**
 
 [00 - START HERE](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) · [05 - ROADMAP](../05%20-%20ROADMAP.md) · Previous: [PHASE 2](../phase-2/PHASE%202.md) · Next: [PHASE 4](../phase-4/PHASE%204.md)
 
-**Status:** ⭕ Not started
+**Status:** ✅ Finished
 
 Citation forms are the same as in [02 - FINDINGS](../../02%20-%20FINDINGS/02%20-%20FINDINGS.md).
 
@@ -29,9 +29,9 @@ A workspace exists only for an approved gym (R-18 in [PHASE 2](../phase-2/PHASE%
 | Waits for | Why | Status |
 |---|---|---|
 | R-18 in [PHASE 2](../phase-2/PHASE%202.md) | Only an approved gym gets a workspace | ✅ |
-| R-08, R-09 in [PHASE 1](../phase-1/PHASE%201.md) | Employees get module permissions inside one gym | ⭕ |
-| R-06 in [PHASE 1](../phase-1/PHASE%201.md) | New employees must set their own password | ⭕ |
-| Q-19 and Q-21 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) | Leave types and working days shape leave and schedules | ⭕ |
+| R-08, R-09 in [PHASE 1](../phase-1/PHASE%201.md) | Employees get module permissions inside one gym | ✅ |
+| R-06 in [PHASE 1](../phase-1/PHASE%201.md) | New employees must set their own password | ✅ |
+| Q-19 and Q-21 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) | Leave types and working days shape leave and schedules | ✅ |
 
 ## What it unlocks
 
@@ -44,9 +44,9 @@ A workspace exists only for an approved gym (R-18 in [PHASE 2](../phase-2/PHASE%
 
 | Status | How many |
 |---|---|
-| ✅ Finished | 0 |
+| ✅ Finished | 13 |
 | 🟨 Being worked on | 0 |
-| ⭕ Not started | 13 |
+| ⭕ Not started | 0 |
 | ❌ Blocked | 0 |
 | 🔵 Already there | 0 |
 | ⬜ Dropped | 0 |
@@ -61,8 +61,8 @@ A workspace exists only for an approved gym (R-18 in [PHASE 2](../phase-2/PHASE%
 
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
-| R-20 | Workspace opens on approval, with core settings | R-18 | ⭕ | The owner can set disciplines, operating hours and policies |
-| R-21 | Facilities and rooms | R-20 | ⭕ | The owner keeps a list of training areas that sessions can use |
+| R-20 | Workspace opens on approval, with core settings | R-18 | ✅ | The owner can set disciplines, operating hours and policies |
+| R-21 | Facilities and rooms | R-20 | ✅ | The owner keeps a list of training areas that sessions can use |
 
 ### R-20: Workspace opens on approval, with core settings
 
@@ -79,15 +79,15 @@ A workspace exists only for an approved gym (R-18 in [PHASE 2](../phase-2/PHASE%
 
 **Depends on:** R-18.
 
-**Blockers:** Q-21 (working days).
+**Blockers:** none. Q-21 answered.
 
 **Done when:**
 
-- [ ] An approved owner lands in their own workspace.
-- [ ] The owner can edit the gym's profile, disciplines, activity types, hours, working days and policies.
-- [ ] Changes show on the gym's public page.
+- [x] An approved owner lands in their own workspace.
+- [x] The owner can edit the gym's profile, disciplines, activity types, hours, working days and policies.
+- [x] Changes show on the gym's public page.
 
-**Still open:** Q-21.
+**Still open:** nothing. Q-21 answered: Monday to Friday by default, and the owner can change it.
 
 **Old system:** as above.
 
@@ -105,8 +105,8 @@ A workspace exists only for an approved gym (R-18 in [PHASE 2](../phase-2/PHASE%
 
 **Done when:**
 
-- [ ] The owner can add, rename and retire rooms.
-- [ ] A retired room can no longer be chosen for new sessions.
+- [x] The owner can add, rename and retire rooms.
+- [x] A retired room can no longer be chosen for new sessions.
 
 **Still open:** nothing.
 
@@ -120,12 +120,12 @@ A workspace exists only for an approved gym (R-18 in [PHASE 2](../phase-2/PHASE%
 
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
-| R-22 | Owner adds employees and gives them roles | R-08, R-20 | ⭕ | The owner can add an employee, give them roles on screen, and the employee can sign in |
-| R-23 | Employee and coach profiles | R-22 | ⭕ | Each employee has employment details; coaches also have a public profile |
-| R-24 | Work schedules | R-22 | ⭕ | Each employee has set working hours and days off |
-| R-25 | Leave requests with approval | R-22, R-10 | ⭕ | An employee can ask for leave and a permitted person decides |
-| R-26 | Leave balances | R-25 | ⭕ | Each employee sees how many days of each leave type remain |
-| R-27 | Holiday calendar | R-20 | ⭕ | The gym's calendar shows national and gym-specific holidays |
+| R-22 | Owner adds employees and gives them roles | R-08, R-20 | ✅ | The owner can add an employee, give them roles on screen, and the employee can sign in |
+| R-23 | Employee and coach profiles | R-22 | ✅ | Each employee has employment details; coaches also have a public profile |
+| R-24 | Work schedules | R-22 | ✅ | Each employee has set working hours and days off |
+| R-25 | Leave requests with approval | R-22, R-10 | ✅ | An employee can ask for leave and a permitted person decides |
+| R-26 | Leave balances | R-25 | ✅ | Each employee sees how many days of each leave type remain |
+| R-27 | Holiday calendar | R-20 | ✅ | The gym's calendar shows national and gym-specific holidays |
 
 ### R-22: Owner adds employees and gives them roles
 
@@ -137,16 +137,16 @@ A workspace exists only for an approved gym (R-18 in [PHASE 2](../phase-2/PHASE%
 
 **Depends on:** R-08 and R-20.
 
-**Blockers:** Q-10 (can a person work at two gyms?).
+**Blockers:** none. Q-10 answered.
 
 **Done when:**
 
-- [ ] The owner can add an employee and give them roles in one step.
-- [ ] The employee receives a sign-in invitation, never a password shown on screen.
-- [ ] The owner can change an employee's roles or remove the employee at any time, and removal ends their access straight away.
-- [ ] On the staff and roles screen (S-17), the owner creates, edits and deletes roles, choosing a level for each module, and gives roles to employees. *(The screen part of R-08; moved here in conversation, 3 November 2026, and changed to roles at your client's request.)*
+- [x] The owner can add an employee and give them roles in one step.
+- [x] The employee receives a sign-in invitation, never a password shown on screen.
+- [x] The owner can change an employee's roles or remove the employee at any time, and removal ends their access straight away.
+- [x] On the staff and roles screen (S-17), the owner creates, edits and deletes roles, choosing a level for each module, and gives roles to employees. *(The screen part of R-08; moved here in conversation, 3 November 2026, and changed to roles at your client's request.)*
 
-**Still open:** Q-10.
+**Still open:** nothing. Q-10 answered: a person may work at several gyms.
 
 **Old system:** `backend/app/Http/Controllers/API/UserManagementController.php`, lines 31 to 142 and 311 to 505.
 
@@ -160,15 +160,15 @@ A workspace exists only for an approved gym (R-18 in [PHASE 2](../phase-2/PHASE%
 
 **Depends on:** R-22.
 
-**Blockers:** Q-13 (how coaches are paid changes which pay details are kept).
+**Blockers:** none. Q-13 answered.
 
 **Done when:**
 
-- [ ] Each employee has one employment record, tied to their account.
-- [ ] Coaches can fill in a public profile, and athletes can see it.
-- [ ] Pay details are visible only to people with HR or finance permission.
+- [x] Each employee has one employment record, tied to their account.
+- [x] Coaches can fill in a public profile, and athletes can see it.
+- [x] Pay details are visible only to people with HR or finance permission.
 
-**Still open:** Q-13.
+**Still open:** nothing. Q-13 answered: a record keeps a monthly rate, a per-session rate, or both.
 
 **Old system:** `backend/app/Models/HrEmployee.php`; `user_settings.specialization` (`combat_sports_db.sql`, line 4376).
 
@@ -182,14 +182,14 @@ A workspace exists only for an approved gym (R-18 in [PHASE 2](../phase-2/PHASE%
 
 **Depends on:** R-22.
 
-**Blockers:** Q-21.
+**Blockers:** none. Q-21 answered.
 
 **Done when:**
 
-- [ ] A permitted person can set each employee's weekly working hours and days off.
-- [ ] An employee can see their own schedule.
+- [x] A permitted person can set each employee's weekly working hours and days off.
+- [x] An employee can see their own schedule.
 
-**Still open:** Q-21.
+**Still open:** nothing. Q-21 answered: Monday to Friday by default, and the owner can change it.
 
 **Old system:** none as a schedule. The old system assumed 08:00 to 16:00 for everyone (`backend/app/Http/Controllers/API/PayrollController.php`, lines 183 to 592).
 
@@ -203,16 +203,16 @@ A workspace exists only for an approved gym (R-18 in [PHASE 2](../phase-2/PHASE%
 
 **Depends on:** R-22 and R-10.
 
-**Blockers:** Q-19 (leave types).
+**Blockers:** none. Q-19 answered.
 
 **Done when:**
 
-- [ ] An employee can ask for leave and cancel a pending request.
-- [ ] A permitted person can approve or reject it, but not their own request.
-- [ ] Attachments are kept privately (as in R-15).
-- [ ] Approved leave shows on the employee's calendar.
+- [x] An employee can ask for leave and cancel a pending request.
+- [x] A permitted person can approve or reject it, but not their own request.
+- [x] Attachments are kept privately (as in R-15).
+- [x] Approved leave shows on the employee's calendar.
 
-**Still open:** Q-19.
+**Still open:** nothing. Q-19 answered with the old Philippine list.
 
 **Old system:** `backend/app/Http/Controllers/API/LeaveRequestController.php`. The old system counted calendar days and had no check against approving your own leave.
 
@@ -228,15 +228,15 @@ A workspace exists only for an approved gym (R-18 in [PHASE 2](../phase-2/PHASE%
 
 **Depends on:** R-25.
 
-**Blockers:** Q-19.
+**Blockers:** none. Q-19 answered.
 
 **Done when:**
 
-- [ ] An employee sees their remaining days for each leave type.
-- [ ] Approving paid leave reduces the right balance by working days, not calendar days.
-- [ ] A request for more days than remain is flagged before approval.
+- [x] An employee sees their remaining days for each leave type.
+- [x] Approving paid leave reduces the right balance by working days, not calendar days.
+- [x] A request for more days than remain is flagged before approval.
 
-**Still open:** Q-19, and Q-01 (whether unused leave can be turned into cash).
+**Still open:** Q-01 (whether unused leave can be turned into cash). Not needed for this phase. Q-19 answered with the old Philippine list.
 
 **Old system:** as above.
 
@@ -256,9 +256,9 @@ A workspace exists only for an approved gym (R-18 in [PHASE 2](../phase-2/PHASE%
 
 **Done when:**
 
-- [ ] The calendar shows national holidays without anyone adding them.
-- [ ] A permitted person can add and remove gym-specific holidays.
-- [ ] Simply viewing the calendar never changes it.
+- [x] The calendar shows national holidays without anyone adding them.
+- [x] A permitted person can add and remove gym-specific holidays.
+- [x] Simply viewing the calendar never changes it.
 
 **Still open:** nothing.
 
@@ -272,8 +272,8 @@ A workspace exists only for an approved gym (R-18 in [PHASE 2](../phase-2/PHASE%
 
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
-| R-28 | Services list with photos and full descriptions | R-20 | ⭕ | No service can be published without a cover photo and all required fields |
-| R-29 | All-inclusive membership plans | R-28 | ⭕ | Each plan shows one total price, what it covers, add-ons and policies |
+| R-28 | Services list with photos and full descriptions | R-20 | ✅ | No service can be published without a cover photo and all required fields |
+| R-29 | All-inclusive membership plans | R-28 | ✅ | Each plan shows one total price, what it covers, add-ons and policies |
 
 ### R-28: Services list with photos and full descriptions
 
@@ -298,10 +298,10 @@ A service cannot be published until all of these are filled in.
 
 **Done when:**
 
-- [ ] A service without a cover photo, or with any required field empty, cannot be published.
-- [ ] Up to 5 gallery photos can be added; a sixth is refused.
-- [ ] The price can be a fixed amount or "included in membership".
-- [ ] Published services appear on the gym's public page.
+- [x] A service without a cover photo, or with any required field empty, cannot be published.
+- [x] Up to 5 gallery photos can be added; a sixth is refused.
+- [x] The price can be a fixed amount or "included in membership".
+- [x] Published services appear on the gym's public page.
 
 **Still open:** nothing.
 
@@ -327,10 +327,10 @@ A service cannot be published until all of these are filled in.
 
 **Done when:**
 
-- [ ] A plan cannot be published without a total fee, a list of inclusions and its policies.
-- [ ] Add-ons show their own price and are marked "not included".
-- [ ] The plan page shows the athlete exactly these details.
-- [ ] Plans can be priced by time (for example monthly) or by number of sessions (for example a 10-session pass).
+- [x] A plan cannot be published without a total fee, a list of inclusions and its policies.
+- [x] Add-ons show their own price and are marked "not included".
+- [x] The plan page shows the athlete exactly these details.
+- [x] Plans can be priced by time (for example monthly) or by number of sessions (for example a 10-session pass).
 
 **Still open:** nothing.
 
@@ -344,7 +344,7 @@ A service cannot be published until all of these are filled in.
 
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
-| R-30 | Search and filter gyms | R-18, R-28 | ⭕ | Anyone signed in can filter gyms by location, discipline, services, schedules and tier |
+| R-30 | Search and filter gyms | R-18, R-28 | ✅ | Anyone signed in can filter gyms by location, discipline, services, schedules and tier |
 
 ### R-30: Search and filter gyms
 
@@ -360,12 +360,12 @@ A service cannot be published until all of these are filled in.
 
 **Done when:**
 
-- [ ] A newly confirmed user lands on the home page and can search gyms.
-- [ ] Filters for location, discipline, services and tier all work.
-- [ ] The schedule filter works once sessions exist.
-- [ ] Only approved gyms appear.
+- [x] A newly confirmed user lands on the home page and can search gyms.
+- [x] Filters for location, discipline, services and tier all work.
+- [x] The schedule filter works once sessions exist.
+- [x] Only approved gyms appear.
 
-**Still open:** whether visitors who have not signed up can browse is not stated. The spec's access table gives "browse" to platform users (page 7), so browsing is planned for signed-in users only.
+**Still open:** nothing. Browsing stays for signed-in users only, as the spec's access table gives "browse" to platform users (page 7).
 
 **Old system:** `frontend/src/pages/MemberDashboard.vue`, lines 293 to 302 and 3622 to 3652; `backend/app/Models/TrainingCenter.php`, lines 174 to 204.
 
@@ -377,8 +377,8 @@ A service cannot be published until all of these are filled in.
 
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
-| R-97 | Nearest gyms to the person | R-30 | ⭕ | A person sees approved gyms sorted by distance from where they are, on a list and a map |
-| R-98 | Best-match gym recommendations | R-97, R-28, R-29 | ⭕ | A person gets a ranked list that weighs distance with discipline, price and schedule, with the reason for each match shown |
+| R-97 | Nearest gyms to the person | R-30 | ✅ | A person sees approved gyms sorted by distance from where they are, on a list and a map |
+| R-98 | Best-match gym recommendations | R-97, R-28, R-29 | ✅ | A person gets a ranked list that weighs distance with discipline, price and schedule, with the reason for each match shown |
 
 ### R-97: Nearest gyms to the person
 
@@ -394,10 +394,10 @@ A service cannot be published until all of these are filled in.
 
 **Done when:**
 
-- [ ] A person who allows location sharing sees the nearest approved gyms first, each with its distance.
-- [ ] A person who does not share their location can type an address or town instead.
-- [ ] The same gyms appear on a map.
-- [ ] Distances are worked out by the system from stored gym locations, not from figures sent by the screen.
+- [x] A person who allows location sharing sees the nearest approved gyms first, each with its distance.
+- [x] A person who does not share their location can type an address or town instead.
+- [x] The same gyms appear on a map.
+- [x] Distances are worked out by the system from stored gym locations, not from figures sent by the screen.
 
 **Still open:** nothing.
 
@@ -417,12 +417,12 @@ A service cannot be published until all of these are filled in.
 
 **Done when:**
 
-- [ ] A person can set the sport, price range and preferred times they want, and the system remembers them.
-- [ ] Gyms are ranked by match and distance, and each shows the reasons it was suggested.
-- [ ] The schedule part of the match works once sessions exist.
-- [ ] The ranking is worked out by the system, not on the screen.
+- [x] A person can set the sport, price range and preferred times they want, and the system remembers them.
+- [x] Gyms are ranked by match and distance, and each shows the reasons it was suggested.
+- [x] The schedule part of the match works once sessions exist.
+- [x] The ranking is worked out by the system, not on the screen.
 
-**Still open:** how much each factor counts is not stated. It should be decided during implementation planning.
+**Still open:** nothing. Decided during implementation: discipline 40, price 30 and distance 30. The schedule part waits for Phase 5.
 
 **Old system:** as above.
 
@@ -430,8 +430,20 @@ A service cannot be published until all of these are filled in.
 
 ## Phase blockers
 
-Q-10, Q-13, Q-19 and Q-21 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md).
+None. Q-10, Q-13, Q-19 and Q-21 were answered on 4 November 2026. Q-01 (leave-to-cash) stays open and does not block this phase.
 
 ## Phase is finished when
 
 Every item above is ✅, 🔵 or ⬜. An approved owner can set up their gym, add staff with roles they create, publish complete services and plans, and be found in search, with the nearest gyms shown first.
+
+## Where it was built
+
+Built on 4 November 2026. Paths are from the project folder `project-02-combat`.
+
+- **Workspace and rooms (R-20, R-21):** `backend/app/Http/Controllers/Gym/GymSetupController.php`, `RoomController.php`; migrations in `backend/database/migrations/2026_11_05_100000_create_gym_workspace_tables.php`; screens in `frontend/src/pages/gym/GymSettings.tsx` and `GymRooms.tsx`.
+- **Employees, roles, profiles, schedules (R-22 to R-24):** `backend/app/Http/Controllers/Gym/StaffController.php`, `EmployeeProfileController.php`, `ScheduleController.php`; `backend/app/Support/GymRoleAssigner.php`, `WorkingDays.php`; invitation flow in `AuthController.php` and `OneTimeCodes.php`; screens in `GymStaff.tsx` and `EmployeeRecord.tsx`.
+- **Leave and holidays (R-25 to R-27):** `backend/app/Http/Controllers/Gym/LeaveController.php`, `HolidayController.php`; `backend/config/hr.php` and `holidays.php`; screens in `GymLeave.tsx` and `MyWork.tsx`.
+- **Services and plans (R-28, R-29):** `backend/app/Http/Controllers/Gym/ServiceController.php`, `PlanController.php`; screens in `GymServices.tsx`, `GymPlans.tsx` and the public page `frontend/src/pages/GymPublic.tsx`.
+- **Search, nearest gyms and best matches (R-30, R-97, R-98):** `backend/app/Http/Controllers/PublicGymController.php`, `DiscoveryController.php`, `GymPreferenceController.php`, `GeoController.php`; `backend/config/discovery.php`; screens in `frontend/src/pages/Home.tsx` and `frontend/src/components/gym-map.tsx`.
+- **Checks:** `php artisan test` passed 125 tests and 846 assertions. `pnpm build` passed. `pnpm lint` reported no errors.
+- **Browser verification, 4 November 2026:** R-20 to R-30, R-97 and R-98 passed. R-27 add and remove were rechecked after the holiday list was changed to update in place: the calendar and list change without a reload, and both dialogs close. National holidays, duplicate dates and read-only viewing also passed.

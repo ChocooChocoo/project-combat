@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable([
     'name', 'tier', 'address_line', 'barangay', 'city', 'province', 'latitude', 'longitude',
     'contact_phone', 'contact_email', 'operating_hours', 'disciplines', 'services', 'facilities',
+    'activity_types', 'working_days', 'policies',
 ])]
 #[UsePolicy(GymApplicationPolicy::class)]
 class Gym extends Model
@@ -41,6 +42,9 @@ class Gym extends Model
         'tier' => 'tier',
     ];
 
+    /** Q-21: the default working week. The owner can change it in the workspace settings. */
+    public const DEFAULT_WORKING_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri'];
+
     protected function casts(): array
     {
         return [
@@ -53,6 +57,8 @@ class Gym extends Model
             'disciplines' => 'array',
             'services' => 'array',
             'facilities' => 'array',
+            'activity_types' => 'array',
+            'working_days' => 'array',
             'return_items' => 'array',
             'checklist' => 'array',
             'submitted_at' => 'datetime',
@@ -78,5 +84,51 @@ class Gym extends Model
     public function documents(): HasMany
     {
         return $this->hasMany(GymDocument::class);
+    }
+
+    public function rooms(): HasMany
+    {
+        return $this->hasMany(Room::class);
+    }
+
+    public function employees(): HasMany
+    {
+        return $this->hasMany(EmployeeProfile::class);
+    }
+
+    public function workSchedules(): HasMany
+    {
+        return $this->hasMany(WorkSchedule::class);
+    }
+
+    public function leaveRequests(): HasMany
+    {
+        return $this->hasMany(LeaveRequest::class);
+    }
+
+    public function leaveBalances(): HasMany
+    {
+        return $this->hasMany(LeaveBalance::class);
+    }
+
+    public function holidays(): HasMany
+    {
+        return $this->hasMany(GymHoliday::class);
+    }
+
+    public function gymServices(): HasMany
+    {
+        return $this->hasMany(GymService::class);
+    }
+
+    public function membershipPlans(): HasMany
+    {
+        return $this->hasMany(MembershipPlan::class);
+    }
+
+    /** The working week the gym set, or Monday to Friday when it has not set one (Q-21). */
+    public function workingDays(): array
+    {
+        return $this->working_days ?: self::DEFAULT_WORKING_DAYS;
     }
 }

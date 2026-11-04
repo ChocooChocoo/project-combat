@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Gym;
 use App\Models\GymRole;
 use App\Models\User;
+use App\Support\GymRoleAssigner;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -61,6 +62,7 @@ class GymRoleController extends Controller
     {
         $role = GymRole::findOrFail($role);
         $this->ensureWithinOwnAccess($request->user(), $gym, $role->permissions);
+        abort_if($role->users()->exists(), 422, 'This role is still given to employees. Take it away from them before deleting it.');
         $role->delete();
 
         return response()->json(['message' => 'Role deleted.']);
@@ -76,25 +78,12 @@ class GymRoleController extends Controller
     /** Replaces the employee's roles with the ones sent. */
     public function assign(Request $request, Gym $gym, User $user): JsonResponse
     {
-        $this->ensureEmployee($gym, $user);
-        abort_if($request->user()->is($user), 403, 'You cannot change your own roles.');
-
         $data = $request->validate([
             'role_ids' => ['present', 'array'],
             'role_ids.*' => ['integer', 'distinct'],
         ]);
 
-        $wanted = GymRole::whereKey($data['role_ids'])->get();
-        abort_if($wanted->count() !== count($data['role_ids']), 422, 'One or more roles do not exist in this gym.');
-
-        // Both the roles given and the roles taken away must be within the editor's own access.
-        $current = $user->gymRoles($gym)->get();
-        foreach ($wanted->merge($current)->unique('id') as $role) {
-            $this->ensureWithinOwnAccess($request->user(), $gym, $role->permissions);
-        }
-
-        $current->each(fn (GymRole $role) => $role->users()->detach($user->id));
-        $wanted->each(fn (GymRole $role) => $role->users()->attach($user->id));
+        app(GymRoleAssigner::class)->replace($request->user(), $gym, $user, $data['role_ids']);
 
         return response()->json(['roles' => $user->gymRoles($gym)->orderBy('name')->get()]);
     }
