@@ -1,4 +1,4 @@
-# 00 - START HERE
+﻿# 00 - START HERE
 
 Next: [01 - OVERVIEW](../01%20-%20OVERVIEW/01%20-%20OVERVIEW.md)
 
@@ -133,15 +133,15 @@ Each one is a real gap, not a guess dressed up as a question. When a question is
 | Q-10 | Can one athlete or employee belong to **more than one gym** at once? | Shapes roles, membership and staff records (R-07, R-09, R-22, R-31). The old store blocked staff at two gyms. | You | ✅ Yes, a person may belong to several gyms at once. Answered 3 November 2026. |
 | Q-11 | For **QR check-in**, does the member show a code for staff to scan, or scan a code posted at the gym? | Decides what R-52 builds and what the front desk needs | You | ⭕ |
 | Q-12 | When a place frees up, is it **given automatically** to the next on the waiting list, or **offered with a time limit**? | Decides how R-50 works | You | ⭕ |
-| Q-13 | How are **coaches paid**: monthly salary, per session, or both? | The old system never solved this and left coaches out of payroll (R-23, R-59) | You | ⭕ |
+| Q-13 | How are **coaches paid**: monthly salary, per session, or both? | The old system never solved this and left coaches out of payroll (R-23, R-59) | You | ✅ Basis + rate: a monthly rate, a per-session rate, or both. Answered 4 November 2026.
 | Q-14 | What counts as **late**, for staff and for athletes? | Needed for attendance records (R-54, R-56) | You | ⭕ |
 | Q-15 | Which **forecasting method** should decision support use? | Needed for R-94 and R-96. The spec names no method. | You, or the spec's author | ⭕ |
 | Q-16 | Can a Tier 1 gym later **move up to Tier 2**, and does its badge change? | Affects the application's life story (R-12, R-18) | The spec's author | ⭕ |
 | Q-17 | Do verification documents **expire** (for example the yearly business permit), and must gyms check again? | Would add renewals to the gym's life (R-17) | The spec's author | ⭕ |
 | Q-18 | How does a gym set its **booking-confirmation policy**: on or off for all bookings, or per session type? | Decides how R-49 works | You | ⭕ |
-| Q-19 | Which **leave types and yearly allowances** apply? Keep the old Philippine list? | Needed for R-25 and R-26 | You | ⭕ |
+| Q-19 | Which **leave types and yearly allowances** apply? Keep the old Philippine list? | Needed for R-25 and R-26 | You | ✅ Keep the old Philippine list: vacation 15, sick 15, service incentive 5, solo parent 7, bereavement 3, emergency 3, maternity 105, paternity 7, special leave for women 60, VAWC 10. Answered 4 November 2026.
 | Q-20 | What is the **refund rule** when the gym cancels a session someone paid extra for? | Needed for R-45 | You | ⭕ |
-| Q-21 | What are a gym's **working days** for absences and payroll? Is Saturday a working day? | The old system disagreed with itself (C-22). Needed for R-20, R-24, R-56 and R-59. | You | ⭕ |
+| Q-21 | What are a gym's **working days** for absences and payroll? Is Saturday a working day? | The old system disagreed with itself (C-22). Needed for R-20, R-24, R-56 and R-59. | You | ✅ Monday to Friday by default; the owner can change the gym working days. Answered 4 November 2026.
 | Q-22 | Should **online payment** also cover session add-ons, or only memberships? | Decides the reach of R-35 and R-51 | You | ✅ Every fee: memberships, registration, session add-ons, private coaching and other fees. Answered 3 November 2026. |
 | Q-23 | What are **platform notices** for, and who receives them: owners only, or all users? | The spec only names them (page 7). Needed for R-81. | The spec's author | ⭕ |
 | Q-24 | Can athletes **cancel their own bookings**, and until when before the session? | Affects R-48 and the booking's life story | You | ⭕ |
@@ -150,6 +150,8 @@ Each one is a real gap, not a guess dressed up as a question. When a question is
 
 | Date | What prompted it | What it touched |
 |---|---|---|
+| 4 November 2026 | Verification: Phase 3 browser checks passed for R-20 to R-30, R-97 and R-98. R-27 was rechecked after the holiday list was changed to update in place: add and remove now change the calendar and list without a reload, and both dialogs close. Phase 3 is finished. | [PHASE 3](../05%20-%20ROADMAP/phase-3/PHASE%203.md), [05 - ROADMAP](../05%20-%20ROADMAP/05%20-%20ROADMAP.md), this note |
+| 4 November 2026 | Progress: Phase 3 built (R-20 to R-30, R-97, R-98). Approved gyms have a workspace, rooms, employees with owner-made roles, employment records, schedules, leave and balances, holidays, services with photos, all-inclusive plans, gym search, nearest gyms and best matches. Q-13, Q-19 and Q-21 answered. | [PHASE 3](../05%20-%20ROADMAP/phase-3/PHASE%203.md), [05 - ROADMAP](../05%20-%20ROADMAP/05%20-%20ROADMAP.md), this note |
 | 4 November 2026 | Progress: Phase 2 built (R-11 to R-19). Gyms can apply with a tier and its documents, the administrator reviews with a checklist and approves, rejects or returns, and approved gyms show their tier badge. Q-16 and Q-17 are still open: built with no tier upgrade and no document expiry. | [PHASE 2](../05%20-%20ROADMAP/phase-2/PHASE%202.md), [05 - ROADMAP](../05%20-%20ROADMAP/05%20-%20ROADMAP.md), this note |
 | 3 November 2026 | Progress: R-08 rebuilt as owner-made roles and finished, so Phase 1 is finished. | [PHASE 1](../05%20-%20ROADMAP/phase-1/PHASE%201.md), [05 - ROADMAP](../05%20-%20ROADMAP/05%20-%20ROADMAP.md) |
 | 3 November 2026 | Your client's feedback. Added D-82 to D-85 and C-24, C-25. R-08 reopened as owner-made roles. Business work split into six modules (5A to 5F). PayMongo made core for every fee (R-35); Q-22 answered. Nearest-gym and best-match recommender added (R-97, R-98). PayMongo test keys copied into `backend/.env`. | [01 - OVERVIEW](../01%20-%20OVERVIEW/01%20-%20OVERVIEW.md), [02 - FINDINGS](../02%20-%20FINDINGS/02%20-%20FINDINGS.md), [03 - SYSTEM ARCHITECTURE](../03%20-%20SYSTEM%20ARCHITECTURE/03%20-%20SYSTEM%20ARCHITECTURE.md), [05 - ROADMAP](../05%20-%20ROADMAP/05%20-%20ROADMAP.md) and phases 1, 3, 4, 5, 6, [06 - SCREENS BY ROLE](../06%20-%20SCREENS%20BY%20ROLE/06%20-%20SCREENS%20BY%20ROLE.md), [07 - WORD LIST](../07%20-%20WORD%20LIST/07%20-%20WORD%20LIST.md), this note |

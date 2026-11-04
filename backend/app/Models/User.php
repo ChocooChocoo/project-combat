@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -35,6 +37,31 @@ class User extends Authenticatable
     public function gyms(): BelongsToMany
     {
         return $this->belongsToMany(Gym::class)->withPivot('role')->withTimestamps();
+    }
+
+    public function employeeProfiles(): HasMany
+    {
+        return $this->hasMany(EmployeeProfile::class);
+    }
+
+    public function workSchedules(): HasMany
+    {
+        return $this->hasMany(WorkSchedule::class);
+    }
+
+    public function leaveRequests(): HasMany
+    {
+        return $this->hasMany(LeaveRequest::class);
+    }
+
+    public function leaveBalances(): HasMany
+    {
+        return $this->hasMany(LeaveBalance::class);
+    }
+
+    public function gymPreference(): HasOne
+    {
+        return $this->hasOne(GymPreference::class);
     }
 
     public function hasGymRole(Gym|int $gym, GymPersonType ...$roles): bool
@@ -75,5 +102,20 @@ class User extends Authenticatable
     public function canInGym(Gym|int $gym, Module $module, AccessLevel $needed): bool
     {
         return (bool) $this->accessLevel($gym, $module)?->covers($needed);
+    }
+
+    /** Pay stays hidden unless the viewer owns the gym, runs HR, or sees payroll or finance (R-23). */
+    public function canSeePay(Gym|int $gym): bool
+    {
+        return $this->hasGymRole($gym, GymPersonType::Owner)
+            || $this->canInGym($gym, Module::Hr, AccessLevel::Manage)
+            || $this->canInGym($gym, Module::Payroll, AccessLevel::View)
+            || $this->canInGym($gym, Module::Finance, AccessLevel::View);
+    }
+
+    public function canApproveLeave(Gym|int $gym): bool
+    {
+        return $this->hasGymRole($gym, GymPersonType::Owner)
+            || $this->canInGym($gym, Module::Hr, AccessLevel::Manage);
     }
 }

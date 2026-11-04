@@ -1,0 +1,138 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Enums\GymPersonType;
+use App\Enums\GymStatus;
+use App\Models\Gym;
+use App\Models\GymRole;
+use App\Models\User;
+use App\Support\CurrentGym;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+/** R-20: the workspace setup screen, its options, and its permissions. */
+class WorkspaceSetupTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private Gym $gym;
+
+    private User $owner;
+
+    private User $employee;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->gym = Gym::factory()->approved(1)->create(['name' => 'Old Name']);
+        $this->owner = User::factory()->create();
+        $this->employee = User::factory()->create();
+        $this->gym->addPerson($this->owner, GymPersonType::Owner);
+        $this->gym->addPerson($this->employee, GymPersonType::Employee);
+
+        app(CurrentGym::class)->set($this->gym);
+    }
+
+    private function url(string $path): string
+    {
+        return "/api/gyms/{$this->gym->id}/{$path}";
+    }
+
+    private function give(User $user, array $permissions, string $name = 'Test role'): void
+    {
+        app(CurrentGym::class)->set($this->gym);
+        $role = GymRole::create(['name' => $name, 'permissions' => $permissions]);
+        $role->users()->attach($user->id);
+        $this->app->forgetScopedInstances();
+    }
+
+    public function test_owner_updates_the_workspace_setup(): void
+    {
+        $this->actingAs($this->owner)->putJson($this->url('setup'), [
+            'name' => 'Iron Works',
+            'address_line' => '1 Main Street',
+            'barangay' => 'Poblacion',
+            'city' => 'Makati',
+            'province' => 'Metro Manila',
+            'latitude' => 14.5547,
+            'longitude' => 121.0244,
+            'contact_phone' => '09171234567',
+            'contact_email' => 'hello@example.com',
+            'disciplines' => ['boxing', 'bjj'],
+            'activity_types' => ['classes', 'open_mat'],
+            'operating_hours' => [
+                'mon' => ['open' => '06:00', 'close' => '21:00'],
+                'sun' => null,
+            ],
+            'working_days' => ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'],
+            'policies' => 'No shoes on the mat.',
+            // These are owned by the application, not the workspace settings.
+            'status' => 'rejected',
+            'tier' => 9,
+            'applicant_id' => 999,
+        ])->assertOk()
+            ->assertJsonPath('setup.name', 'Iron Works')
+            ->assertJsonPath('setup.disciplines', ['boxing', 'bjj'])
+            ->assertJsonPath('setup.activity_types', ['classes', 'open_mat'])
+            ->assertJsonPath('setup.operating_hours.mon.open', '06:00')
+            ->assertJsonPath('setup.operating_hours.sun', null)
+            ->assertJsonPath('setup.working_days', ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'])
+            ->assertJsonPath('setup.policies', 'No shoes on the mat.')
+            ->assertJsonPath('setup.profile.city', 'Makati')
+            ->assertJsonPath('setup.options.disciplines.boxing', 'Boxing');
+
+        $fresh = $this->gym->fresh();
+        $this->assertSame('Iron Works', $fresh->name);
+        $this->assertSame(GymStatus::Approved, $fresh->status);
+        $this->assertSame(1, $fresh->tier);
+        $this->assertNull($fresh->applicant_id);
+    }
+
+    public function test_setup_shows_the_tier_badge_and_the_default_working_week(): void
+    {
+        $this->actingAs($this->owner)->getJson($this->url('setup'))
+            ->assertOk()
+            ->assertJsonPath('setup.badge', 'Tier 1 verified')
+            ->assertJsonPath('setup.tier', 1)
+            ->assertJsonPath('setup.working_days', ['mon', 'tue', 'wed', 'thu', 'fri'])
+            ->assertJsonPath('setup.options.default_working_days', ['mon', 'tue', 'wed', 'thu', 'fri'])
+            ->assertJsonPath('setup.options.plan_billing.sessions', 'By sessions');
+    }
+
+    public function test_options_are_open_to_every_member_but_setup_needs_permission(): void
+    {
+        $this->actingAs($this->employee)->getJson($this->url('options'))
+            ->assertOk()
+            ->assertJsonPath('options.weekdays.mon', 'Monday')
+            ->assertJsonPath('options.pay_bases.both', 'Monthly and per session')
+            ->assertJsonPath('options.leave_types.vacation.days', 15)
+            ->assertJsonPath('options.attachment.max_kb', 5120)
+            ->assertJsonPath('options.service_photos.max', 5);
+
+        $this->actingAs($this->employee)->getJson($this->url('setup'))->assertForbidden();
+        $this->actingAs($this->employee)->putJson($this->url('setup'), ['name' => 'Nope'])->assertForbidden();
+
+        $this->give($this->employee, ['gym_setup' => 'view'], 'Setup viewer');
+
+        $this->actingAs($this->employee)->getJson($this->url('setup'))->assertOk();
+        $this->actingAs($this->employee)->putJson($this->url('setup'), ['name' => 'Nope'])->assertForbidden();
+    }
+
+    public function test_setup_rejects_unknown_choices_and_backwards_hours(): void
+    {
+        $this->actingAs($this->owner)->putJson($this->url('setup'), [
+            'disciplines' => ['fencing'],
+            'activity_types' => ['bogus'],
+            'working_days' => ['funday'],
+            'operating_hours' => ['mon' => ['open' => '20:00', 'close' => '08:00']],
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'disciplines.0',
+                'activity_types.0',
+                'working_days.0',
+                'operating_hours.mon.close',
+            ]);
+    }
+}

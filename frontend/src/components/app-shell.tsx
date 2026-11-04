@@ -1,8 +1,9 @@
-import { Bell, ChevronsUpDown, ClipboardCheck, FilePlus2, FileText, House, LogOut, UserRound } from 'lucide-react'
+import { Bell, Building2, Check, ChevronsUpDown, ClipboardCheck, FilePlus2, FileText, House, LogOut, UserRound } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
+import { myWorkNav, workspaceNav } from '@/components/gym-nav'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Menu, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
+import { Menu, MenuGroup, MenuGroupLabel, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
 import {
   Sidebar,
   SidebarContent,
@@ -21,9 +22,17 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { api } from '@/lib/api'
-import { useAuth } from '@/lib/auth'
+import { useAuth, type GymAccess } from '@/lib/auth'
+import { approvedGym, canManage } from '@/lib/gym-access'
 
 type Item = { to: string; label: string; icon: React.ComponentType; end?: boolean; badge?: number }
+
+/** Where a gym's card in the switcher leads: workspace when allowed, public page otherwise. */
+function gymEntry(gym: GymAccess): string {
+  if (canManage(gym)) return `/gyms/${gym.id}/manage`
+  if (gym.roles.includes('employee')) return `/gyms/${gym.id}/manage/my-work`
+  return `/gyms/${gym.id}`
+}
 
 function NavGroup({ label, items }: { label?: string; items: Item[] }) {
   const { pathname } = useLocation()
@@ -53,6 +62,44 @@ function NavGroup({ label, items }: { label?: string; items: Item[] }) {
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
+  )
+}
+
+/** Picks the gym the workspace screens should show. The URL is the only source of truth. */
+function GymSwitcher({ gyms, current }: { gyms: GymAccess[]; current?: GymAccess }) {
+  const navigate = useNavigate()
+
+  return (
+    <SidebarMenuItem>
+      <Menu>
+        <MenuTrigger
+          render={<SidebarMenuButton size="lg" className="data-popup-open:bg-sidebar-accent" />}
+        >
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border bg-background">
+            <Building2 className="size-4" aria-hidden />
+          </span>
+          <span className="grid flex-1 text-left text-sm leading-tight">
+            <span className="truncate font-medium">{current?.name ?? 'Choose a gym'}</span>
+            <span className="truncate text-muted-foreground text-xs">
+              {current ? 'Gym workspace' : `${gyms.length} approved`}
+            </span>
+          </span>
+          <ChevronsUpDown className="ms-auto size-4 opacity-60" />
+        </MenuTrigger>
+        <MenuPopup side="bottom" align="start" className="min-w-56">
+          <MenuGroup>
+            <MenuGroupLabel>Your gyms</MenuGroupLabel>
+            {gyms.map((gym) => (
+              <MenuItem key={gym.id} onClick={() => navigate(gymEntry(gym))}>
+                <Building2 />
+                <span className="truncate">{gym.name}</span>
+                {current?.id === gym.id && <Check className="ms-auto" />}
+              </MenuItem>
+            ))}
+          </MenuGroup>
+        </MenuPopup>
+      </Menu>
+    </SidebarMenuItem>
   )
 }
 
@@ -95,16 +142,23 @@ function AccountMenu() {
 /** Frame for every signed-in screen: a sidebar that shows only what this person's role allows. */
 export function AppShell() {
   const { user } = useAuth()
+  const { pathname } = useLocation()
   const [unread, setUnread] = useState(0)
 
   useEffect(() => {
     api<{ unread_count: number }>('/notifications').then((r) => setUnread(r.unread_count)).catch(() => undefined)
   }, [])
 
+  const approvedGyms = user?.gyms.filter((gym) => gym.status === 'approved') ?? []
+  const currentGym = approvedGym(user, Number(pathname.match(/^\/gyms\/(\d+)(?:\/|$)/)?.[1]))
+
   const general: Item[] = [
     { to: '/', label: 'Home', icon: House, end: true },
     { to: '/notifications', label: 'Notifications', icon: Bell, badge: unread },
   ]
+  if (currentGym?.roles.includes('employee')) general.push(myWorkNav(currentGym.id))
+
+  const workspace = currentGym ? workspaceNav(currentGym) : []
   const owner: Item[] = [
     { to: '/applications', label: 'My applications', icon: FileText },
     { to: '/apply', label: 'New application', icon: FilePlus2 },
@@ -127,10 +181,12 @@ export function AppShell() {
                 </span>
               </SidebarMenuButton>
             </SidebarMenuItem>
+            {approvedGyms.length > 0 && <GymSwitcher gyms={approvedGyms} current={currentGym} />}
           </SidebarMenu>
         </SidebarHeader>
         <SidebarContent>
           <NavGroup items={general} />
+          {workspace.length > 0 && <NavGroup label={currentGym?.name ?? 'Workspace'} items={workspace} />}
           {user?.is_platform_admin ? <NavGroup label="Platform" items={admin} /> : <NavGroup label="Run a gym" items={owner} />}
         </SidebarContent>
         <SidebarFooter>

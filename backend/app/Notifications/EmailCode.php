@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Support\OneTimeCodes;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -21,7 +22,11 @@ class EmailCode extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $subject = $this->purpose === 'reset' ? 'Reset your password' : 'Confirm your email';
+        $subject = match ($this->purpose) {
+            OneTimeCodes::RESET => 'Reset your password',
+            OneTimeCodes::INVITE => 'Set up your gym account',
+            default => 'Confirm your email',
+        };
 
         return (new MailMessage)
             ->subject($subject)

@@ -139,6 +139,31 @@ class AuthController extends Controller
         return response()->json(['message' => 'Password changed. You can sign in now.']);
     }
 
+    /** R-06: an invited employee sets their own password with the emailed code. */
+    public function acceptInvite(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email'],
+            'code' => ['required', 'digits:6'],
+            'password' => ['required', 'confirmed', Password::defaults()],
+        ]);
+
+        $user = User::where('email', $data['email'])->first();
+
+        if (! $user || ! $this->codes->consume($user, OneTimeCodes::INVITE, $data['code'])) {
+            throw ValidationException::withMessages(['code' => 'The code is wrong, expired, or used up. Ask for a new one.']);
+        }
+
+        $user->forceFill([
+            'password' => $data['password'],
+            'email_verified_at' => now(),
+            'password_change_required' => false,
+        ])->save();
+        $user->tokens()->delete();
+
+        return response()->json(['message' => 'Password set. You can sign in now.']);
+    }
+
     private function signedIn(User $user): JsonResponse
     {
         return response()->json([
