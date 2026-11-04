@@ -50,3 +50,24 @@ export function formValues(event: React.FormEvent<HTMLFormElement>): Record<stri
   event.preventDefault()
   return Object.fromEntries(new FormData(event.currentTarget)) as Record<string, string>
 }
+
+/** Fetches a private file (R-15) with the sign-in pass and returns an in-memory URL for it. */
+export async function apiBlobUrl(path: string): Promise<string> {
+  const response = await fetch(BASE + path, { headers: { Authorization: `Bearer ${token.get() ?? ''}` } })
+  if (!response.ok) throw new ApiError(response.status, await response.json().catch(() => ({})))
+  return URL.createObjectURL(await response.blob())
+}
+
+/** Opens a private file in a new tab. A plain link would not carry the sign-in pass. */
+export async function apiFile(path: string): Promise<void> {
+  const tab = window.open('', '_blank')
+  try {
+    const url = await apiBlobUrl(path)
+    if (tab) tab.location.href = url
+    else window.location.href = url
+    setTimeout(() => URL.revokeObjectURL(url), 60_000)
+  } catch (error) {
+    tab?.close()
+    throw error
+  }
+}

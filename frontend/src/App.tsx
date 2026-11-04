@@ -2,9 +2,14 @@ import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
 import { AppShell } from '@/components/app-shell'
 import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/lib/auth'
+import AdminHome from '@/pages/admin/AdminHome'
+import ReviewApplication from '@/pages/admin/ReviewApplication'
+import ApplicationDetail from '@/pages/ApplicationDetail'
 import FirstPassword from '@/pages/FirstPassword'
 import ForgotPassword from '@/pages/ForgotPassword'
+import GymApply from '@/pages/GymApply'
 import Home from '@/pages/Home'
+import MyApplications from '@/pages/MyApplications'
 import Notifications from '@/pages/Notifications'
 import Profile from '@/pages/Profile'
 import SignIn from '@/pages/SignIn'
@@ -32,6 +37,12 @@ function Guard({ need }: { need: 'guest' | 'signed-in' | 'first-password' }) {
   return <Outlet />
 }
 
+/** Platform administrator screens. The backend refuses everyone else too (403). */
+function AdminOnly() {
+  const { user } = useAuth()
+  return user?.is_platform_admin ? <Outlet /> : <Navigate to="/" replace />
+}
+
 export default function App() {
   return (
     <Routes>
@@ -49,6 +60,14 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/notifications" element={<Notifications />} />
+          <Route path="/apply" element={<GymApply />} />
+          <Route path="/applications" element={<MyApplications />} />
+          <Route path="/applications/:id" element={<ApplicationDetail />} />
+          <Route path="/applications/:id/edit" element={<GymApply />} />
+          <Route element={<AdminOnly />}>
+            <Route path="/admin" element={<AdminHome />} />
+            <Route path="/admin/applications/:id" element={<ReviewApplication />} />
+          </Route>
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

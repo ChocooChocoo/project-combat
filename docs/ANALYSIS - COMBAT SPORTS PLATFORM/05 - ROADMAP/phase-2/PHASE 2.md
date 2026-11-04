@@ -4,7 +4,7 @@
 
 [00 - START HERE](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) · [05 - ROADMAP](../05%20-%20ROADMAP.md) · Previous: [PHASE 1](../phase-1/PHASE%201.md) · Next: [PHASE 3](../phase-3/PHASE%203.md)
 
-**Status:** ⭕ Not started
+**Status:** ✅ Finished
 
 Citation forms are the same as in [02 - FINDINGS](../../02%20-%20FINDINGS/02%20-%20FINDINGS.md).
 
@@ -18,12 +18,12 @@ An application needs a confirmed account (R-01 and R-02 in [PHASE 1](../phase-1/
 
 ## What it waits for
 
-| Waits for | Why | Status |
-|---|---|---|
-| R-01, R-02 in [PHASE 1](../phase-1/PHASE%201.md) | Only confirmed platform users may apply | ⭕ |
-| R-07, R-09 in [PHASE 1](../phase-1/PHASE%201.md) | The owner role and gym separation start here | ⭕ |
-| R-10 in [PHASE 1](../phase-1/PHASE%201.md) | The applicant is told the decision | ⭕ |
-| Q-16 and Q-17 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) | Tier upgrades and document expiry change the application's life | ⭕ |
+| Waits for                                                                                   | Why                                                             | Status                                                      |
+| ------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------- |
+| R-01, R-02 in [PHASE 1](../phase-1/PHASE%201.md)                                            | Only confirmed platform users may apply                         | ✅                                                           |
+| R-07, R-09 in [PHASE 1](../phase-1/PHASE%201.md)                                            | The owner role and gym separation start here                    | ✅                                                           |
+| R-10 in [PHASE 1](../phase-1/PHASE%201.md)                                                  | The applicant is told the decision                              | ✅                                                           |
+| Q-16 and Q-17 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) | Tier upgrades and document expiry change the application's life | ⭕ Still open; built without them (see *Where it was built*) |
 
 ## What it unlocks
 
@@ -33,9 +33,9 @@ An application needs a confirmed account (R-01 and R-02 in [PHASE 1](../phase-1/
 
 | Status | How many |
 |---|---|
-| ✅ Finished | 0 |
+| ✅ Finished | 9 |
 | 🟨 Being worked on | 0 |
-| ⭕ Not started | 9 |
+| ⭕ Not started | 0 |
 | ❌ Blocked | 0 |
 | 🔵 Already there | 0 |
 | ⬜ Dropped | 0 |
@@ -50,11 +50,11 @@ An application needs a confirmed account (R-01 and R-02 in [PHASE 1](../phase-1/
 
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
-| R-11 | Apply to become a gym owner | R-02 | ⭕ | A confirmed user can submit a full gym profile |
-| R-12 | Choose a tier and see its exact document list | R-11 | ⭕ | The applicant picks Tier 1 or Tier 2 and sees exactly what to upload |
-| R-13 | Upload rules enforced | R-12, R-15 | ⭕ | Wrong file types, missing items or too few photos cannot be submitted |
-| R-14 | Follow the application | R-11 | ⭕ | The applicant sees its status and everything they sent |
-| R-15 | Private keeping of verification documents | R-09 | ⭕ | Only the applicant and the administrator can open the documents |
+| R-11 | Apply to become a gym owner | R-02 | ✅ | A confirmed user can submit a full gym profile |
+| R-12 | Choose a tier and see its exact document list | R-11 | ✅ | The applicant picks Tier 1 or Tier 2 and sees exactly what to upload |
+| R-13 | Upload rules enforced | R-12, R-15 | ✅ | Wrong file types, missing items or too few photos cannot be submitted |
+| R-14 | Follow the application | R-11 | ✅ | The applicant sees its status and everything they sent |
+| R-15 | Private keeping of verification documents | R-09 | ✅ | Only the applicant and the administrator can open the documents |
 
 ### R-11: Apply to become a gym owner
 
@@ -70,10 +70,12 @@ An application needs a confirmed account (R-01 and R-02 in [PHASE 1](../phase-1/
 
 **Done when:**
 
-- [ ] A confirmed user can start an application from their account.
-- [ ] The application cannot be sent until every required profile field is filled in.
-- [ ] The location can be set on a map.
-- [ ] The person becomes an owner only after approval (R-17), not when applying.
+
+
+- [x] A confirmed user can start an application from their account.
+- [x] The application cannot be sent until every required profile field is filled in.
+- [x] The location can be set on a map.
+- [x] The person becomes an owner only after approval (R-17), not when applying.
 
 **Still open:** Q-09.
 
@@ -98,10 +100,12 @@ The screen shows each document, what it proves, and who must send it.
 
 **Done when:**
 
-- [ ] The applicant picks Tier 1 or Tier 2, and the choice is saved.
-- [ ] The Tier 1 list asks for DTI *or* SEC, and both permits.
-- [ ] The Tier 2 list adds the photos, video, ID, selfie and bill.
-- [ ] Changing tier never deletes files already sent without the applicant agreeing.
+
+
+- [x] The applicant picks Tier 1 or Tier 2, and the choice is saved.
+- [x] The Tier 1 list asks for DTI *or* SEC, and both permits.
+- [x] The Tier 2 list adds the photos, video, ID, selfie and bill.
+- [x] Changing tier never deletes files already sent without the applicant agreeing.
 
 **Still open:** Q-16.
 
@@ -121,10 +125,12 @@ The screen shows each document, what it proves, and who must send it.
 
 **Done when:**
 
-- [ ] A file of the wrong type is refused with a clear message.
-- [ ] An application with a missing required document cannot be sent.
-- [ ] A Tier 2 application with fewer than 10 photos cannot be sent.
-- [ ] The upload screen states the clarity, colour, validity and matching rules.
+
+
+- [x] A file of the wrong type is refused with a clear message.
+- [x] An application with a missing required document cannot be sent.
+- [x] A Tier 2 application with fewer than 10 photos cannot be sent.
+- [x] The upload screen states the clarity, colour, validity and matching rules.
 
 **Still open:** the spec marks these rules "proposed" (page 11). They are treated as settled unless you say otherwise.
 
@@ -144,9 +150,11 @@ The screen shows each document, what it proves, and who must send it.
 
 **Done when:**
 
-- [ ] The applicant sees the current status at any time.
-- [ ] The applicant can open each file they uploaded.
-- [ ] After a return or rejection, the reason is shown.
+
+
+- [x] The applicant sees the current status at any time.
+- [x] The applicant can open each file they uploaded.
+- [x] After a return or rejection, the reason is shown.
 
 **Still open:** nothing.
 
@@ -166,9 +174,11 @@ The screen shows each document, what it proves, and who must send it.
 
 **Done when:**
 
-- [ ] A person who is not the applicant or the administrator cannot open a document, even with its link.
-- [ ] An applicant can delete only their own files, and only before sending.
-- [ ] The same private keeping is ready for later private files: member IDs, medical files and leave attachments.
+
+
+- [x] A person who is not the applicant or the administrator cannot open a document, even with its link.
+- [x] An applicant can delete only their own files, and only before sending.
+- [x] The same private keeping is ready for later private files: member IDs, medical files and leave attachments.
 
 **Still open:** nothing.
 
@@ -182,9 +192,9 @@ The screen shows each document, what it proves, and who must send it.
 
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
-| R-16 | Review against a checklist | R-14, R-15 | ⭕ | The administrator ticks each check item for each application |
-| R-17 | Approve, reject or return for correction | R-16, R-10 | ⭕ | All three decisions work, and the applicant is told |
-| R-18 | Approved gym goes live with its badge | R-17 | ⭕ | An approved gym appears on the platform with its tier badge |
+| R-16 | Review against a checklist | R-14, R-15 | ✅ | The administrator ticks each check item for each application |
+| R-17 | Approve, reject or return for correction | R-16, R-10 | ✅ | All three decisions work, and the applicant is told |
+| R-18 | Approved gym goes live with its badge | R-17 | ✅ | An approved gym appears on the platform with its tier badge |
 
 ### R-16: Review against a checklist
 
@@ -206,9 +216,11 @@ For Tier 2, two more checks: the selfie matches the ID, and the photos and video
 
 **Done when:**
 
-- [ ] The administrator sees the application profile and every document side by side.
-- [ ] Each checklist item can be marked as passed or failed.
-- [ ] Tier 2 applications show the two extra checks.
+
+
+- [x] The administrator sees the application profile and every document side by side.
+- [x] Each checklist item can be marked as passed or failed.
+- [x] Tier 2 applications show the two extra checks.
 
 **Still open:** nothing.
 
@@ -234,10 +246,12 @@ Whatever the decision, the applicant gets a notice.
 
 **Done when:**
 
-- [ ] Approve is possible only when every checklist item has passed.
-- [ ] Reject cannot be saved without a reason.
-- [ ] A returned application goes back to the applicant with the items to fix, and can be sent again.
-- [ ] The applicant gets a notice for each decision.
+
+
+- [x] Approve is possible only when every checklist item has passed.
+- [x] Reject cannot be saved without a reason.
+- [x] A returned application goes back to the applicant with the items to fix, and can be sent again.
+- [x] The applicant gets a notice for each decision.
 
 **Still open:** Q-17 (whether documents expire and gyms must re-verify).
 
@@ -257,9 +271,11 @@ Whatever the decision, the applicant gets a notice.
 
 **Done when:**
 
-- [ ] An approved gym appears on the platform; pending, returned and rejected gyms do not.
-- [ ] The gym shows the badge for its approved tier.
-- [ ] The applicant now holds the owner role for that gym.
+
+
+- [x] An approved gym appears on the platform; pending, returned and rejected gyms do not.
+- [x] The gym shows the badge for its approved tier.
+- [x] The applicant now holds the owner role for that gym.
 
 **Still open:** Q-16 (does the badge change if the gym moves up a tier?).
 
@@ -273,7 +289,7 @@ Whatever the decision, the applicant gets a notice.
 
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
-| R-19 | Platform-wide numbers for the administrator | R-17 | ⭕ | The administrator sees gym counts and pending applications, and nothing private |
+| R-19 | Platform-wide numbers for the administrator | R-17 | ✅ | The administrator sees gym counts and pending applications, and nothing private |
 
 ### R-19: Platform-wide numbers for the administrator
 
@@ -289,14 +305,29 @@ Whatever the decision, the applicant gets a notice.
 
 **Done when:**
 
-- [ ] The administrator sees counts of registered and verified gyms, and pending applications.
-- [ ] The administrator has no screen or request that returns a gym's private records.
+
+
+- [x] The administrator sees counts of registered and verified gyms, and pending applications.
+- [x] The administrator has no screen or request that returns a gym's private records.
 
 **Still open:** which other platform-wide numbers are "permitted" is not listed beyond the examples (the spec, page 19). The examples are taken as the list.
 
 **Old system:** `backend/app/Http/Controllers/API/ActivityController.php` (activity feed); `frontend/src/pages/AdminDashboard.vue`.
 
 ---
+
+## Where it was built
+
+Built on 4 November 2026. Paths are from the project folder `project-02-combat`. The step-by-step plan is in `docs/implementation-plan/roadmap-phase-2/`.
+
+- **Owner application, tiers, upload rules, following it (R-11 to R-14):** the gym row is also its application. `backend/database/migrations/2026_11_04_100000_add_application_to_gyms.php`, `backend/app/Http/Controllers/Gym/GymApplicationController.php`, `backend/app/Http/Controllers/Gym/GymDocumentController.php`. Tier lists, file rules, checklist and the combat sports list live in one place: `backend/config/verification.php`. Screens: `frontend/src/pages/GymApply.tsx`, `MyApplications.tsx`, `ApplicationDetail.tsx`; map with Leaflet and OpenStreetMap in `frontend/src/components/location-picker.tsx`.
+- **Private documents (R-15):** files sit on the private disk (`backend/storage/app/private`) and are only sent through a signed-in, checked request (`backend/app/Policies/GymApplicationPolicy.php`). A copied link opens nothing. Later private files can follow the same pattern.
+- **Administrator review and decisions (R-16, R-17):** `backend/app/Http/Controllers/Admin/GymReviewController.php`, notice `backend/app/Notifications/GymApplicationDecided.php`, screens in `frontend/src/pages/admin/`.
+- **Going live (R-18):** approval gives the applicant the owner role and sets the badge from the approved tier. Approved gyms are listed by `backend/app/Http/Controllers/PublicGymController.php` and shown on the home page.
+- **Platform numbers (R-19):** `backend/app/Http/Controllers/Admin/PlatformStatsController.php` counts gyms only.
+- **Checks:** 22 new automatic tests (48 in total, all passing). A full browser run was made: apply with Tier 2, return for correction, fix and send again, approve, reject, notices, home-page badge.
+- **Q-16 and Q-17 still open:** built with no tier upgrade and no document expiry. The chosen tier and the approved tier are kept apart, so either can be added later.
+- **Not checked:** opening a PDF in a normal browser (the test browser downloads PDFs instead), and a real video above 2 MB with the current `php.ini` limits (2M / 8M).
 
 ## Phase blockers
 

@@ -2,7 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Enums\GymStatus;
 use App\Models\Gym;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -10,15 +12,37 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class GymFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
             'name' => fake()->company().' Gym',
         ];
+    }
+
+    /** A draft application with every profile field filled in. */
+    public function application(User $applicant, int $tier = 1): static
+    {
+        return $this->state(fn () => [
+            'applicant_id' => $applicant->id,
+            'status' => GymStatus::Draft,
+            'tier' => $tier,
+            'address_line' => '12 Rizal Street',
+            'barangay' => 'San Antonio',
+            'city' => 'Makati',
+            'province' => 'Metro Manila',
+            'latitude' => 14.5547,
+            'longitude' => 121.0244,
+            'contact_phone' => '09171234567',
+            'contact_email' => fake()->safeEmail(),
+            'operating_hours' => ['mon' => ['open' => '08:00', 'close' => '20:00']],
+            'disciplines' => ['boxing'],
+            'services' => ['Group classes'],
+            'facilities' => ['Boxing ring'],
+        ]);
+    }
+
+    public function approved(int $tier = 1): static
+    {
+        return $this->state(fn () => ['status' => GymStatus::Approved, 'tier' => $tier, 'approved_tier' => $tier]);
     }
 }
