@@ -50,6 +50,7 @@ export function PaymentsList({ payments, actions }: { payments: Payment[]; actio
               <span className="font-semibold tabular-nums">{money(payment.amount)}</span>
             </div>
             {payment.member && <span>{payment.member.name}</span>}
+            {payment.session && <span className="break-words">Session add-on: {payment.session.name} · {dateLabel(payment.session.starts_at)}</span>}
             <span className="text-muted-foreground">
               {METHOD_LABELS[payment.method]} · {dateTimeLabel(payment.paid_at)}
             </span>
@@ -82,6 +83,7 @@ export function PaymentsList({ payments, actions }: { payments: Payment[]; actio
                 <TableCell>
                   <div className="flex flex-col gap-0.5">
                     <span className="font-mono text-xs">{payment.receipt_number}</span>
+                    {payment.session && <span className="max-w-64 whitespace-normal break-words text-sm">Session add-on: {payment.session.name} · {dateLabel(payment.session.starts_at)}</span>}
                     {payment.note && <span className="max-w-64 truncate text-muted-foreground text-xs" title={payment.note}>{payment.note}</span>}
                   </div>
                 </TableCell>

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Popover, PopoverPopup, PopoverTitle, PopoverTrigger } from '@/components/ui/popover'
 import { Skeleton } from '@/components/ui/skeleton'
 import { api } from '@/lib/api'
+import { dateTimeLabel } from '@/lib/membership'
 
 export type Notice = {
   id: string
@@ -78,7 +79,7 @@ export function NotificationsMenu({ unread, onUnreadChange }: { unread: number; 
                     {notice.data.title ?? 'Notice'}
                   </span>
                   {notice.data.message && <span className="line-clamp-2 text-muted-foreground text-xs">{notice.data.message}</span>}
-                  <span className="text-muted-foreground text-xs">{new Date(notice.created_at).toLocaleString()}</span>
+                  <span className="text-muted-foreground text-xs">{dateTimeLabel(notice.created_at)}</span>
                 </div>
                 {!notice.read_at && (
                   <Button variant="outline" size="xs" onClick={() => act(`/notifications/${notice.id}/read`)}>

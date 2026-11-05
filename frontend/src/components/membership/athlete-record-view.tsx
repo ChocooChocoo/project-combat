@@ -4,6 +4,8 @@ import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs'
 import { dateLabel, type AthleteRecord, type HealthDetails, type MembershipForm } from '@/lib/membership'
 import { Button } from '@/components/ui/button'
 import { FileText } from 'lucide-react'
+import { AttendanceList, ProgressNotes } from '@/components/schedule/attendance-list'
+import { ATTENDANCE_LABELS } from '@/lib/attendance'
 
 /** Current ranks plus the four lists of the athlete record (R-37 to R-39, R-41). */
 export function AthleteRecordView({ record, action }: { record: AthleteRecord; action?: React.ReactNode }) {
@@ -47,6 +49,14 @@ export function AthleteRecordView({ record, action }: { record: AthleteRecord; a
           ))}
         </Tabs>
 
+        <section className="flex min-w-0 flex-col gap-3 border-t pt-4">
+          <h3 className="font-semibold">Attendance</h3>
+          <dl className="flex flex-wrap gap-4 text-sm">{Object.entries(record.attendance_counts).map(([status, count]) => <div key={status}><dt className="text-muted-foreground">{ATTENDANCE_LABELS[status as keyof typeof ATTENDANCE_LABELS]}</dt><dd className="font-medium tabular-nums">{count}</dd></div>)}</dl>
+          <AttendanceList rows={record.attendance} />
+        </section>
+        <section className="flex min-w-0 flex-col gap-3 border-t pt-4">
+          <h3 className="font-semibold">Progress notes</h3><ProgressNotes notes={record.progress_notes} />
+        </section>
         {(record.background || record.training_history) && (
           <dl className="grid gap-3 border-t pt-4 text-sm sm:grid-cols-2">
             {record.background && (

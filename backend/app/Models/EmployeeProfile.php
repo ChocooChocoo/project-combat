@@ -35,4 +35,13 @@ class EmployeeProfile extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function isCoach(): bool
+    {
+        return filled($this->coach_experience)
+            || filled($this->coach_rank)
+            || filled($this->coach_specialisation)
+            || filled($this->coach_bio)
+            || filled($this->coach_photo_path);
+    }
 }

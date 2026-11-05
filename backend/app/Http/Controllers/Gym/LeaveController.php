@@ -6,16 +6,20 @@ use App\Enums\AccessLevel;
 use App\Enums\GymPersonType;
 use App\Enums\LeaveRequestStatus;
 use App\Enums\Module;
+use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Gym\Concerns\PresentsHr;
 use App\Models\Gym;
 use App\Models\LeaveRequest;
+use App\Models\TrainingSession;
 use App\Notifications\LeaveRequestDecided;
 use App\Notifications\LeaveRequestSubmitted;
+use App\Notifications\SessionsFlagged;
 use App\Support\WorkingDays;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -159,15 +163,33 @@ class LeaveController extends Controller
             'note' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $leave->status = $data['decision'] === 'approve'
-            ? LeaveRequestStatus::Approved
-            : LeaveRequestStatus::Rejected;
-        $leave->decided_by = $request->user()->id;
-        $leave->decided_at = now();
-        $leave->decision_note = $data['note'] ?? null;
-        $leave->save();
+        DB::transaction(function () use ($request, $gym, $leave, $data) {
+            // R-46: serialize with session saves, so approval cannot miss a concurrent occurrence.
+            Gym::whereKey($gym->id)->lockForUpdate()->firstOrFail();
+            $leave = $gym->leaveRequests()->lockForUpdate()->findOrFail($leave->id);
+            abort_unless($leave->status === LeaveRequestStatus::Pending, 409, 'Only pending requests can be decided.');
+            $leave->status = $data['decision'] === 'approve'
+                ? LeaveRequestStatus::Approved
+                : LeaveRequestStatus::Rejected;
+            $leave->decided_by = $request->user()->id;
+            $leave->decided_at = now();
+            $leave->decision_note = $data['note'] ?? null;
+            $leave->save();
 
-        $leave->user->notify(new LeaveRequestDecided($gym, $leave));
+            $leave->user->notify(new LeaveRequestDecided($gym, $leave));
+            if ($leave->status === LeaveRequestStatus::Approved) {
+                $count = TrainingSession::where('coach_id', $leave->user_id)->where('status', SessionStatus::Scheduled)
+                    ->where('starts_at', '>=', $leave->starts_on->copy()->startOfDay())
+                    ->where('starts_at', '<', $leave->ends_on->copy()->addDay()->startOfDay())
+                    ->update(['flagged_at' => now(), 'flag_reason' => 'Coach on approved leave ('.$leave->starts_on->format('M j, Y')
+                        .($leave->starts_on->isSameDay($leave->ends_on) ? '' : ' to '.$leave->ends_on->format('M j, Y')).')']);
+                if ($count > 0) {
+                    foreach ($gym->people()->get()->unique('id')->filter(fn ($person) => $person->canInGym($gym, Module::Training, AccessLevel::Manage)) as $manager) {
+                        $manager->notify(new SessionsFlagged($gym->id, $count, trim("{$leave->user->first_name} {$leave->user->last_name}")));
+                    }
+                }
+            }
+        });
 
         return response()->json(['request' => $this->leavePayload($gym, $leave->fresh(['user', 'decidedBy']))]);
     }

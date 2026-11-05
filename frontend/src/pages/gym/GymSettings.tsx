@@ -9,11 +9,12 @@ import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardPanel, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { CheckboxGroup } from '@/components/ui/checkbox-group'
-import { Field, FieldDescription, FieldError } from '@/components/ui/field'
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 import { Fieldset, FieldsetLegend } from '@/components/ui/fieldset'
 import { Form } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { toastManager } from '@/components/ui/toast'
 import { api, ApiError, type FieldErrors } from '@/lib/api'
@@ -40,6 +41,9 @@ type FormState = {
   hours: DayHours
   working_days: Day[]
   policies: string
+  booking_approval: boolean
+  late_grace_minutes: string
+  cancel_cutoff_hours: string
 }
 
 function fromSetup(setup: WorkspaceSetup): FormState {
@@ -67,6 +71,9 @@ function fromSetup(setup: WorkspaceSetup): FormState {
     hours,
     working_days: setup.working_days ?? [],
     policies: setup.policies ?? '',
+    booking_approval: setup.booking_approval,
+    late_grace_minutes: String(setup.late_grace_minutes),
+    cancel_cutoff_hours: String(setup.cancel_cutoff_hours),
   }
 }
 
@@ -149,6 +156,9 @@ export default function GymSettings() {
           ),
           working_days: form.working_days,
           policies: form.policies || null,
+          booking_approval: form.booking_approval,
+          late_grace_minutes: Number(form.late_grace_minutes),
+          cancel_cutoff_hours: Number(form.cancel_cutoff_hours),
         },
       })
       setSetup(result.setup)
@@ -416,6 +426,32 @@ export default function GymSettings() {
                   </Fieldset>
                   <FieldError />
                 </Field>
+              </CardPanel>
+            </Card>
+
+            {/* R-42: gym-wide booking defaults; sessions may override approval. */}
+            <Card>
+              <CardHeader>
+                <CardTitle render={<h2 />}>Booking and attendance</CardTitle>
+                <CardDescription>Default rules for sessions across this gym.</CardDescription>
+              </CardHeader>
+              <CardPanel className="grid gap-5 sm:grid-cols-2">
+                <Field name="booking_approval" className="w-full sm:col-span-2">
+                  <div className="flex w-full items-center justify-between gap-4 rounded-lg border px-3 py-3">
+                    <div className="flex flex-col gap-2">
+                      <FieldLabel>Bookings need approval</FieldLabel>
+                      <FieldDescription>Staff must confirm bookings unless a session sets its own approval rule.</FieldDescription>
+                    </div>
+                    <Switch checked={form.booking_approval} onCheckedChange={(checked) => set('booking_approval', checked)} />
+                  </div>
+                  <FieldError />
+                </Field>
+                <TextField name="late_grace_minutes" label="Late arrival grace (minutes)" type="number" required min={0} max={120} step={1}
+                  value={form.late_grace_minutes} onChange={(e) => set('late_grace_minutes', e.target.value)}
+                  description="A member is late after the start time plus this many minutes. Default: 10." />
+                <TextField name="cancel_cutoff_hours" label="Cancellation cut-off (hours)" type="number" required min={0} max={72} step={1}
+                  value={form.cancel_cutoff_hours} onChange={(e) => set('cancel_cutoff_hours', e.target.value)}
+                  description="Members can cancel until this many hours before a session. After that, only staff can cancel. Default: 2." />
               </CardPanel>
             </Card>
 

@@ -12,6 +12,7 @@ import { api, ApiError } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { approvedGym, can } from '@/lib/gym-access'
 import { correctable, money, type Membership, type Payment } from '@/lib/membership'
+import type { OwedBooking } from '@/lib/bookings'
 
 /** S-30, R-34 and R-35: the payments desk. Desk payments are recorded here; online ones arrive on their own. */
 export default function GymPayments() {
@@ -23,6 +24,8 @@ export default function GymPayments() {
 
   const [payments, setPayments] = useState<Payment[] | null>(null)
   const [members, setMembers] = useState<Membership[]>([])
+  const [bookings, setBookings] = useState<OwedBooking[]>([])
+  const [choicesError, setChoicesError] = useState('')
   const [error, setError] = useState('')
   const [version, setVersion] = useState(0)
   const [recording, setRecording] = useState(false)
@@ -40,9 +43,13 @@ export default function GymPayments() {
         setError(failure instanceof ApiError ? failure.message : 'Could not load payments.')
       })
     if (canRecord) {
+      setChoicesError('')
       api<{ memberships: Membership[] }>(`/gyms/${gymId}/memberships?view=members`)
         .then((result) => live && setMembers(result.memberships.filter((m) => ['awaiting_payment', 'active', 'frozen'].includes(m.status))))
-        .catch(() => undefined)
+        .catch(() => live && setChoicesError('Could not load membership choices. Try again.'))
+      api<{ bookings: OwedBooking[] }>(`/gyms/${gymId}/payments/owed-bookings`)
+        .then((result) => live && setBookings(result.bookings))
+        .catch(() => live && setChoicesError('Could not load session add-ons owed. Try again.'))
     }
     return () => {
       live = false
@@ -57,16 +64,17 @@ export default function GymPayments() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Payments"
-        description="Every membership payment with its receipt. Record cash, card and e-wallet payments here; PayMongo payments appear once confirmed."
+        description="Membership and session add-on payments with receipts. Record cash, card and e-wallet payments here; PayMongo payments appear once confirmed."
         actions={
           canRecord && (
-            <Button size="sm" onClick={() => setRecording(true)} disabled={members.length === 0}>
+            <Button size="sm" onClick={() => setRecording(true)} disabled={(members.length === 0 && bookings.length === 0) || Boolean(choicesError)}>
               <Plus aria-hidden />
               Record payment
             </Button>
           )
         }
       />
+      {choicesError && <Alert variant="error"><AlertTitle>Payment choices unavailable</AlertTitle><AlertDescription>{choicesError} <Button variant="outline" onClick={refresh}>Try again</Button></AlertDescription></Alert>}
 
       {canRecord && owing.length > 0 && (
         <Card>
@@ -129,16 +137,17 @@ export default function GymPayments() {
         </CardPanel>
       </Card>
 
-      <RecordPaymentDialog
+      {recording && <RecordPaymentDialog
         gymId={gymId}
         open={recording}
         memberships={members}
+        bookings={bookings}
         onClose={() => setRecording(false)}
         onSaved={() => {
           setRecording(false)
           refresh()
         }}
-      />
+      />}
       <CorrectPaymentDialog
         gymId={gymId}
         payment={correcting}

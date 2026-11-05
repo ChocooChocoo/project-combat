@@ -1,4 +1,4 @@
-import { Building2, Check, ChevronsUpDown, ClipboardCheck, FilePlus2, FileText, House, IdCard, LogOut, Medal, UserRound } from 'lucide-react'
+import { Building2, CalendarDays, Check, ChevronsUpDown, ClipboardCheck, FilePlus2, FileText, House, IdCard, LogOut, Medal, UserRound } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { myWorkNav, workspaceNav } from '@/components/gym-nav'
@@ -155,9 +155,11 @@ export function AppShell() {
   const general: Item[] = [
     { to: '/', label: 'Home', icon: House, end: true },
     { to: '/memberships', label: 'My memberships', icon: IdCard },
+    { to: '/bookings', label: 'My bookings', icon: CalendarDays },
   ]
   if (currentGym?.roles.includes('employee')) general.push(myWorkNav(currentGym.id))
   if (currentGym?.roles.includes('member')) general.push({ to: `/gyms/${currentGym.id}/my-record`, label: 'My record', icon: Medal })
+  if (currentGym?.roles.includes('member')) general.push({ to: `/gyms/${currentGym.id}/sessions`, label: 'Sessions', icon: CalendarDays })
 
   const workspace = currentGym ? workspaceNav(currentGym) : []
   const owner: Item[] = [

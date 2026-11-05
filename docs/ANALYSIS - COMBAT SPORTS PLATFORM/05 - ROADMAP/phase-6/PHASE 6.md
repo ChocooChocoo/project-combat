@@ -328,6 +328,7 @@ Discounts are shown. Staff can also record walk-in and merchandise sales directl
 
 - [ ] Each member's balance is visible to permitted staff and to the member.
 - [ ] Recording a payment reduces the balance.
+- [ ] Unpaid session add-ons and private coaching fees (R-51 in [PHASE 5](../phase-5/PHASE%205.md)) appear in this list. *(Moved from R-51 on 5 November 2026.)*
 
 **Still open:** nothing.
 

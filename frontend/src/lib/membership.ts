@@ -14,6 +14,8 @@ export type HealthDetails = {
 export type Payment = {
   id: number
   membership_id: number | null
+  session_booking_id: number | null
+  session: { name: string; starts_at: string } | null
   member: { id: number; name: string; email: string } | null
   amount: string
   method: 'cash' | 'card' | 'ewallet' | 'paymongo'
@@ -88,6 +90,9 @@ export type AthleteRecord = {
   ranks: { discipline: string; rank: string; since: string }[]
   entries: AthleteEntry[]
   memberships: Membership[]
+  attendance: import('@/lib/attendance').AttendanceRow[]
+  attendance_counts: Record<import('@/lib/attendance').Attendance, number>
+  progress_notes: import('@/lib/attendance').ProgressNote[]
   health?: HealthDetails
 }
 
@@ -171,16 +176,22 @@ export function periodLabel(membership: Membership): string | null {
 
 export function dateLabel(value: string | null | undefined): string {
   if (!value) return ''
-  const date = new Date(value.length === 10 ? `${value}T00:00:00` : value)
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('en-PH', { day: 'numeric', month: 'short', year: 'numeric' })
+  const date = gymDate(value.length === 10 ? `${value}T00:00:00` : value)
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+/** Offset-free API timestamps are Philippine wall time; ISO offsets already identify an instant. */
+export function gymDate(value: string): Date {
+  const iso = value.replace(' ', 'T')
+  return new Date(/(?:Z|[+-]\d{2}:?\d{2})$/i.test(iso) ? iso : `${iso}+08:00`)
 }
 
 export function dateTimeLabel(value: string | null | undefined): string {
   if (!value) return ''
-  const date = new Date(value)
+  const date = gymDate(value)
   return Number.isNaN(date.getTime())
     ? value
-    : date.toLocaleString('en-PH', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+    : date.toLocaleString('en-PH', { timeZone: 'Asia/Manila', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })
 }
 
 /** Appends nested values the way Laravel reads them: contacts[0][name], answers[key]. Booleans become 1 or 0. */

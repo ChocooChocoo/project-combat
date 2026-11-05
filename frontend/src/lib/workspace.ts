@@ -215,6 +215,9 @@ export type WorkspaceSetup = {
   operating_hours: WorkingHours
   working_days: Day[]
   policies: string | null
+  booking_approval: boolean
+  late_grace_minutes: number
+  cancel_cutoff_hours: number
   services: string[]
   facilities: string[]
   options?: WorkspaceOptions

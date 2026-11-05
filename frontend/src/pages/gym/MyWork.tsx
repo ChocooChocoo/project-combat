@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { LeaveCalendar, formatDateRange, formatDay, isoDay } from '@/components/leave-calendar'
 import { PageHeader } from '@/components/page-header'
+import { CoachCalendar } from '@/components/schedule/coach-calendar'
 import { TextField } from '@/components/text-field'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -65,6 +66,7 @@ type WorkHoliday = {
 }
 
 type WorkData = {
+  is_coach: boolean
   schedule: WorkDay[]
   balances: WorkBalance[]
   requests: WorkRequest[]
@@ -286,6 +288,7 @@ export default function MyWork() {
         </div>
       ) : (
         <>
+          {data.is_coach && user && <CoachCalendar gymId={gymId} userId={user.id} refreshKey={version} />}
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>

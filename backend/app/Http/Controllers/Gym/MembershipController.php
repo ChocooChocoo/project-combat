@@ -136,7 +136,7 @@ class MembershipController extends Controller
                 $note = 'Starts again once PHP '.number_format((float) $plan->total_fee, 2).' is paid';
             } elseif ($plan->billing_type === PlanBilling::Sessions) {
                 $model->sessions_remaining = (int) $model->sessions_remaining + $plan->session_count;
-                $note = "{$model->sessions_remaining} sessions left";
+                $note = $model->sessions_remaining.($model->sessions_remaining === 1 ? ' session left' : ' sessions left');
             } else {
                 $model->ends_on = $model->ends_on->copy()->addMonthsNoOverflow($plan->duration_months);
                 $note = 'Valid until '.$model->ends_on->toDateString();

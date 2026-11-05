@@ -4,9 +4,9 @@
 
 [00 - START HERE](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) · [05 - ROADMAP](../05%20-%20ROADMAP.md) · Previous: [PHASE 4](../phase-4/PHASE%204.md) · Next: [PHASE 6](../phase-6/PHASE%206.md)
 
-**Status:** 🟨 In progress
+**Status:** ✅ Finished
 
-> **5 November 2026:** Building started. Open questions answered in conversation, 5 November 2026:
+> **5 November 2026:** Phase finished. The one check that needs a later phase (unpaid add-ons in the money-owed list) was moved to R-65 in PHASE 6. Building started the same day. Open questions answered in conversation, 5 November 2026:
 >
 > - **Q-11:** the member shows a QR code from the app that changes every minute; staff scan it or type its short code.
 > - **Q-12:** a freed place goes automatically to the first athlete on the waiting list, who is notified.
@@ -51,9 +51,9 @@ Sessions need:
 
 | Status | How many |
 |---|---|
-| ✅ Finished | 0 |
+| ✅ Finished | 14 |
 | 🟨 Being worked on | 0 |
-| ⭕ Not started | 14 |
+| ⭕ Not started | 0 |
 | ❌ Blocked | 0 |
 | 🔵 Already there | 0 |
 | ⬜ Dropped | 0 |
@@ -68,11 +68,11 @@ Sessions need:
 
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
-| R-42 | Create every kind of session | R-21, R-23 | ⭕ | Classes, group, private, sparring and open-mat sessions can be created with all their details |
-| R-43 | Refuse clashes | R-42 | ⭕ | A session that clashes on coach, room or time cannot be saved |
-| R-44 | Coach availability calendar | R-24, R-25, R-27, R-42 | ⭕ | Each coach's calendar shows hours, days off, leave and sessions |
-| R-45 | Reschedule and cancel, with notices | R-42, R-10 | ⭕ | Changing or cancelling a session tells everyone booked and the coach |
-| R-46 | Coach becomes unavailable | R-44, R-45 | ⭕ | Affected bookings are flagged for staff to reassign or move |
+| R-42 | Create every kind of session | R-21, R-23 | ✅ | Classes, group, private, sparring and open-mat sessions can be created with all their details |
+| R-43 | Refuse clashes | R-42 | ✅ | A session that clashes on coach, room or time cannot be saved |
+| R-44 | Coach availability calendar | R-24, R-25, R-27, R-42 | ✅ | Each coach's calendar shows hours, days off, leave and sessions |
+| R-45 | Reschedule and cancel, with notices | R-42, R-10 | ✅ | Changing or cancelling a session tells everyone booked and the coach |
+| R-46 | Coach becomes unavailable | R-44, R-45 | ✅ | Affected bookings are flagged for staff to reassign or move |
 
 ### R-42: Create every kind of session
 
@@ -96,10 +96,12 @@ Sessions can repeat on a pattern.
 
 **Done when:**
 
-- [ ] The owner and permitted staff can create each session type.
-- [ ] Each session has a coach, room, time, capacity, eligibility, content and fee.
-- [ ] A repeating session creates every occurrence, and each occurrence can be changed on its own.
-- [ ] Sessions link to the matching service in the gym's list (R-28).
+- [x] The owner and permitted staff can create each session type.
+- [x] Each session has a coach, room, time, capacity, eligibility, content and fee.
+- [x] A repeating session creates every occurrence, and each occurrence can be changed on its own.
+- [x] Sessions link to the matching service in the gym's list (R-28).
+
+**Status note (5 November 2026):** Built. `training_sessions` table, `TrainingSession` model, `Gym\SessionController` (routes `gyms/{gym}/sessions`; view needs `training,view`, changes need `training,manage`), Schedule screen (`GymSchedule.tsx`, `session-editor.tsx`). A repeat creates every occurrence with a shared series id; each occurrence is edited on its own. Gym settings added: booking approval, late grace minutes, cancel cut-off hours. Checked: `SessionTest` (19 tests), full suite 172 tests passed; `pnpm build` and `pnpm lint` passed; screens checked in a browser with mocked data.
 
 **Still open:** nothing.
 
@@ -125,10 +127,12 @@ If anything clashes, it says what, and does not save.
 
 **Done when:**
 
-- [ ] A session that overlaps the same coach's other session is refused.
-- [ ] A session that overlaps another session in the same room is refused.
-- [ ] A session outside the coach's working hours, on their approved leave or on a holiday is refused or clearly warned against.
-- [ ] Two staff saving clashing sessions at the same moment cannot both succeed.
+- [x] A session that overlaps the same coach's other session is refused.
+- [x] A session that overlaps another session in the same room is refused.
+- [x] A session outside the coach's working hours, on their approved leave or on a holiday is refused or clearly warned against.
+- [x] Two staff saving clashing sessions at the same moment cannot both succeed.
+
+**Status note (5 November 2026):** Built in `App\Support\SessionScheduler`. It refuses a coach clash, a room clash, times outside working hours, approved leave, and gym or national holidays, with a message naming the clash. Saves lock the gym row inside a transaction, so two clashing saves run one after the other. Not proven by tests: SQLite (used by the tests) ignores row locks; MySQL honours them.
 
 **Still open:** nothing.
 
@@ -148,9 +152,11 @@ If anything clashes, it says what, and does not save.
 
 **Done when:**
 
-- [ ] A coach and permitted staff can see the coach's calendar.
-- [ ] Approved leave and holidays appear on it automatically.
-- [ ] When booking private coaching, the athlete sees only the coach's open slots.
+- [x] A coach and permitted staff can see the coach's calendar.
+- [x] Approved leave and holidays appear on it automatically.
+- [x] When booking private coaching, the athlete sees only the coach's open slots.
+
+**Status note (5 November 2026):** Built. `Gym\CoachCalendarController`: `coaches/{user}/calendar` (self, `training,view` or `hr,view`) shows working hours, days off, approved leave, gym and national holidays and sessions; shown on the employee record and in My work. `coaches/{user}/open-slots` lists only free slots for private coaching. Checked in `BookingTest`.
 
 **Still open:** nothing.
 
@@ -170,11 +176,13 @@ If anything clashes, it says what, and does not save.
 
 **Done when:**
 
-- [ ] Moving a session runs the clash check again.
-- [ ] Booked athletes and the coach get a notice when a session is moved or cancelled.
-- [ ] Paid add-on bookings for a cancelled session follow the agreed refund rule.
+- [x] Moving a session runs the clash check again.
+- [x] Booked athletes and the coach get a notice when a session is moved or cancelled.
+- [x] Paid add-on bookings for a cancelled session follow the agreed refund rule.
 
-**Still open:** Q-20.
+**Status note (5 November 2026):** Built. Moving a session or changing its room or coach reruns the clash check and notifies every requested, booked and waitlisted athlete and the coach (old and new) with `SessionChanged`. Raising capacity gives places to the waiting list; capacity cannot drop below places taken. `sessions/{session}/cancel` (`training,manage`, reason required) cancels all bookings and notifies everyone. Q-20 answered: each payment on a cancelled booking gets a full refund entry (same method, linked to the original) and staff hand the money back; no automatic PayMongo refund. Checked: `SessionChangeTest` (8 tests).
+
+**Still open:** nothing.
 
 **Old system:** as above.
 
@@ -192,9 +200,11 @@ If anything clashes, it says what, and does not save.
 
 **Done when:**
 
-- [ ] Approving a coach's leave flags every session of theirs in that period.
-- [ ] Staff see a list of flagged sessions and can reassign a free coach or move the session.
-- [ ] Athletes and the new coach get a notice of the change.
+- [x] Approving a coach's leave flags every session of theirs in that period.
+- [x] Staff see a list of flagged sessions and can reassign a free coach or move the session.
+- [x] Athletes and the new coach get a notice of the change.
+
+**Status note (5 November 2026):** Built. Approving leave in `LeaveController` flags that coach's scheduled sessions in the leave dates and sends training managers one notice. The Schedule screen lists flagged sessions; staff reassign a free coach (`sessions/{session}/free-coaches`), move or cancel the session. A flagged session cannot be booked. Athletes and the new coach are notified. Checked in `SessionChangeTest`.
 
 **Still open:** nothing.
 
@@ -208,11 +218,11 @@ If anything clashes, it says what, and does not save.
 
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
-| R-47 | Session details page | R-42 | ⭕ | Every session has a details page with all the spec's information |
-| R-48 | Book with checks | R-47, R-44, R-36 | ⭕ | A booking goes through only if places, coach and eligibility all check out |
-| R-49 | Booking approval when the gym requires it | R-48, R-10 | ⭕ | If the gym needs confirmation, staff approve or reject, and the athlete is told |
-| R-50 | Waiting list | R-48 | ⭕ | A full session puts the athlete on a waiting list, and a freed place goes to the next in line |
-| R-51 | Add-on fees owed or paid, honestly | R-48, R-34 | ⭕ | A booking with a fee is marked "owed" until a real payment is recorded |
+| R-47 | Session details page | R-42 | ✅ | Every session has a details page with all the spec's information |
+| R-48 | Book with checks | R-47, R-44, R-36 | ✅ | A booking goes through only if places, coach and eligibility all check out |
+| R-49 | Booking approval when the gym requires it | R-48, R-10 | ✅ | If the gym needs confirmation, staff approve or reject, and the athlete is told |
+| R-50 | Waiting list | R-48 | ✅ | A full session puts the athlete on a waiting list, and a freed place goes to the next in line |
+| R-51 | Add-on fees owed or paid, honestly | R-48, R-34 | ✅ | A booking with a fee is marked "owed" until a real payment is recorded |
 
 ### R-47: Session details page
 
@@ -236,9 +246,11 @@ If anything clashes, it says what, and does not save.
 
 **Done when:**
 
-- [ ] Every session has a details page showing all the items above.
-- [ ] Places left are always up to date.
-- [ ] The page offers "Book" or "Join waiting list" as appropriate.
+- [x] Every session has a details page showing all the items above.
+- [x] Places left are always up to date.
+- [x] The page offers "Book" or "Join waiting list" as appropriate.
+
+**Status note (5 November 2026):** Built. `timetable/{session}` and the athlete screen `SessionDetails.tsx` show every item above, including the coach's public profile (hidden profiles stay private), places left and the right action (Book, Request booking, Join waiting list, Cancel). Places left are read fresh on each load and after each action.
 
 **Still open:** nothing.
 
@@ -264,10 +276,12 @@ Only then does the booking go through. A booking that clashes with the coach's s
 
 **Done when:**
 
-- [ ] A member without an active membership, or at the wrong level, is refused with the reason.
-- [ ] A booking for a time when the coach is unavailable cannot be submitted.
-- [ ] Two members booking the last place at the same moment cannot both get it.
-- [ ] The member sees their bookings in one list.
+- [x] A member without an active membership, or at the wrong level, is refused with the reason.
+- [x] A booking for a time when the coach is unavailable cannot be submitted.
+- [x] Two members booking the last place at the same moment cannot both get it.
+- [x] The member sees their bookings in one list.
+
+**Status note (5 November 2026):** Built in `App\Support\BookingDesk`: checks active membership, allowed plans, sessions left on a session pack, and coach availability, and gives the reason when it refuses. Booking locks the session row so two people cannot take the last place (not proven by tests: SQLite ignores row locks). Members see all their bookings at `/bookings`. Q-24 answered: athletes cancel their own booking until the gym's cut-off (default 2 hours); after that only staff. Checked: `BookingTest` (26 tests), full suite 198 tests passed.
 
 **Still open:** Q-24 (can athletes cancel their own bookings, and until when?).
 
@@ -287,11 +301,13 @@ Only then does the booking go through. A booking that clashes with the coach's s
 
 **Done when:**
 
-- [ ] The owner can turn booking confirmation on or off.
-- [ ] With it on, bookings wait for a staff decision, and staff see a list of them.
-- [ ] The athlete gets a notice when the booking is approved or rejected.
+- [x] The owner can turn booking confirmation on or off.
+- [x] With it on, bookings wait for a staff decision, and staff see a list of them.
+- [x] The athlete gets a notice when the booking is approved or rejected.
 
-**Still open:** Q-18.
+**Status note (5 November 2026):** Built. Q-18 answered: a gym-wide switch on the Setup screen, which each session can override. Requested bookings hold a place and show on the Bookings screen; `training,approve` approves or rejects (rejecting needs a reason); the athlete is notified either way.
+
+**Still open:** nothing.
 
 **Old system:** only private and sparring requests needed approval (`TrainerSessionRequestController.php`, lines 236 to 431). Reject skipped the permission check that approve has.
 
@@ -309,11 +325,13 @@ Only then does the booking go through. A booking that clashes with the coach's s
 
 **Done when:**
 
-- [ ] Athletes can join and leave a full session's waiting list.
-- [ ] The waiting list keeps the order people joined in.
-- [ ] A freed place goes to the first athlete in line, who is notified.
+- [x] Athletes can join and leave a full session's waiting list.
+- [x] The waiting list keeps the order people joined in.
+- [x] A freed place goes to the first athlete in line, who is notified.
 
-**Still open:** Q-12.
+**Status note (5 November 2026):** Built. Q-12 answered: a freed place goes automatically to the first athlete in line, who is notified. The waiting list is ordered by when each athlete joined; the next athlete is checked for eligibility again before being given the place.
+
+**Still open:** nothing.
 
 **Old system:** none.
 
@@ -331,10 +349,12 @@ Only then does the booking go through. A booking that clashes with the coach's s
 
 **Done when:**
 
-- [ ] A booking for a paid session shows the amount owed.
-- [ ] It turns "paid" only after a recorded payment.
-- [ ] Session add-ons and private coaching can be paid online through PayMongo, reusing the payment record and checkout flow from R-35 ([PHASE 4](../phase-4/PHASE%204.md)). *(Moved from R-35 on 5 November 2026.)*
-- [ ] Unpaid add-ons appear in the gym's list of money owed (R-65).
+- [x] A booking for a paid session shows the amount owed.
+- [x] It turns "paid" only after a recorded payment.
+- [x] Session add-ons and private coaching can be paid online through PayMongo, reusing the payment record and checkout flow from R-35 ([PHASE 4](../phase-4/PHASE%204.md)). *(Moved from R-35 on 5 November 2026.)*
+*Moved on 5 November 2026:* unpaid add-ons appearing in the gym's list of money owed is checked in R-65 ([PHASE 6](../phase-6/PHASE%206.md)), which builds that list.
+
+**Status note (5 November 2026):** Built. `payments.session_booking_id` links a payment to a booking; `BookingLedger` records it with a receipt. A booking shows included, owed, paid or refunded from real payment entries only. Desk payments (`finance,manage`) and online PayMongo checkout (`my-bookings/{booking}/checkout`, webhook shared with memberships) both work; membership payments behave as before. Checked: `BookingPaymentTest` (7 tests), full suite 213 tests passed, `pnpm build` and `pnpm lint` passed.
 
 **Still open:** nothing.
 
@@ -348,10 +368,10 @@ Only then does the booking go through. A booking that clashes with the coach's s
 
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
-| R-52 | Check in by account or QR code | R-48 | ⭕ | A member can check in with their account or membership QR code |
-| R-53 | Manual attendance by staff | R-48, R-08 | ⭕ | Permitted staff can confirm or enter attendance by hand |
-| R-54 | Attendance history | R-52, R-53 | ⭕ | Check-in and out times, late arrivals, absences and no-shows are kept per member |
-| R-55 | Training progress notes | R-42 | ⭕ | Coaches can write notes per session and per athlete |
+| R-52 | Check in by account or QR code | R-48 | ✅ | A member can check in with their account or membership QR code |
+| R-53 | Manual attendance by staff | R-48, R-08 | ✅ | Permitted staff can confirm or enter attendance by hand |
+| R-54 | Attendance history | R-52, R-53 | ✅ | Check-in and out times, late arrivals, absences and no-shows are kept per member |
+| R-55 | Training progress notes | R-42 | ✅ | Coaches can write notes per session and per athlete |
 
 ### R-52: Check in by account or QR code
 
@@ -367,11 +387,13 @@ Only then does the booking go through. A booking that clashes with the coach's s
 
 **Done when:**
 
-- [ ] Each member has a membership QR code they can show from the app.
-- [ ] Checking in with the QR code or account records the time against the right booking.
-- [ ] A member cannot check in from home or for someone else.
+- [x] Each member has a membership QR code they can show from the app.
+- [x] Checking in with the QR code or account records the time against the right booking.
+- [x] A member cannot check in from home or for someone else.
 
-**Still open:** Q-11.
+**Status note (5 November 2026):** Built. Q-11 answered: the member shows a QR code with a short code from the app (Sessions and My bookings screens); it changes every minute (`App\Support\CheckInCode`, signed with the app key). Only staff with `training,manage` record check-ins, on the Check-in screen (camera scan where the browser supports it, typed code or USB scanner, or account search), so a member cannot check in from home or for someone else. A check-in is tied to the booking open at that time, or recorded as a gym visit. Session packs lose one session on check-in and get it back if staff mark the booking absent. Checked: `AttendanceTest`. Not checked: a real camera and a real USB scanner.
+
+**Still open:** nothing.
 
 **Old system:** `MemberTrainerSessionController.php`, lines 281 to 369.
 
@@ -389,8 +411,10 @@ Only then does the booking go through. A booking that clashes with the coach's s
 
 **Done when:**
 
-- [ ] Permitted staff can mark a member present, late or absent for a session.
-- [ ] Each manual entry records who made it.
+- [x] Permitted staff can mark a member present, late or absent for a session.
+- [x] Each manual entry records who made it.
+
+**Status note (5 November 2026):** Built. `bookings/{booking}/attendance` (`training,manage`) marks present, late or absent; check-out is separate. Each entry stores who made it, shown on the session roster. Checked in `AttendanceTest`.
 
 **Still open:** nothing.
 
@@ -410,13 +434,15 @@ Only then does the booking go through. A booking that clashes with the coach's s
 
 **Done when:**
 
-- [ ] Each attendance shows check-in and check-out times.
-- [ ] Late arrivals are marked by a set rule.
-- [ ] A booking with no check-in by the end of the session becomes a no-show.
-- [ ] Staff can view attendance by gym, class, session or member; members see their own.
-- [ ] An athlete's attendance appears in their record (R-41 in [PHASE 4](../phase-4/PHASE%204.md)). *(Moved from R-41 on 5 November 2026.)*
+- [x] Each attendance shows check-in and check-out times.
+- [x] Late arrivals are marked by a set rule.
+- [x] A booking with no check-in by the end of the session becomes a no-show.
+- [x] Staff can view attendance by gym, class, session or member; members see their own.
+- [x] An athlete's attendance appears in their record (R-41 in [PHASE 4](../phase-4/PHASE%204.md)). *(Moved from R-41 on 5 November 2026.)*
 
-**Still open:** Q-14.
+**Status note (5 November 2026):** Built. Q-14 answered: late means checking in after the start time plus the gym's grace period (Setup screen, default 10 minutes). `app:mark-no-shows` runs every 15 minutes and marks bookings with no check-in after the session ended. The Attendance screen (`training,view`) filters by date, session, class and member; attendance and its counts appear in the athlete record for staff and for the athlete. Checked: `AttendanceTest` (17 tests).
+
+**Still open:** nothing.
 
 **Old system:** `combat_sports_db.sql`, line 4095 (booking check-in and check-out columns).
 
@@ -434,8 +460,10 @@ Only then does the booking go through. A booking that clashes with the coach's s
 
 **Done when:**
 
-- [ ] A coach can add a note to a session and to each participant.
-- [ ] An athlete's notes appear in their record over time (R-41 in [PHASE 4](../phase-4/PHASE%204.md)). *(Moved from R-41 on 5 November 2026.)*
+- [x] A coach can add a note to a session and to each participant.
+- [x] An athlete's notes appear in their record over time (R-41 in [PHASE 4](../phase-4/PHASE%204.md)). *(Moved from R-41 on 5 November 2026.)*
+
+**Status note (5 November 2026):** Built. `session_notes` table; the session's coach or `training,manage` adds a whole-session note or a note for a booked participant on the session screen. Participant notes appear in the athlete record over time; whole-session notes stay staff-only. Checked: `ProgressNoteTest` (4 tests), full suite 234 tests passed, `pnpm build` and `pnpm lint` passed. Seed data now has 30 sample sessions (6 per approved gym).
 
 **Still open:** nothing.
 
@@ -445,8 +473,17 @@ Only then does the booking go through. A booking that clashes with the coach's s
 
 ## Phase blockers
 
-Q-11, Q-12, Q-14, Q-18, Q-20 and Q-24 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md).
+Q-11, Q-12, Q-14, Q-18, Q-20 and Q-24 were answered on 5 November 2026 (see the note at the top). R-51's money-owed check was moved to R-65 in [PHASE 6](../phase-6/PHASE%206.md).
 
 ## Phase is finished when
 
 Every item above is ✅, 🔵 or ⬜. No session can be saved with a clash. Athletes book only what they are eligible for, with full information, and check in properly. Every attendance is recorded.
+
+## Where it was built
+
+- **Backend:** `SessionController`, `BookingController`, `CoachCalendarController`, `AttendanceController`, `SessionNoteController`, `MyBookingController`; `SessionScheduler`, `BookingDesk`, `BookingLedger`, `AttendanceLedger`, `CheckInCode`; migrations `2026_11_07_100000` to `2026_11_07_130000`; `app:mark-no-shows` in `routes/console.php`.
+- **Screens:** staff Schedule, Session (roster, attendance, notes), Bookings, Check-in, Attendance, coach calendar on the employee record and My work; athlete Sessions, Session details, Private coaching, My bookings, check-in code, attendance and notes in My record.
+- **Permissions used:** `training` (view: schedules and attendance; manage: sessions, check-in, attendance, notes; approve: booking requests), `finance,manage` for add-on payments.
+- **Checks (5 November 2026):** 234 tests, 1,904 assertions passed; `pnpm build` passed; `pnpm lint` no errors; `migrate:fresh --seed` ran on the local database. Screens checked in a browser with mocked data.
+- **Live browser test (5 November 2026):** every flow was run against the real backend. Fixed afterwards: the app clock now uses Philippine time (Asia/Manila), so check-in attaches to the right booking and the cancel cut-off works; only staff with a coach profile are listed as coaches; the Front Desk template gets `training,manage` so it can check members in; cancelled bookings no longer show money owed; private coaching has no waiting list; a membership can no longer be overpaid at the desk; several wording fixes. Rechecked live: QR check-in recorded "Present" against the booking at 3:26 PM, and self-cancel inside the cut-off was refused. 241 tests passed.
+- **Not checked:** row locks under real MySQL load (tests use SQLite), real PayMongo payments, a real camera or USB scanner, and live end-to-end browser use.

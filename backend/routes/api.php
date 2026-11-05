@@ -6,6 +6,9 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DiscoveryController;
 use App\Http\Controllers\GeoController;
 use App\Http\Controllers\Gym\AthleteRecordController;
+use App\Http\Controllers\Gym\AttendanceController;
+use App\Http\Controllers\Gym\BookingController;
+use App\Http\Controllers\Gym\CoachCalendarController;
 use App\Http\Controllers\Gym\EmployeeProfileController;
 use App\Http\Controllers\Gym\GymApplicationController;
 use App\Http\Controllers\Gym\GymDocumentController;
@@ -19,10 +22,13 @@ use App\Http\Controllers\Gym\PlanController;
 use App\Http\Controllers\Gym\RoomController;
 use App\Http\Controllers\Gym\ScheduleController;
 use App\Http\Controllers\Gym\ServiceController;
+use App\Http\Controllers\Gym\SessionController;
+use App\Http\Controllers\Gym\SessionNoteController;
 use App\Http\Controllers\Gym\StaffController;
 use App\Http\Controllers\Gym\WorkController;
 use App\Http\Controllers\GymPreferenceController;
 use App\Http\Controllers\MembershipApplicationController;
+use App\Http\Controllers\MyBookingController;
 use App\Http\Controllers\MyMembershipController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PayMongoWebhookController;
@@ -89,6 +95,9 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('membership-form', [MembershipApplicationController::class, 'form']);
             Route::post('gyms/{gym}/membership-applications', [MembershipApplicationController::class, 'store'])->whereNumber('gym');
             Route::get('my-memberships', [MyMembershipController::class, 'index']);
+            Route::get('my-bookings', [MyBookingController::class, 'index']);
+            Route::post('my-bookings/{booking}/checkout', [MyBookingController::class, 'checkout'])->whereNumber('booking');
+            Route::post('my-bookings/{booking}/checkout/confirm', [MyBookingController::class, 'confirm'])->whereNumber('booking');
             Route::get('my-memberships/{membership}', [MyMembershipController::class, 'show'])->whereNumber('membership');
             Route::post('my-memberships/{membership}/checkout', [MyMembershipController::class, 'checkout'])->whereNumber('membership');
             Route::post('my-memberships/{membership}/checkout/confirm', [MyMembershipController::class, 'confirm'])->whereNumber('membership');
@@ -126,6 +135,35 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::post('rooms', [RoomController::class, 'store'])->middleware('module:gym_setup,manage');
                 Route::put('rooms/{room}', [RoomController::class, 'update'])->whereNumber('room')->middleware('module:gym_setup,manage');
                 Route::delete('rooms/{room}', [RoomController::class, 'destroy'])->whereNumber('room')->middleware('module:gym_setup,manage');
+
+                // Sessions (R-42, R-43). Options must come before the occurrence id.
+                // R-44, R-47 to R-50: members book without staff module access.
+                Route::get('timetable', [BookingController::class, 'timetable']);
+                // R-52 to R-55: members show codes; only the training desk redeems them.
+                Route::get('my-check-in-code', [AttendanceController::class, 'code'])->middleware('throttle:30,1');
+                Route::get('check-ins/members', [AttendanceController::class, 'members'])->middleware('module:training,manage');
+                Route::get('check-ins', [AttendanceController::class, 'today'])->middleware('module:training,manage');
+                Route::post('check-ins', [AttendanceController::class, 'store'])->middleware(['module:training,manage', 'throttle:60,1']);
+                Route::get('attendance', [AttendanceController::class, 'index'])->middleware('module:training,view');
+                Route::put('bookings/{booking}/attendance', [AttendanceController::class, 'attendance'])->whereNumber('booking')->middleware('module:training,manage');
+                Route::post('bookings/{booking}/check-out', [AttendanceController::class, 'checkOut'])->whereNumber('booking')->middleware('module:training,manage');
+                Route::post('sessions/{session}/notes', [SessionNoteController::class, 'store'])->whereNumber('session');
+                Route::get('timetable/{session}', [BookingController::class, 'show'])->whereNumber('session');
+                Route::post('timetable/{session}/book', [BookingController::class, 'book'])->whereNumber('session');
+                Route::get('coaches/{user}/open-slots', [CoachCalendarController::class, 'slots'])->whereNumber('user');
+                Route::get('coaches/{user}/calendar', [CoachCalendarController::class, 'calendar'])->whereNumber('user');
+                Route::post('private-bookings', [CoachCalendarController::class, 'bookPrivate']);
+                Route::get('bookings', [BookingController::class, 'index'])->middleware('module:training,view');
+                Route::post('bookings/{booking}/cancel', [BookingController::class, 'cancel'])->whereNumber('booking');
+                Route::post('bookings/{booking}/decision', [BookingController::class, 'decide'])->whereNumber('booking')->middleware('module:training,approve');
+                Route::get('sessions/{session}/roster', [BookingController::class, 'roster'])->whereNumber('session')->middleware('module:training,view');
+                Route::get('sessions/options', [SessionController::class, 'options'])->middleware('module:training,view');
+                Route::get('sessions', [SessionController::class, 'index'])->middleware('module:training,view');
+                Route::get('sessions/{session}', [SessionController::class, 'show'])->whereNumber('session')->middleware('module:training,view');
+                Route::post('sessions', [SessionController::class, 'store'])->middleware('module:training,manage');
+                Route::put('sessions/{session}', [SessionController::class, 'update'])->whereNumber('session')->middleware('module:training,manage');
+                Route::post('sessions/{session}/cancel', [SessionController::class, 'cancel'])->whereNumber('session')->middleware('module:training,manage');
+                Route::get('sessions/{session}/free-coaches', [SessionController::class, 'freeCoaches'])->whereNumber('session')->middleware('module:training,view');
 
                 // Staff (R-22 to R-24). Showing a person is open to that person; the controller checks.
                 Route::get('staff', [StaffController::class, 'index'])->middleware('module:hr,view');
@@ -189,6 +227,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
                 // Payments desk (R-34).
                 Route::get('payments', [PaymentController::class, 'index'])->middleware('module:finance,view');
+                Route::get('payments/owed-bookings', [PaymentController::class, 'owedBookings'])->middleware('module:finance,view');
                 Route::post('payments', [PaymentController::class, 'store'])->middleware('module:finance,manage');
                 Route::post('payments/{payment}/correct', [PaymentController::class, 'correct'])->whereNumber('payment')->middleware('module:finance,manage');
 

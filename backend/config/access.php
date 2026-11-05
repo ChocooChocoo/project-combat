@@ -9,7 +9,7 @@ return [
         ],
         'front_desk' => [
             'members' => 'approve',
-            'training' => 'view',
+            'training' => 'manage',
             'finance' => 'manage',
             'customers' => 'manage',
             'announcements' => 'manage',

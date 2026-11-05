@@ -8,6 +8,7 @@ import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '@/c
 import { toastManager } from '@/components/ui/toast'
 import { api, ApiError, formValues, type FieldErrors } from '@/lib/api'
 import { METHOD_LABELS, money, type Membership, type Payment } from '@/lib/membership'
+import { dayLabel, type OwedBooking } from '@/lib/bookings'
 
 const DESK_METHODS = (['cash', 'card', 'ewallet'] as const).map((value) => ({ value, label: METHOD_LABELS[value] }))
 
@@ -18,30 +19,39 @@ export function RecordPaymentDialog({
   onClose,
   onSaved,
   memberships,
+  bookings = [],
 }: {
   gymId: number
   open: boolean
   onClose: () => void
   onSaved: (payment: Payment) => void
   memberships: Membership[]
+  bookings?: OwedBooking[]
 }) {
   const [membershipId, setMembershipId] = useState('')
+  const [kind, setKind] = useState(memberships.length === 0 && bookings.length > 0 ? 'booking' : 'membership')
+  const [bookingId, setBookingId] = useState('')
   const [method, setMethod] = useState('cash')
   const [errors, setErrors] = useState<FieldErrors>({})
   const [busy, setBusy] = useState(false)
-  const chosen = memberships.length === 1 ? memberships[0] : memberships.find((m) => String(m.id) === membershipId)
-  const items = memberships.map((m) => ({ value: String(m.id), label: `${m.member.name} · ${m.plan?.name ?? ''}` }))
+  const chosen = kind === 'booking'
+    ? bookings.length === 1 ? bookings[0] : bookings.find((b) => String(b.id) === bookingId)
+    : memberships.length === 1 ? memberships[0] : memberships.find((m) => String(m.id) === membershipId)
+  const items = kind === 'booking'
+    ? bookings.map((b) => ({ value: String(b.id), label: `${b.athlete.name} · ${b.session.name} · ${dayLabel(b.session.starts_at)}` }))
+    : memberships.map((m) => ({ value: String(m.id), label: `${m.member.name} · ${m.plan?.name ?? ''}` }))
+  const field = kind === 'booking' ? 'session_booking_id' : 'membership_id'
 
   async function save(event: React.FormEvent<HTMLFormElement>) {
     const values = formValues(event)
     if (!chosen) {
-      setErrors({ membership_id: ['Choose the member who paid.'] })
+      setErrors({ [field]: ['Choose the membership or session add-on being paid.'] })
       return
     }
     setBusy(true)
     try {
       const result = await api<{ payment: Payment }>(`/gyms/${gymId}/payments`, {
-        body: { membership_id: chosen.id, amount: Number(values.amount), method, note: values.note || null },
+        body: { [field]: chosen.id, amount: Number(values.amount), method, note: values.note || null },
       })
       toastManager.add({ title: `Payment recorded. Receipt ${result.payment.receipt_number}.`, type: 'success' })
       setErrors({})
@@ -67,16 +77,17 @@ export function RecordPaymentDialog({
             <DialogDescription>For money taken at the front desk. Online payments are recorded on their own once PayMongo confirms them.</DialogDescription>
           </DialogHeader>
           <DialogPanel className="flex flex-col gap-4">
-            {memberships.length === 1 ? (
+            {memberships.length > 0 && bookings.length > 0 && <Field name="payment_for"><FieldLabel>Payment for</FieldLabel><Select items={[{ value: 'membership', label: 'Membership' }, { value: 'booking', label: 'Session add-on' }]} value={kind} onValueChange={(next) => { setKind(String(next)); setErrors({}) }}><SelectTrigger><SelectValue /></SelectTrigger><SelectPopup><SelectItem value="membership">Membership</SelectItem><SelectItem value="booking">Session add-on</SelectItem></SelectPopup></Select></Field>}
+            {items.length === 1 ? (
               <p className="text-sm">
-                <span className="font-medium">{chosen?.member.name}</span> · {chosen?.plan?.name}
+                <span className="font-medium">{items[0].label}</span>
               </p>
             ) : (
-              <Field name="membership_id" className="w-full">
-                <FieldLabel>Member</FieldLabel>
-                <Select items={items} value={membershipId} onValueChange={(next) => setMembershipId(String(next ?? ''))}>
-                  <SelectTrigger aria-label="Member">
-                    <SelectValue placeholder="Choose a member" />
+              <Field name={field} className="w-full">
+                <FieldLabel>{kind === 'booking' ? 'Session add-on' : 'Member'}</FieldLabel>
+                <Select items={items} value={kind === 'booking' ? bookingId : membershipId} onValueChange={(next) => kind === 'booking' ? setBookingId(String(next ?? '')) : setMembershipId(String(next ?? ''))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={kind === 'booking' ? 'Choose a booking' : 'Choose a member'} />
                   </SelectTrigger>
                   <SelectPopup>
                     {items.map((item) => (
@@ -89,7 +100,7 @@ export function RecordPaymentDialog({
                 <FieldError />
               </Field>
             )}
-            {chosen && Number(chosen.balance) > 0 && <p className="text-muted-foreground text-sm">Still owed: {money(chosen.balance)}</p>}
+            {chosen && <p className="text-muted-foreground text-sm">Still owed: {money(chosen.balance)}</p>}
             <TextField
               name="amount"
               label="Amount (PHP)"
@@ -98,7 +109,8 @@ export function RecordPaymentDialog({
               step="0.01"
               inputMode="decimal"
               required
-              key={chosen?.id ?? 'none'}
+              key={`${kind}-${chosen?.id ?? 'none'}`}
+              max={chosen?.balance}
               defaultValue={chosen && Number(chosen.balance) > 0 ? chosen.balance : ''}
             />
             <Field name="method" className="w-full">

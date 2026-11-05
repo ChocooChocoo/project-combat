@@ -20,6 +20,14 @@ use Illuminate\Support\Facades\Storage;
 /** Shared response shapes for the HR screens (R-22 to R-27). */
 trait PresentsHr
 {
+    /** R-42, R-44: scheduling and athlete slot selection share the same coach list. */
+    protected function coaches(Gym $gym): Collection
+    {
+        return $gym->people()->wherePivotIn('role', [GymPersonType::Employee->value, GymPersonType::Owner->value])
+            ->orderBy('first_name')->orderBy('last_name')->get()->unique('id')
+            ->filter(fn (User $user) => $this->profileFor($gym, $user)?->isCoach() ?? false);
+    }
+
     /** One employee as the staff list and employee record show them. */
     protected function employeePayload(Gym $gym, User $user, bool $canSeePay): array
     {
@@ -33,7 +41,7 @@ trait PresentsHr
             'email' => $user->email,
             'phone' => $user->phone,
             'photo_url' => $user->photo_path ? Storage::disk('public')->url($user->photo_path) : null,
-            'is_coach' => $this->isCoach($profile, $roles),
+            'is_coach' => $profile?->isCoach() ?? false,
             'roles' => $roles->pluck('name')->values()->all(),
             'profile' => $this->profilePayload($profile, $canSeePay),
             'schedule' => $this->scheduleRows($gym, $user),
@@ -87,22 +95,6 @@ trait PresentsHr
         $profile->user_id = $user->id;
 
         return $profile;
-    }
-
-    /** @param Collection<int, GymRole> $roles */
-    private function isCoach(?EmployeeProfile $profile, Collection $roles): bool
-    {
-        if ($roles->contains(fn (GymRole $role) => $role->levelFor(Module::Training) !== null)) {
-            return true;
-        }
-
-        return $profile !== null && (
-            filled($profile->coach_experience)
-            || filled($profile->coach_rank)
-            || filled($profile->coach_specialisation)
-            || filled($profile->coach_bio)
-            || filled($profile->coach_photo_path)
-        );
     }
 
     protected function scheduleRows(Gym $gym, User $user): array

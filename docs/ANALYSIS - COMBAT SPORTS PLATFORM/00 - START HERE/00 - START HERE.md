@@ -1,4 +1,4 @@
-﻿# 00 - START HERE
+# 00 - START HERE
 
 Next: [01 - OVERVIEW](../01%20-%20OVERVIEW/01%20-%20OVERVIEW.md)
 
@@ -41,6 +41,12 @@ Next: [01 - OVERVIEW](../01%20-%20OVERVIEW/01%20-%20OVERVIEW.md)
 | R-37: do gyms define rank ladders? | No: ranks are typed freely per discipline | 4 November 2026 |
 | R-34: keep the old "front desk passes money to finance" chain? | No: each payment is recorded once by a permitted staff member | 4 November 2026 |
 | Whether setting up the backend, frontend and store belongs in the phases | Add it: the Phase 1 implementation plan must start with it. It is not a roadmap item. | 3 November 2026 |
+| Q-11: QR check-in | The member shows a code from the app that changes every minute; staff scan it or type its short code | 5 November 2026 |
+| Q-12: freed places on a waiting list | Given automatically to the next athlete in line, who is notified | 5 November 2026 |
+| Q-14: what counts as late | For athletes: checking in after the start time plus a grace period the owner sets (default 10 minutes) | 5 November 2026 |
+| Q-18: booking-confirmation policy | One gym-wide on/off switch, which each session can override | 5 November 2026 |
+| Q-20: refund when the gym cancels a paid session | A full refund entry is recorded against each payment; staff hand the money back | 5 November 2026 |
+| Q-24: athletes cancelling their own bookings | Yes, until a cut-off the owner sets (default 2 hours before the start); after that only staff | 5 November 2026 |
 
 The old features judged to "fit inside a spec module" are:
 
@@ -135,20 +141,20 @@ Each one is a real gap, not a guess dressed up as a question. When a question is
 | Q-08 | Carry any **old stored information** into the new system, or only reference lists (leave types, payroll rates, holidays)? | Moving old records would need cleaning, because the old store has many broken links | You | ⭕ |
 | Q-09 | Can one owner run **more than one gym**? | Shapes roles, gym separation and the owner application (R-07, R-09, R-11) | You | ✅ Yes, an owner may run several gyms. Answered 3 November 2026. |
 | Q-10 | Can one athlete or employee belong to **more than one gym** at once? | Shapes roles, membership and staff records (R-07, R-09, R-22, R-31). The old store blocked staff at two gyms. | You | ✅ Yes, a person may belong to several gyms at once. Answered 3 November 2026. |
-| Q-11 | For **QR check-in**, does the member show a code for staff to scan, or scan a code posted at the gym? | Decides what R-52 builds and what the front desk needs | You | ⭕ |
-| Q-12 | When a place frees up, is it **given automatically** to the next on the waiting list, or **offered with a time limit**? | Decides how R-50 works | You | ⭕ |
+| Q-11 | For **QR check-in**, does the member show a code for staff to scan, or scan a code posted at the gym? | Decides what R-52 builds and what the front desk needs | You | ✅ The member shows a code from the app that changes every minute; staff scan it or type its short code. Answered 5 November 2026. |
+| Q-12 | When a place frees up, is it **given automatically** to the next on the waiting list, or **offered with a time limit**? | Decides how R-50 works | You | ✅ Given automatically to the next athlete in line, who is notified. Answered 5 November 2026. |
 | Q-13 | How are **coaches paid**: monthly salary, per session, or both? | The old system never solved this and left coaches out of payroll (R-23, R-59) | You | ✅ Basis + rate: a monthly rate, a per-session rate, or both. Answered 4 November 2026.
-| Q-14 | What counts as **late**, for staff and for athletes? | Needed for attendance records (R-54, R-56) | You | ⭕ |
+| Q-14 | What counts as **late**, for staff and for athletes? | Needed for attendance records (R-54, R-56) | You | ✅ For athletes: late means checking in after the start time plus a grace period the owner sets (default 10 minutes). Staff lateness (R-56) is still open. Answered 5 November 2026. |
 | Q-15 | Which **forecasting method** should decision support use? | Needed for R-94 and R-96. The spec names no method. | You, or the spec's author | ⭕ |
 | Q-16 | Can a Tier 1 gym later **move up to Tier 2**, and does its badge change? | Affects the application's life story (R-12, R-18) | The spec's author | ⭕ |
 | Q-17 | Do verification documents **expire** (for example the yearly business permit), and must gyms check again? | Would add renewals to the gym's life (R-17) | The spec's author | ⭕ |
-| Q-18 | How does a gym set its **booking-confirmation policy**: on or off for all bookings, or per session type? | Decides how R-49 works | You | ⭕ |
+| Q-18 | How does a gym set its **booking-confirmation policy**: on or off for all bookings, or per session type? | Decides how R-49 works | You | ✅ One gym-wide on/off switch, which each session can override. Answered 5 November 2026. |
 | Q-19 | Which **leave types and yearly allowances** apply? Keep the old Philippine list? | Needed for R-25 and R-26 | You | ✅ Keep the old Philippine list: vacation 15, sick 15, service incentive 5, solo parent 7, bereavement 3, emergency 3, maternity 105, paternity 7, special leave for women 60, VAWC 10. Answered 4 November 2026.
-| Q-20 | What is the **refund rule** when the gym cancels a session someone paid extra for? | Needed for R-45 | You | ⭕ |
+| Q-20 | What is the **refund rule** when the gym cancels a session someone paid extra for? | Needed for R-45 | You | ✅ A full refund entry is recorded against each payment; staff hand the money back. Answered 5 November 2026. |
 | Q-21 | What are a gym's **working days** for absences and payroll? Is Saturday a working day? | The old system disagreed with itself (C-22). Needed for R-20, R-24, R-56 and R-59. | You | ✅ Monday to Friday by default; the owner can change the gym working days. Answered 4 November 2026.
 | Q-22 | Should **online payment** also cover session add-ons, or only memberships? | Decides the reach of R-35 and R-51 | You | ✅ Every fee: memberships, registration, session add-ons, private coaching and other fees. Answered 3 November 2026. |
 | Q-23 | What are **platform notices** for, and who receives them: owners only, or all users? | The spec only names them (page 7). Needed for R-81. | The spec's author | ⭕ |
-| Q-24 | Can athletes **cancel their own bookings**, and until when before the session? | Affects R-48 and the booking's life story | You | ⭕ |
+| Q-24 | Can athletes **cancel their own bookings**, and until when before the session? | Affects R-48 and the booking's life story | You | ✅ Yes, until a cut-off the owner sets (default 2 hours before the start); after that only staff. Answered 5 November 2026. |
 
 ## Changed
 

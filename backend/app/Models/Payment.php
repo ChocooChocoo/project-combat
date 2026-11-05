@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 #[Fillable([
     'membership_id', 'user_id', 'amount', 'method', 'received_by', 'paid_at', 'note', 'corrects_id',
-    'paymongo_checkout_id', 'paymongo_payment_id',
+    'paymongo_checkout_id', 'paymongo_payment_id', 'session_booking_id',
 ])]
 class Payment extends Model
 {
@@ -53,5 +53,10 @@ class Payment extends Model
     public function membership(): BelongsTo
     {
         return $this->belongsTo(Membership::class)->withoutGlobalScope('gym');
+    }
+
+    public function booking(): BelongsTo
+    {
+        return $this->belongsTo(SessionBooking::class, 'session_booking_id')->withoutGlobalScope('gym');
     }
 }
