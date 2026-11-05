@@ -197,6 +197,10 @@ class PublicGymTest extends TestCase
         ]);
         $former = $this->coach($gym, ['first_name' => 'Former', 'last_name' => 'Coach']);
         $gym->people()->detach($former->id);
+        $this->coach($gym, ['first_name' => 'Desk', 'last_name' => 'Staff'], [
+            'coach_experience' => null, 'coach_rank' => null, 'coach_specialisation' => null,
+            'coach_bio' => null, 'coach_photo_path' => null,
+        ]);
         $this->app->forgetScopedInstances();
 
         $response = $this->getJson("/api/gyms/{$gym->id}")->assertOk()

@@ -179,7 +179,7 @@ export default function MembershipApply() {
                       <span className="font-medium">{plan.name}</span>
                       <span className="text-muted-foreground text-sm">
                         {plan.billing_type === 'sessions'
-                          ? `${plan.session_count ?? 0} sessions`
+                          ? `${plan.session_count ?? 0} ${plan.session_count === 1 ? 'session' : 'sessions'}`
                           : `${plan.duration_months ?? 0} ${plan.duration_months === 1 ? 'month' : 'months'}`}
                       </span>
                     </span>

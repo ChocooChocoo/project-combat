@@ -9,11 +9,13 @@ use App\Models\Gym;
 use App\Models\GymRole;
 use App\Models\GymService;
 use App\Models\MembershipPlan;
+use App\Models\TrainingSession;
 use App\Models\User;
 use App\Notifications\GymApplicationDecided;
 use App\Notifications\LeaveRequestDecided;
 use App\Notifications\LeaveRequestSubmitted;
 use App\Support\CurrentGym;
+use App\Support\SessionScheduler;
 use App\Support\WorkingDays;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -60,7 +62,7 @@ class DatabaseSeeder extends Seeder
         ],
         'Front Desk' => [
             'members' => 'approve',
-            'training' => 'view',
+            'training' => 'manage',
             'finance' => 'manage',
             'customers' => 'manage',
             'announcements' => 'manage',
@@ -114,6 +116,15 @@ class DatabaseSeeder extends Seeder
             'jobs',
             'job_batches',
             'failed_jobs',
+            'session_notes',
+            'gym_visits',
+            'session_bookings',
+            'training_sessions',
+            'athlete_entries',
+            'athlete_profiles',
+            'membership_events',
+            'payments',
+            'memberships',
             'gym_service_photos',
             'membership_plan_addons',
             'gym_services',
@@ -333,7 +344,46 @@ class DatabaseSeeder extends Seeder
                 $gym->addPerson($people[$member], GymPersonType::Member);
             }
 
+            $this->seedSessions($gym, $owner, $spec, $employees, $services);
+
             $owner->notify(new GymApplicationDecided($gym));
+        }
+    }
+
+    /** R-42: sample classes use the same holiday, leave and clash checks as staff scheduling. */
+    private function seedSessions(Gym $gym, User $owner, array $spec, array $employees, array $services): void
+    {
+        $classes = array_values(array_filter($services, fn ($service) => $service->activity_type === 'classes'));
+        $room = $gym->rooms()->first();
+        if (! $classes || ! $room) {
+            return;
+        }
+        $scheduler = app(SessionScheduler::class);
+        foreach (range(1, 13, 2) as $index => $offset) {
+            $date = today()->addDays($offset);
+            $weekday = strtolower($date->format('D'));
+            $service = $classes[$index % count($classes)];
+            foreach ($spec['staff'] as $staff) {
+                if (empty($staff['coach_public']) || empty($staff['schedule'][$weekday])) {
+                    continue;
+                }
+                $coach = $employees[$staff['email']];
+                $start = Carbon::parse($date->toDateString().' '.$staff['schedule'][$weekday][0])->addHour();
+                $end = $start->copy()->addMinutes($service->duration_minutes ?? 60);
+                if ($scheduler->problems($coach->id, $room->id, $start, $end) !== []) {
+                    continue;
+                }
+                TrainingSession::create([
+                    'gym_service_id' => $service->id, 'type' => 'classes', 'name' => $service->name,
+                    'discipline' => $service->discipline, 'level' => $service->level ?? 'all',
+                    'coach_id' => $coach->id, 'room_id' => $room->id,
+                    'starts_at' => $start, 'ends_at' => $end, 'capacity' => 12,
+                    'content' => $service->overview, 'bring' => $service->bring,
+                    'fee' => $service->price_included ? null : $service->price,
+                    'status' => 'scheduled', 'created_by' => $owner->id,
+                ]);
+                break;
+            }
         }
     }
 

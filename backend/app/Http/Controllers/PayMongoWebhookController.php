@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Membership;
+use App\Models\SessionBooking;
+use App\Support\BookingLedger;
 use App\Support\MembershipLedger;
 use App\Support\PayMongo;
 use Illuminate\Http\JsonResponse;
@@ -15,7 +17,7 @@ use RuntimeException;
  */
 class PayMongoWebhookController extends Controller
 {
-    public function __invoke(Request $request, PayMongo $payMongo, MembershipLedger $ledger): JsonResponse
+    public function __invoke(Request $request, PayMongo $payMongo, MembershipLedger $ledger, BookingLedger $bookingLedger): JsonResponse
     {
         if (! $payMongo->validSignature($request->header('Paymongo-Signature'), $request->getContent())) {
             abort(401, 'Invalid signature.');
@@ -30,7 +32,9 @@ class PayMongoWebhookController extends Controller
             ? null
             : Membership::withoutGlobalScope('gym')->where('pending_checkout_id', $checkoutId)->first();
 
-        if (! $membership) {
+        $booking = ! $membership && $checkoutId !== ''
+            ? SessionBooking::withoutGlobalScope('gym')->where('pending_checkout_id', $checkoutId)->first() : null;
+        if (! $membership && ! $booking) {
             return response()->json(['ignored' => true]);
         }
 
@@ -41,7 +45,11 @@ class PayMongoWebhookController extends Controller
         }
 
         if ($result['paid']) {
-            MyMembershipController::recordCheckout($membership, $checkoutId, $result, $ledger);
+            if ($membership) {
+                MyMembershipController::recordCheckout($membership, $checkoutId, $result, $ledger);
+            } else {
+                MyBookingController::recordCheckout($booking, $checkoutId, $result, $bookingLedger);
+            }
         }
 
         return response()->json(['received' => true]);

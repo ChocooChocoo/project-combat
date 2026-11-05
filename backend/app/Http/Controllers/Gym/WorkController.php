@@ -39,6 +39,7 @@ class WorkController extends Controller
                 'requests' => $requests,
                 'approved_leave_dates' => $this->approvedLeaveDates($gym, $user, $year),
                 'holidays' => $this->holidaysFor($gym, $year),
+                'is_coach' => $this->coaches($gym)->contains('id', $user->id),
             ],
         ]);
     }

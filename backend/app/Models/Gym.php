@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'name', 'tier', 'address_line', 'barangay', 'city', 'province', 'latitude', 'longitude',
     'contact_phone', 'contact_email', 'operating_hours', 'disciplines', 'services', 'facilities',
     'activity_types', 'working_days', 'policies',
+    'booking_approval', 'late_grace_minutes', 'cancel_cutoff_hours',
 ])]
 #[UsePolicy(GymApplicationPolicy::class)]
 class Gym extends Model
@@ -59,6 +60,9 @@ class Gym extends Model
             'facilities' => 'array',
             'activity_types' => 'array',
             'working_days' => 'array',
+            'booking_approval' => 'boolean',
+            'late_grace_minutes' => 'integer',
+            'cancel_cutoff_hours' => 'integer',
             'return_items' => 'array',
             'checklist' => 'array',
             'submitted_at' => 'datetime',

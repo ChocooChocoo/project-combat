@@ -93,9 +93,16 @@ trait PresentsMemberships
 
     protected function paymentPayload(Payment $payment): array
     {
+        $session = $payment->session_booking_id ? $payment->booking->session()->withoutGlobalScope('gym')->firstOrFail() : null;
+
         return [
             'id' => $payment->id,
             'membership_id' => $payment->membership_id,
+            'session_booking_id' => $payment->session_booking_id,
+            'session' => $session ? [
+                'name' => $session->name,
+                'starts_at' => $session->starts_at->format('Y-m-d H:i:s'),
+            ] : null,
             'member' => $payment->relationLoaded('user') ? $this->personPayload($payment->user) : null,
             'amount' => $payment->amount,
             'method' => $payment->method->value,

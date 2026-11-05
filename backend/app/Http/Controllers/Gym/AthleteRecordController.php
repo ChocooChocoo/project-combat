@@ -11,7 +11,9 @@ use App\Models\AthleteEntry;
 use App\Models\AthleteProfile;
 use App\Models\Gym;
 use App\Models\Membership;
+use App\Models\SessionNote;
 use App\Models\User;
+use App\Support\AttendanceLedger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -145,6 +147,7 @@ class AthleteRecordController extends Controller
                 'since' => $promotions->first()->occurred_on?->toDateString(),
             ])->values();
 
+        $attendance = app(AttendanceLedger::class)->rows(['user_id' => $user->id]);
         $record = [
             'athlete' => [...$this->personPayload($user), 'phone' => $user->phone],
             'background' => $profile->background,
@@ -155,7 +158,11 @@ class AthleteRecordController extends Controller
             'memberships' => $gym->memberships()->where('user_id', $user->id)->with(['gym', 'user', 'decidedBy'])
                 ->orderByDesc('created_at')->get()
                 ->map(fn (Membership $membership) => $this->membershipPayload($membership, false))->values(),
-            // Attendance and progress notes join this record once Phase 5 builds them (R-54, R-55).
+            // R-54, R-55: only this athlete's attendance and participant notes.
+            'attendance' => $attendance,
+            'attendance_counts' => collect(['present', 'late', 'absent', 'no_show'])->mapWithKeys(fn ($status) => [$status => $attendance->where('attendance', $status)->count()]),
+            'progress_notes' => SessionNote::with(['session', 'author'])->where('user_id', $user->id)
+                ->get()->sortByDesc(fn ($note) => $note->session->starts_at->timestamp)->values()->map(fn ($note) => $note->payload()),
         ];
 
         if ($withHealth) {

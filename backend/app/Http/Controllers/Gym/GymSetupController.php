@@ -70,6 +70,9 @@ class GymSetupController extends Controller
             'operating_hours' => $gym->operating_hours ?? [],
             'working_days' => $gym->workingDays(),
             'policies' => $gym->policies,
+            'booking_approval' => $gym->booking_approval,
+            'late_grace_minutes' => $gym->late_grace_minutes,
+            'cancel_cutoff_hours' => $gym->cancel_cutoff_hours,
             'services' => $gym->services ?? [],
             'facilities' => $gym->facilities ?? [],
             'options' => $this->optionLists($gym),
@@ -119,6 +122,9 @@ class GymSetupController extends Controller
             'working_days' => ['sometimes', 'nullable', 'array'],
             'working_days.*' => ['distinct', Rule::in(array_keys(config('hr.weekdays')))],
             'policies' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            'booking_approval' => ['sometimes', 'required', 'boolean'],
+            'late_grace_minutes' => ['sometimes', 'required', 'integer', 'between:0,120'],
+            'cancel_cutoff_hours' => ['sometimes', 'required', 'integer', 'between:0,72'],
         ];
     }
 }

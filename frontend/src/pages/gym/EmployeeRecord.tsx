@@ -2,6 +2,7 @@ import { ArrowLeft, Camera } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { PageHeader } from '@/components/page-header'
+import { CoachCalendar } from '@/components/schedule/coach-calendar'
 import { TextField } from '@/components/text-field'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -61,6 +62,7 @@ export default function EmployeeRecord() {
   const [error, setError] = useState('')
   const [version, setVersion] = useState(0)
   const [tab, setTab] = useState('employment')
+  const [calendarVersion, setCalendarVersion] = useState(0)
 
   useEffect(() => {
     if (!gymId || !canOpen) return
@@ -196,7 +198,8 @@ export default function EmployeeRecord() {
         </TabsPanel>
 
         <TabsPanel value="schedule" keepMounted className="pt-4">
-          <ScheduleSection gymId={Number(gymId)} userId={Number(userId)} options={options} canEdit={canManageHr} />
+          {isCoach && <div className="mb-6"><CoachCalendar gymId={Number(gymId)} userId={Number(userId)} refreshKey={calendarVersion} /></div>}
+          <ScheduleSection gymId={Number(gymId)} userId={Number(userId)} options={options} canEdit={canManageHr} onSaved={() => setCalendarVersion((value) => value + 1)} />
         </TabsPanel>
 
         <TabsPanel value="leave" keepMounted className="pt-4">
@@ -603,11 +606,13 @@ function ScheduleSection({
   userId,
   options,
   canEdit,
+  onSaved,
 }: {
   gymId: number
   userId: number
   options: WorkspaceOptions
   canEdit: boolean
+  onSaved: () => void
 }) {
   const [days, setDays] = useState<DaySchedule | null>(null)
   const [loadError, setLoadError] = useState('')
@@ -667,6 +672,7 @@ function ScheduleSection({
       })
       setErrors({})
       toastManager.add({ title: 'Schedule saved.', type: 'success' })
+      onSaved()
     } catch (saveFailure) {
       setErrors(saveFailure instanceof ApiError ? saveFailure.errors : {})
       if (!(saveFailure instanceof ApiError) || Object.keys(saveFailure.errors).length === 0) {

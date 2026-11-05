@@ -328,7 +328,7 @@ export default function MemberRecord() {
                   {action === 'renew' &&
                     (status === 'expired'
                       ? `Adds ${money(plan?.total_fee)} to pay. The new period starts once it is paid.`
-                      : `Adds one more ${plan?.billing_type === 'sessions' ? `${plan.session_count} sessions` : `${plan?.duration_months} month period`} and ${money(plan?.total_fee)} to pay.`)}
+                      : `Adds one more ${plan?.billing_type === 'sessions' ? `${plan.session_count} ${plan.session_count === 1 ? 'session' : 'sessions'}` : `${plan?.duration_months} month period`} and ${money(plan?.total_fee)} to pay.`)}
                   {action === 'freeze' && `The end date moves forward by the frozen days. ${freezeLeft} days left on this plan.`}
                   {action === 'unfreeze' && 'The membership becomes active today, and any unused frozen days are taken back off the end date.'}
                   {action === 'cancel' && 'The membership ends now. The member is told, with your reason.'}

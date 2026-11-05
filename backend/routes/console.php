@@ -1,7 +1,9 @@
 <?php
 
+use App\Enums\BookingStatus;
 use App\Enums\MembershipStatus;
 use App\Models\Membership;
+use App\Models\SessionBooking;
 use App\Models\User;
 use App\Support\MembershipLedger;
 use Illuminate\Support\Facades\Artisan;
@@ -52,6 +54,16 @@ Artisan::command('app:expire-memberships', function (MembershipLedger $ledger) {
 })->purpose('Expire memberships past their end date and end finished freezes');
 
 Schedule::command('app:expire-memberships')->dailyAt('00:05');
+
+// R-54: all gyms, including when no request has selected a CurrentGym.
+Artisan::command('app:mark-no-shows', function () {
+    $count = SessionBooking::withoutGlobalScope('gym')->where('status', BookingStatus::Booked)
+        ->whereNull('check_in_at')->whereNull('attendance')
+        ->whereHas('session', fn ($q) => $q->withoutGlobalScope('gym')->where('status', 'scheduled')->where('ends_at', '<', now()))
+        ->update(['attendance' => 'no_show']);
+    $this->info("{$count} no-shows marked.");
+})->purpose('Mark ended, unchecked bookings as no-shows');
+Schedule::command('app:mark-no-shows')->everyFifteenMinutes();
 
 // Expired sign-in passes are removed daily (R-03).
 Schedule::command('sanctum:prune-expired --hours=24')->daily();

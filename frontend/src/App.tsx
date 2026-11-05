@@ -15,11 +15,16 @@ import GymApply from '@/pages/GymApply'
 import GymPublic from '@/pages/GymPublic'
 import EmployeeRecord from '@/pages/gym/EmployeeRecord'
 import GymApplications from '@/pages/gym/GymApplications'
+import GymBookings from '@/pages/gym/GymBookings'
+import GymCheckIn from '@/pages/gym/GymCheckIn'
+import GymAttendance from '@/pages/gym/GymAttendance'
 import GymLeave from '@/pages/gym/GymLeave'
 import GymMembers from '@/pages/gym/GymMembers'
 import GymPayments from '@/pages/gym/GymPayments'
 import GymPlans from '@/pages/gym/GymPlans'
 import GymRooms from '@/pages/gym/GymRooms'
+import GymSchedule from '@/pages/gym/GymSchedule'
+import GymSession from '@/pages/gym/GymSession'
 import GymServices from '@/pages/gym/GymServices'
 import GymSettings from '@/pages/gym/GymSettings'
 import GymStaff from '@/pages/gym/GymStaff'
@@ -28,6 +33,10 @@ import MyWork from '@/pages/gym/MyWork'
 import MembershipApply from '@/pages/member/MembershipApply'
 import MyMembership, { MyMembershipList } from '@/pages/member/MyMemberships'
 import MyRecord from '@/pages/member/MyRecord'
+import MyBookings from '@/pages/member/MyBookings'
+import PrivateCoaching from '@/pages/member/PrivateCoaching'
+import SessionDetails from '@/pages/member/SessionDetails'
+import Timetable from '@/pages/member/Timetable'
 import Home from '@/pages/Home'
 import MyApplications from '@/pages/MyApplications'
 import Notifications from '@/pages/Notifications'
@@ -115,13 +124,22 @@ export default function App() {
           <Route path="/applications/:id/edit" element={<GymApply />} />
           <Route path="/gyms/:gymId/apply" element={<MembershipApply />} />
           <Route path="/memberships" element={<MyMembershipList />} />
+          <Route path="/bookings" element={<MyBookings />} />
           <Route path="/memberships/:id" element={<MyMembership />} />
           <Route element={<GymMember />}>
             <Route path="/gyms/:gymId/my-record" element={<MyRecord />} />
+            <Route path="/gyms/:gymId/sessions" element={<Timetable />} />
+            <Route path="/gyms/:gymId/sessions/:sessionId" element={<SessionDetails />} />
+            <Route path="/gyms/:gymId/private-coaching" element={<PrivateCoaching />} />
             <Route path="/gyms/:gymId/manage" element={<GymWorkspaceLayout />}>
               <Route index element={<WorkspaceHome />} />
               <Route path="settings" element={<GymSettings />} />
               <Route path="rooms" element={<GymRooms />} />
+              <Route path="schedule" element={<GymSchedule />} />
+              <Route path="schedule/:sessionId" element={<GymSession />} />
+              <Route path="bookings" element={<GymBookings />} />
+              <Route path="check-in" element={<GymCheckIn />} />
+              <Route path="attendance" element={<GymAttendance />} />
               <Route path="staff" element={<GymStaff />} />
               <Route path="staff/:userId" element={<EmployeeRecord />} />
               <Route path="leave" element={<GymLeave />} />

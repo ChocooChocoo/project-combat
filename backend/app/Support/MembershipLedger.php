@@ -89,7 +89,9 @@ class MembershipLedger
             return 'Valid until '.$membership->ends_on->toDateString();
         }
 
-        return $membership->sessions_remaining !== null ? "{$membership->sessions_remaining} sessions left" : null;
+        return $membership->sessions_remaining !== null
+            ? $membership->sessions_remaining.($membership->sessions_remaining === 1 ? ' session left' : ' sessions left')
+            : null;
     }
 
     /** Keeps the change in the history and tells the athlete (R-36). */

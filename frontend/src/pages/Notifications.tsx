@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 import { Skeleton } from '@/components/ui/skeleton'
 import { api } from '@/lib/api'
+import { dateTimeLabel } from '@/lib/membership'
 
 /** S-15, R-10: the person's own notices. Later features add the notices themselves. */
 export default function Notifications() {
@@ -62,7 +63,7 @@ export default function Notifications() {
                   {notice.data.title ?? 'Notice'}
                 </span>
                 {notice.data.message && <span className="text-muted-foreground text-sm">{notice.data.message}</span>}
-                <span className="text-muted-foreground text-xs">{new Date(notice.created_at).toLocaleString()}</span>
+                <span className="text-muted-foreground text-xs">{dateTimeLabel(notice.created_at)}</span>
               </div>
               {!notice.read_at && (
                 <Button variant="outline" size="xs" onClick={() => act(`/notifications/${notice.id}/read`)}>Mark read</Button>

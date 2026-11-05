@@ -239,20 +239,20 @@ class PublicGymController extends Controller
         ];
     }
 
-    /** R-23: only public coach profiles who still hold the employee role in this gym. */
+    /** R-23: only public coach profiles who still hold a staff role in this gym. */
     private function coaches(Gym $gym): array
     {
-        $employeeIds = $gym->people()
-            ->wherePivot('role', GymPersonType::Employee->value)
+        $staffIds = $gym->people()
+            ->wherePivotIn('role', [GymPersonType::Employee->value, GymPersonType::Owner->value])
             ->pluck('users.id');
 
         return EmployeeProfile::withoutGlobalScope('gym')
             ->where('gym_id', $gym->id)
             ->where('coach_public', true)
-            ->whereIn('user_id', $employeeIds)
+            ->whereIn('user_id', $staffIds)
             ->with('user')
             ->get()
-            ->filter(fn (EmployeeProfile $profile) => $profile->user !== null)
+            ->filter(fn (EmployeeProfile $profile) => $profile->user !== null && $profile->isCoach())
             ->sortBy(fn (EmployeeProfile $profile) => mb_strtolower(
                 $profile->user->first_name.' '.$profile->user->last_name,
             ))
