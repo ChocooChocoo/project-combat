@@ -53,7 +53,7 @@ Nothing; this is the last phase. It answers the spec's research questions 3 and 
 | ❓ Unclear | 0 |
 | **Total** | **12** |
 
-Access to everything in this phase follows R-08: the owner always, employees only if permitted (the spec, page 7).
+Access follows R-08: owners hold every active catalog permission in their gym; employees need the exact named permission through an active, unexpired role. Disabled permissions grant nothing to either group. See [permission operations](../../../implementation-plan/rbac-redesign/rbac-operations.md).
 
 ---
 

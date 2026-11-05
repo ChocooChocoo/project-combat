@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { StatusBadge } from '@/components/application-summary'
 import { PageHeader } from '@/components/page-header'
+import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -65,6 +66,7 @@ export default function AdminHome() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Gym applications"
+        actions={<Button variant="outline" render={<Link to="/admin/permissions" />}>Permission catalog</Button>}
         description={
           stats ? (
             <span className="tabular-nums">

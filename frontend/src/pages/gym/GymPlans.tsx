@@ -50,8 +50,8 @@ export default function GymPlans() {
   const { gymId } = useParams()
   const { user } = useAuth()
   const gym = approvedGym(user, Number(gymId))
-  const canView = gym ? can(gym, 'members', 'view') : false
-  const canManage = gym ? can(gym, 'members', 'manage') : false
+  const canView = gym ? can(gym, 'members.plans.view') : false
+  const canManage = gym ? can(gym, 'members.plans.manage') : false
 
   const [plans, setPlans] = useState<PublicPlan[] | null>(null)
   const [options, setOptions] = useState<WorkspaceOptions | null>(null)

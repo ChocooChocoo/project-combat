@@ -23,7 +23,7 @@ use Tests\TestCase;
 /** R-25 and R-26: leave requests, decisions, attachments and balances. */
 class LeaveTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, \Tests\Feature\Concerns\GivesGymRoles;
 
     private Gym $gym;
 
@@ -48,7 +48,7 @@ class LeaveTest extends TestCase
 
         app(CurrentGym::class)->set($this->gym);
 
-        GymRole::create(['name' => 'HR Manager', 'permissions' => ['hr' => 'manage']])
+        $this->makeRole(['hr' => 'manage'], 'HR Manager')
             ->users()
             ->attach($this->hr->id);
     }

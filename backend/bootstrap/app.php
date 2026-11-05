@@ -16,7 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsurePlatformAdmin::class,
             'gym' => \App\Http\Middleware\EnsureGymAccess::class,
-            'module' => \App\Http\Middleware\RequireModuleAccess::class,
+            'permission' => \App\Http\Middleware\RequirePermission::class,
             'password.changed' => \App\Http\Middleware\EnsurePasswordChanged::class,
             'verified.email' => \App\Http\Middleware\EnsureEmailVerified::class,
         ]);

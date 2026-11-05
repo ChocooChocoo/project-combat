@@ -166,6 +166,7 @@ class GymReviewTest extends TestCase
         $this->decide($gym, ['decision' => 'approve'])->assertOk();
 
         $this->assertTrue($this->applicant->hasGymRole($gym, GymPersonType::Owner));
+        $this->assertSame(4, \App\Models\GymRole::withoutGlobalScope('gym')->where('gym_id', $gym->id)->where('is_system', true)->count());
         $this->actingAs($this->applicant)->getJson("/api/gyms/{$gym->id}/roles")->assertOk();
 
         $this->sent(); // still pending

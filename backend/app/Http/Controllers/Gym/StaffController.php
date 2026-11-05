@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers\Gym;
 
-use App\Enums\AccessLevel;
 use App\Enums\GymPersonType;
-use App\Enums\Module;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Gym\Concerns\PresentsHr;
 use App\Models\Gym;
@@ -56,6 +54,9 @@ class StaffController extends Controller
 
     public function store(Request $request, Gym $gym): JsonResponse
     {
+        if ($request->exists('role_ids')) {
+            abort_unless($request->user()->hasPermission($gym, 'hr.roles.manage'), 403);
+        }
         $existing = User::where('email', $request->input('email'))->first();
 
         if ($existing && ($existing->is_platform_admin || $existing->hasGymRole($gym, GymPersonType::Owner))) {
@@ -175,8 +176,13 @@ class StaffController extends Controller
 
         $this->ensureEmployee($gym, $user);
 
-        $gym->people()->wherePivot('role', GymPersonType::Employee->value)->detach($user->id);
-        $user->gymRoles($gym)->get()->each(fn ($role) => $role->users()->detach($user->id));
+        DB::transaction(function () use ($request, $gym, $user) {
+            if ($user->gymRoles($gym)->exists()) {
+                abort_unless($request->user()->hasPermission($gym, 'hr.roles.manage'), 403);
+                app(GymRoleAssigner::class)->replace($request->user(), $gym, $user, []);
+            }
+            $gym->people()->wherePivot('role', GymPersonType::Employee->value)->detach($user->id);
+        });
 
         return response()->json(['message' => 'Employee removed.']);
     }
@@ -189,7 +195,7 @@ class StaffController extends Controller
     private function ensureCanView(User $viewer, Gym $gym, User $employee): void
     {
         abort_unless(
-            $viewer->is($employee) || $viewer->canInGym($gym, Module::Hr, AccessLevel::View),
+            $viewer->is($employee) || $viewer->hasPermission($gym, 'hr.staff.view'),
             403,
         );
     }

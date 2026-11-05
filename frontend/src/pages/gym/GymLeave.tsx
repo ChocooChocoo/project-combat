@@ -139,7 +139,8 @@ export default function GymLeave() {
   const gymId = Number(gymIdParam)
   const { user } = useAuth()
   const gym = approvedGym(user, gymId)
-  const canDecide = gym ? can(gym, 'hr', 'manage') : false
+  const canDecide = gym ? can(gym, 'hr.leave.manage') : false
+  const canManageHolidays = gym ? can(gym, 'hr.holidays.manage') : false
 
   const [tab, setTab] = useState('requests')
   const [options, setOptions] = useState<GymOptions | null>(null)
@@ -571,7 +572,7 @@ export default function GymLeave() {
               <CardHeader>
                 <CardTitle render={<h2 />}>Holidays in {year}</CardTitle>
                 <CardDescription>National holidays are fixed by law. Gym holidays are extra closures.</CardDescription>
-                {canDecide && (
+                {canManageHolidays && (
                   <CardAction>
                     <Button size="sm" onClick={() => setHolidayOpen(true)}>
                       <Plus aria-hidden />
@@ -608,7 +609,7 @@ export default function GymLeave() {
                           <span className="text-muted-foreground text-sm">{formatDay(holiday.date)}</span>
                         </div>
                         <Badge variant={holiday.national ? 'info' : 'outline'}>{holiday.national ? 'National' : 'Gym'}</Badge>
-                        {canDecide && holiday.id != null && (
+                        {canManageHolidays && holiday.id != null && (
                           <Button size="xs" variant="ghost" onClick={() => setRemoving(holiday)}>
                             <Trash2 aria-hidden />
                             Remove

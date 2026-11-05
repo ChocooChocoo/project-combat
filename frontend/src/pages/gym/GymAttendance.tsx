@@ -20,7 +20,7 @@ export default function GymAttendance() {
   const { gymId } = useParams()
   const { user } = useAuth()
   const gym = approvedGym(user, Number(gymId))
-  const allowed = Boolean(gym && can(gym, 'training', 'view'))
+  const allowed = Boolean(gym && can(gym, 'training.attendance.view'))
   const [filters, setFilters] = useState(() => ({ from: shiftDay(dateKey(new Date()), -30), to: dateKey(new Date()), session_id: '', gym_service_id: '', user_id: '' }))
   const [data, setData] = useState<History | null>(null)
   const [error, setError] = useState('')

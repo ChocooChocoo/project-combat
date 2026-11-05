@@ -2,9 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Enums\AccessLevel;
 use App\Enums\GymPersonType;
-use App\Enums\Module;
 use App\Models\Gym;
 use App\Models\GymRole;
 use App\Models\User;
@@ -12,11 +10,13 @@ use App\Support\CurrentGym;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use LogicException;
 use Tests\TestCase;
+use Tests\Feature\Concerns\GivesGymRoles;
+use App\Support\PermissionCatalog;
 
 /** R-07 roles, R-08 owner-made roles ("dynamic RBAC"), R-09 gym separation. */
 class AccessTest extends TestCase
 {
-    use RefreshDatabase;
+    use GivesGymRoles, RefreshDatabase;
 
     private Gym $gym;
 
@@ -43,7 +43,7 @@ class AccessTest extends TestCase
     private function role(array $permissions, ?Gym $gym = null, string $name = 'Role'): GymRole
     {
         app(CurrentGym::class)->set($gym ?? $this->gym);
-        $role = GymRole::create(['name' => $name, 'permissions' => $permissions]);
+        $role = $this->makeRole($permissions, $name);
         $this->app->forgetScopedInstances();
 
         return $role;
@@ -77,25 +77,35 @@ class AccessTest extends TestCase
         $this->assertFalse($this->owner->hasGymRole($other, GymPersonType::Owner));
     }
 
-    public function test_owner_creates_a_role_from_a_template_edits_it_and_deletes_it(): void
+    public function test_owner_creates_edits_and_deletes_a_role(): void
     {
         $id = $this->actingAs($this->owner)->postJson($this->url('roles'), [
             'name' => 'Head Coach',
-            'template' => 'coach',
-            'permissions' => ['members' => null, 'announcements' => 'manage'],
+            'description' => 'Runs classes.',
+            'permissions' => ['training.sessions.view', 'training.sessions.manage'],
         ])->assertCreated()
-            ->assertJsonPath('role.permissions', ['training' => 'manage', 'announcements' => 'manage'])
+            ->assertJsonPath('role.description', 'Runs classes.')
+            ->assertJsonPath('role.status', 'active')
+            ->assertJsonPath('role.is_system', false)
             ->json('role.id');
 
         $this->actingAs($this->owner)->putJson($this->url("roles/{$id}"), [
-            'name' => 'Senior Coach', 'permissions' => ['training' => 'approve'],
+            'name' => 'Senior Coach', 'permissions' => ['training.bookings.approve'],
         ])->assertOk()->assertJsonPath('role.name', 'Senior Coach');
 
-        $this->actingAs($this->owner)->postJson($this->url('roles'), ['name' => 'Senior Coach'])
+        $this->actingAs($this->owner)->postJson($this->url('roles'), ['name' => 'Senior Coach', 'permissions' => []])
             ->assertJsonValidationErrors('name');
 
         $this->actingAs($this->owner)->deleteJson($this->url("roles/{$id}"))->assertOk();
         $this->assertSame(0, GymRole::withoutGlobalScope('gym')->count());
+    }
+
+    public function test_catalog_lists_active_permissions_and_expanded_templates(): void
+    {
+        $response = $this->actingAs($this->owner)->getJson('/api/permissions/catalog')->assertOk();
+        $this->assertCount(count(PermissionCatalog::all()), $response->json('permissions'));
+        $this->assertSame('Coach', $response->json('templates.coach.name'));
+        $this->assertContains('training.sessions.manage', $response->json('templates.coach.permissions'));
     }
 
     public function test_access_comes_from_roles_and_follows_role_changes(): void
@@ -107,22 +117,31 @@ class AccessTest extends TestCase
             'role_ids' => [$cashier->id, $desk->id],
         ])->assertOk()->assertJsonCount(2, 'roles');
 
-        // Highest level across roles wins.
-        $this->assertSame(AccessLevel::Manage, $this->employee->accessLevel($this->gym, Module::Finance));
+        // Permissions combine across roles without inferring lower actions.
+        $this->assertTrue($this->employee->hasPermission($this->gym, 'finance.payments.manage'));
 
         // Editing a role changes access for everyone holding it.
         $this->actingAs($this->owner)->putJson($this->url("roles/{$desk->id}"), [
-            'name' => 'Desk', 'permissions' => ['members' => 'view'],
+            'name' => 'Desk', 'permissions' => PermissionCatalog::expandLevels(['members' => 'view']),
         ])->assertOk();
-        $this->assertSame(AccessLevel::View, $this->employee->accessLevel($this->gym, Module::Finance));
+        $this->assertTrue($this->employee->hasPermission($this->gym, 'finance.payments.view'));
+        $this->assertFalse($this->employee->hasPermission($this->gym, 'finance.payments.manage'));
 
         // Taking a role away removes its access; the emptied role can then be deleted.
         $this->actingAs($this->owner)->putJson($this->url("staff/{$this->employee->id}/roles"), [
             'role_ids' => [$desk->id],
         ])->assertOk();
-        $this->assertNull($this->employee->accessLevel($this->gym, Module::Finance));
+        $this->assertFalse($this->employee->hasPermission($this->gym, 'finance.payments.view'));
 
         $this->actingAs($this->owner)->deleteJson($this->url("roles/{$cashier->id}"))->assertOk();
+    }
+
+    public function test_me_lists_permission_strings_per_gym(): void
+    {
+        $this->give($this->employee, $this->role(['finance.payments.view'], name: 'Cashier'));
+        $this->actingAs($this->employee)->getJson('/api/me')->assertOk()
+            ->assertJsonPath('data.gyms.0.permissions', ['finance.payments.view']);
+        $this->assertCount(51, $this->actingAs($this->owner)->getJson('/api/me')->json('data.gyms.0.permissions'));
     }
 
     public function test_a_role_still_given_to_employees_cannot_be_deleted(): void
@@ -156,9 +175,9 @@ class AccessTest extends TestCase
         $small = $this->role(['finance' => 'view'], name: 'Cashier');
 
         $hr = $this->actingAs($this->employee);
-        $hr->postJson($this->url('roles'), ['name' => 'Too much', 'permissions' => ['payroll' => 'view']])->assertForbidden();
-        $hr->postJson($this->url('roles'), ['name' => 'Ok', 'permissions' => ['finance' => 'view']])->assertCreated();
-        $hr->putJson($this->url("roles/{$big->id}"), ['name' => 'Finance Head', 'permissions' => ['finance' => 'view']])->assertForbidden();
+        $hr->postJson($this->url('roles'), ['name' => 'Too much', 'permissions' => ['payroll.general.view']])->assertForbidden();
+        $hr->postJson($this->url('roles'), ['name' => 'Ok', 'permissions' => ['finance.payments.view']])->assertCreated();
+        $hr->putJson($this->url("roles/{$big->id}"), ['name' => 'Finance Head', 'permissions' => ['finance.payments.view']])->assertForbidden();
         $hr->deleteJson($this->url("roles/{$big->id}"))->assertForbidden();
         $hr->putJson($this->url("staff/{$colleague->id}/roles"), ['role_ids' => [$big->id]])->assertForbidden();
         $hr->putJson($this->url("staff/{$colleague->id}/roles"), ['role_ids' => [$small->id]])->assertOk();
@@ -207,7 +226,7 @@ class AccessTest extends TestCase
         $this->assertSame(0, GymRole::count()); // another gym: nothing
 
         $this->expectException(LogicException::class);
-        $role = new GymRole(['name' => 'Sneaky', 'permissions' => []]);
+        $role = new GymRole(['name' => 'Sneaky']);
         $role->gym_id = $this->gym->id;
         $role->save();
     }

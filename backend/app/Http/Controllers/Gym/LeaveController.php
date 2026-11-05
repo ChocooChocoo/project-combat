@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers\Gym;
 
-use App\Enums\AccessLevel;
 use App\Enums\GymPersonType;
 use App\Enums\LeaveRequestStatus;
-use App\Enums\Module;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Gym\Concerns\PresentsHr;
@@ -36,7 +34,7 @@ class LeaveController extends Controller
         ]);
 
         $viewer = $request->user();
-        $canSeeAll = $viewer->canInGym($gym, Module::Hr, AccessLevel::View) || $viewer->canApproveLeave($gym);
+        $canSeeAll = $viewer->hasPermission($gym, 'hr.leave.view', 'hr.leave.manage');
 
         $query = $gym->leaveRequests()->with(['user', 'decidedBy']);
 
@@ -118,7 +116,7 @@ class LeaveController extends Controller
         $viewer = $request->user();
 
         abort_unless(
-            $viewer->id === $leave->user_id || $viewer->canInGym($gym, Module::Hr, AccessLevel::View),
+            $viewer->id === $leave->user_id || $viewer->hasPermission($gym, 'hr.leave.view'),
             403,
         );
 
@@ -184,7 +182,7 @@ class LeaveController extends Controller
                     ->update(['flagged_at' => now(), 'flag_reason' => 'Coach on approved leave ('.$leave->starts_on->format('M j, Y')
                         .($leave->starts_on->isSameDay($leave->ends_on) ? '' : ' to '.$leave->ends_on->format('M j, Y')).')']);
                 if ($count > 0) {
-                    foreach ($gym->people()->get()->unique('id')->filter(fn ($person) => $person->canInGym($gym, Module::Training, AccessLevel::Manage)) as $manager) {
+                    foreach ($gym->peopleWithPermission('training.sessions.manage') as $manager) {
                         $manager->notify(new SessionsFlagged($gym->id, $count, trim("{$leave->user->first_name} {$leave->user->last_name}")));
                     }
                 }
@@ -202,7 +200,7 @@ class LeaveController extends Controller
 
         $year = (int) ($data['year'] ?? now()->year);
         $viewer = $request->user();
-        $canSeeAll = $viewer->canInGym($gym, Module::Hr, AccessLevel::View) || $viewer->canApproveLeave($gym);
+        $canSeeAll = $viewer->hasPermission($gym, 'hr.leave.view', 'hr.leave.manage');
 
         if ($canSeeAll) {
             $employees = $gym->people()

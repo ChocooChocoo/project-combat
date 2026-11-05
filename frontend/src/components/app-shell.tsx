@@ -23,13 +23,13 @@ import {
 } from '@/components/ui/sidebar'
 import { api } from '@/lib/api'
 import { useAuth, type GymAccess } from '@/lib/auth'
-import { approvedGym, canManage } from '@/lib/gym-access'
+import { approvedGym, canOpenWorkspace } from '@/lib/gym-access'
 
 type Item = { to: string; label: string; icon: React.ComponentType; end?: boolean }
 
 /** Where a gym's card in the switcher leads: workspace when allowed, public page otherwise. */
 function gymEntry(gym: GymAccess): string {
-  if (canManage(gym)) return `/gyms/${gym.id}/manage`
+  if (canOpenWorkspace(gym)) return `/gyms/${gym.id}/manage`
   if (gym.roles.includes('employee')) return `/gyms/${gym.id}/manage/my-work`
   if (gym.roles.includes('member')) return `/gyms/${gym.id}/my-record`
   return `/gyms/${gym.id}`

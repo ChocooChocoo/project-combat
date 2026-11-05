@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers\Gym;
 
-use App\Enums\AccessLevel;
 use App\Enums\GymPersonType;
-use App\Enums\Module;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Gym\Concerns\PresentsHr;
 use App\Models\Gym;
@@ -25,7 +23,7 @@ class EmployeeProfileController extends Controller
 
         $viewer = $request->user();
         $isSelf = $viewer->is($user);
-        $hrManage = $viewer->canInGym($gym, Module::Hr, AccessLevel::Manage);
+        $hrManage = $viewer->hasPermission($gym, 'hr.staff.manage');
 
         abort_unless($isSelf || $hrManage, 403);
 

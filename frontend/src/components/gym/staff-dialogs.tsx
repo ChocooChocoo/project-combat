@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 import { Form } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { TextField } from '@/components/text-field'
 import { toastManager } from '@/components/ui/toast'
@@ -32,11 +33,13 @@ import type { GymRole, StaffMember } from '@/lib/workspace'
 export function AddEmployeeDialog({
   gymId,
   roles,
+  canAssign,
   onClose,
   onSaved,
 }: {
   gymId: number
   roles: GymRole[]
+  canAssign: boolean
   onClose: () => void
   onSaved: () => void
 }) {
@@ -58,7 +61,7 @@ export function AddEmployeeDialog({
           first_name: firstName,
           last_name: lastName,
           job_title: jobTitle || null,
-          role_ids: roleIds.map(Number),
+          ...(canAssign ? { role_ids: roleIds.map(Number) } : {}),
         },
       })
       toastManager.add({ title: 'Employee added.', type: 'success' })
@@ -105,7 +108,7 @@ export function AddEmployeeDialog({
               autoFocus
             />
             <p className="text-muted-foreground text-sm">
-              If this email already has an account, the roles you pick are applied to it and no new invitation is sent.
+              {canAssign ? 'For an existing account, the selected roles replace its current roles in this gym.' : 'Existing accounts keep their current roles. An authorized role manager can assign access later.'}
             </p>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -138,7 +141,7 @@ export function AddEmployeeDialog({
               placeholder="Coach"
             />
 
-            <Field name="role_ids" className="w-full">
+            {canAssign && <Field name="role_ids" className="w-full">
               <FieldLabel>Roles</FieldLabel>
               {roles.length === 0 ? (
                 <FieldDescription>No roles exist yet. You can add this person now and give roles after creating one.</FieldDescription>
@@ -146,14 +149,14 @@ export function AddEmployeeDialog({
                 <CheckboxGroup value={roleIds} onValueChange={setRoleIds} className="grid w-full gap-x-4 gap-y-3 sm:grid-cols-2">
                   {roles.map((role) => (
                     <label key={role.id} className="flex items-center gap-2 text-sm">
-                      <Checkbox value={String(role.id)} />
+                      <Checkbox value={String(role.id)} aria-label={role.name} />
                       {role.name}
                     </label>
                   ))}
                 </CheckboxGroup>
               )}
               <FieldError />
-            </Field>
+            </Field>}
           </DialogPanel>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
@@ -174,16 +177,21 @@ export function AssignRolesDialog({
   gymId,
   employee,
   roles,
+  ownPermissions,
   onClose,
   onSaved,
 }: {
   gymId: number
   employee: StaffMember
   roles: GymRole[]
+  ownPermissions: string[]
   onClose: () => void
   onSaved: () => void
 }) {
   const [selected, setSelected] = useState<string[] | null>(null)
+  const [grants, setGrants] = useState<GymRole[]>([])
+  const [expiryChanges, setExpiryChanges] = useState<Record<string, string | null>>({})
+  const [today] = useState(() => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()))
   const [errors, setErrors] = useState<FieldErrors>({})
   const [loadError, setLoadError] = useState('')
   const [version, setVersion] = useState(0)
@@ -194,7 +202,11 @@ export function AssignRolesDialog({
     setLoadError('')
     api<{ roles: GymRole[] }>(`/gyms/${gymId}/staff/${employee.id}/roles`)
       .then((result) => {
-        if (live) setSelected(result.roles.map((role) => String(role.id)))
+        if (live) {
+          setSelected(result.roles.map((role) => String(role.id)))
+          setGrants(result.roles)
+          setExpiryChanges({})
+        }
       })
       .catch((error) => {
         if (live) setLoadError(error instanceof ApiError ? error.message : 'This person\'s roles could not be loaded.')
@@ -210,7 +222,7 @@ export function AssignRolesDialog({
     try {
       await api(`/gyms/${gymId}/staff/${employee.id}/roles`, {
         method: 'PUT',
-        body: { role_ids: (selected ?? []).map(Number) },
+        body: { role_ids: (selected ?? []).map(Number), expires_at: Object.fromEntries(Object.entries(expiryChanges).filter(([id]) => selected?.includes(id))) },
       })
       toastManager.add({ title: 'Roles updated.', type: 'success' })
       onSaved()
@@ -268,14 +280,31 @@ export function AssignRolesDialog({
                   {roles.length === 0 ? (
                     <FieldDescription>No roles exist yet. Create one on the Roles tab first.</FieldDescription>
                   ) : (
-                    <CheckboxGroup value={selected} onValueChange={setSelected} className="grid w-full gap-x-4 gap-y-3 sm:grid-cols-2">
-                      {roles.map((role) => (
-                        <label key={role.id} className="flex items-center gap-2 text-sm">
-                          <Checkbox value={String(role.id)} />
-                          {role.name}
-                        </label>
-                      ))}
-                    </CheckboxGroup>
+                    <div className="flex flex-col gap-4">
+                      {roles.map((role) => {
+                        const id = String(role.id)
+                        const checked = selected.includes(id)
+                        const grant = grants.find((value) => value.id === role.id)
+                        const original = grant?.expires_at?.slice(0, 10) ?? ''
+                        const expired = original !== '' && original < today
+                        const canAdd = role.status === 'active' && role.permissions.every((key) => ownPermissions.includes(key))
+                        const canRemove = role.permissions.every((key) => role.inactive_permissions.includes(key) || ownPermissions.includes(key))
+                        const dateValue = Object.hasOwn(expiryChanges, id) ? expiryChanges[id] ?? '' : expired ? '' : original
+                        return <div key={role.id} className="flex flex-col gap-2">
+                          <label className="flex min-h-11 items-center gap-2 text-sm">
+                            <Checkbox aria-label={role.name} checked={checked} disabled={checked ? !canRemove : !canAdd} onCheckedChange={(value) => setSelected((current) => value ? [...(current ?? []), id] : (current ?? []).filter((key) => key !== id))} />
+                            {role.name}{role.status === 'inactive' && ' (off)'}
+                          </label>
+                          {checked && <Field name={`expires_at.${id}`}>
+                            <FieldLabel>Last day for {role.name}</FieldLabel>
+                            {expired && !Object.hasOwn(expiryChanges, id) && <FieldDescription>Expired on {original}. Leave unchanged to keep this historical grant.</FieldDescription>}
+                            <Input type="date" min={today} value={dateValue} disabled={!canAdd} onChange={(event) => setExpiryChanges((current) => ({ ...current, [id]: event.target.value || null }))} />
+                            <FieldDescription>{canAdd ? 'Blank means no end date when changed. Unchanged grants keep their current end date.' : 'This dormant grant can be preserved or removed, not extended.'}</FieldDescription>
+                            <FieldError />
+                          </Field>}
+                        </div>
+                      })}
+                    </div>
                   )}
                   <FieldError />
                 </Field>

@@ -52,8 +52,10 @@ export default function EmployeeRecord() {
   const { gymId, userId } = useParams()
   const { user } = useAuth()
   const gym = approvedGym(user, Number(gymId))
-  const canViewHr = gym ? can(gym, 'hr', 'view') : false
-  const canManageHr = gym ? can(gym, 'hr', 'manage') : false
+  const canViewHr = gym ? can(gym, 'hr.staff.view') : false
+  const canManageHr = gym ? can(gym, 'hr.staff.manage') : false
+  const canReadSchedule = gym ? can(gym, 'hr.schedules.view') : false
+  const canEditSchedule = gym ? can(gym, 'hr.schedules.manage') : false
   const targetIsSelf = Number(userId) === user?.id
   const canOpen = Boolean(gym) && (canViewHr || targetIsSelf)
 
@@ -174,7 +176,7 @@ export default function EmployeeRecord() {
         <TabsList variant="underline" aria-label="Employee record sections" className="max-w-full overflow-x-auto overflow-y-hidden [scrollbar-width:none]">
           <TabsTab value="employment">Employment</TabsTab>
           <TabsTab value="coach">Coach profile</TabsTab>
-          <TabsTab value="schedule">Schedule</TabsTab>
+          {(targetIsSelf || canReadSchedule) && <TabsTab value="schedule">Schedule</TabsTab>}
           <TabsTab value="leave">Leave</TabsTab>
         </TabsList>
 
@@ -197,10 +199,10 @@ export default function EmployeeRecord() {
           />
         </TabsPanel>
 
-        <TabsPanel value="schedule" keepMounted className="pt-4">
+        {(targetIsSelf || canReadSchedule) && <TabsPanel value="schedule" keepMounted className="pt-4">
           {isCoach && <div className="mb-6"><CoachCalendar gymId={Number(gymId)} userId={Number(userId)} refreshKey={calendarVersion} /></div>}
-          <ScheduleSection gymId={Number(gymId)} userId={Number(userId)} options={options} canEdit={canManageHr} onSaved={() => setCalendarVersion((value) => value + 1)} />
-        </TabsPanel>
+          <ScheduleSection gymId={Number(gymId)} userId={Number(userId)} options={options} canEdit={canEditSchedule} onSaved={() => setCalendarVersion((value) => value + 1)} />
+        </TabsPanel>}
 
         <TabsPanel value="leave" keepMounted className="pt-4">
           <LeaveSection

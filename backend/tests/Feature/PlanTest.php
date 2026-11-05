@@ -16,7 +16,7 @@ use Tests\TestCase;
 /** R-29: membership plans, billing by time or sessions, add-ons and publishing. */
 class PlanTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, \Tests\Feature\Concerns\GivesGymRoles;
 
     private Gym $gym;
 
@@ -45,7 +45,7 @@ class PlanTest extends TestCase
     private function give(User $user, array $permissions, string $name = 'Test role'): void
     {
         app(CurrentGym::class)->set($this->gym);
-        $role = GymRole::create(['name' => $name, 'permissions' => $permissions]);
+        $role = $this->makeRole($permissions, $name);
         $role->users()->attach($user->id);
         $this->app->forgetScopedInstances();
     }

@@ -36,8 +36,8 @@ export default function GymSchedule() {
   const { gymId } = useParams()
   const { user } = useAuth()
   const gym = approvedGym(user, Number(gymId))
-  const canView = gym ? can(gym, 'training', 'view') : false
-  const canManage = gym ? can(gym, 'training', 'manage') : false
+  const canView = gym ? can(gym, 'training.sessions.view') : false
+  const canManage = gym ? can(gym, 'training.sessions.manage') : false
   const [week, setWeek] = useState(monday)
   const [sessions, setSessions] = useState<TrainingSession[] | null>(null)
   const [options, setOptions] = useState<SessionOptions | null>(null)

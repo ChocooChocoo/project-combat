@@ -42,7 +42,7 @@ The old screens get several role rules wrong. These are recorded as contradictio
 | Employee, coaches included | Do the work the owner allowed, module by module | The spec, page 7 and page 9 |
 | Athlete or member | Book, check in, and follow their own membership and progress | The spec, page 7 and page 15 |
 
-Each level sees only its own screens. Owners, employees and athletes are also kept inside their own gym (R-09). Employees see owner screens only for the modules they are permitted (R-08). Everyone is also a platform user, so everyone has the platform-user screens. The old system did not keep to these rules (see above).
+Each level sees only its own screens. Owners, employees and athletes stay inside their own gym (R-09). Employees need exact active permissions from active, unexpired roles (R-08). Owners hold every active permission, not permissions the administrator has disabled. Everyone is also a platform user, so everyone has the platform-user screens.
 
 ## Platform administrator
 
@@ -75,12 +75,12 @@ S-11 depends on Q-09 (several gyms per owner), and S-13 on Q-10 (several gyms pe
 
 ## Owner
 
-The owner sees every screen in this section for their own gym. Employees see the same screens only for the modules they are permitted (R-08).
+The owner holds every active permission for their own gym. Employees see the same screens only when their exact permissions allow them (R-08). Read, Manage, and Approve are independent. The platform admin manages the shared catalog at `/admin/permissions`; custom keys need a configuration entry and a code check before use.
 
 | # | Screen | What is on it | Where it leads | Where the need came from |
 |---|---|---|---|---|
 | S-16 | Gym setup | Profile, disciplines, activity types, hours, working days, policies, rooms | — | D-20, R-20 and R-21 |
-| S-17 | Staff and roles | Employee list; add an employee; create, edit and delete the gym's own roles with a level per module, starting from a template if wanted; give roles to employees; remove | S-18 | D-09 and D-82, R-08 and R-22 |
+| S-17 | Staff and roles | Separate staff and role permissions; independent named permission choices; starter templates; on/off switches; optional role end dates; explicit disabled-grant cleanup; delete unused custom roles only; no self changes | S-18 | D-09 and D-82, R-08 and R-22 |
 | S-18 | Employee record | Employment details, schedule, leave balance, performance notes; coach public profile | — | D-49, R-23, R-24, R-26 and R-58 |
 | S-19 | Services | List and editor with photo upload and required fields; publish | — | D-21 and D-22, R-28 |
 | S-20 | Membership plans | List and editor with the fee, inclusions, add-ons and policies | — | D-23, R-29 |

@@ -13,6 +13,7 @@ use App\Support\CurrentGym;
 /** Shared set-up for the Phase 4 tests: a gym, an owner, a published plan and an applicant. */
 trait MembershipSetup
 {
+    use GivesGymRoles;
     protected Gym $gym;
 
     protected User $owner;
@@ -47,7 +48,7 @@ trait MembershipSetup
         $user = User::factory()->create();
         $this->gym->addPerson($user, GymPersonType::Employee);
         app(CurrentGym::class)->set($this->gym);
-        GymRole::create(['name' => 'Role '.$user->id, 'permissions' => $permissions])->users()->attach($user->id);
+        $this->makeRole($permissions, 'Role '.$user->id)->users()->attach($user->id);
         $this->app->forgetScopedInstances();
 
         return $user;

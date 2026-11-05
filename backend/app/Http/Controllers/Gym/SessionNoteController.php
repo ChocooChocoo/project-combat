@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers\Gym;
 
-use App\Enums\AccessLevel;
 use App\Enums\BookingStatus;
-use App\Enums\Module;
 use App\Http\Controllers\Controller;
 use App\Models\Gym;
 use App\Models\SessionNote;
@@ -19,7 +17,7 @@ class SessionNoteController extends Controller
     public function store(Request $request, Gym $gym, int $session): JsonResponse
     {
         $model = TrainingSession::findOrFail($session);
-        abort_unless($model->coach_id === $request->user()->id || $request->user()->canInGym($gym, Module::Training, AccessLevel::Manage), 403);
+        abort_unless($model->coach_id === $request->user()->id || $request->user()->hasPermission($gym, 'training.sessions.manage'), 403);
         $data = $request->validate(['body' => ['required', 'string', 'max:10000'], 'user_id' => ['nullable', 'integer']]);
         if (isset($data['user_id']) && ! $model->bookings()->where('user_id', $data['user_id'])->where('status', BookingStatus::Booked)->exists()) {
             throw ValidationException::withMessages(['user_id' => 'Choose a booked participant in this session.']);

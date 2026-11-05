@@ -2,6 +2,7 @@
 
 // Starting templates for owner-made roles (R-08). Owners copy one and change it freely.
 return [
+    'names' => ['coach' => 'Coach', 'front_desk' => 'Front desk', 'finance' => 'Finance', 'hr' => 'HR'],
     'templates' => [
         'coach' => [
             'training' => 'manage',

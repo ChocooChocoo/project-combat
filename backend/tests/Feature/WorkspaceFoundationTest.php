@@ -26,7 +26,7 @@ use Tests\TestCase;
 /** Phase 3 shared foundation: workspace tables, working days, roles and invitations. */
 class WorkspaceFoundationTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, \Tests\Feature\Concerns\GivesGymRoles;
 
     private Gym $gym;
 
@@ -106,11 +106,11 @@ class WorkspaceFoundationTest extends TestCase
         $this->gym->addPerson($hr, GymPersonType::Employee);
         $this->gym->addPerson($colleague, GymPersonType::Employee);
 
-        $hrRole = GymRole::create(['name' => 'HR Officer', 'permissions' => ['hr' => 'manage', 'finance' => 'view']]);
+        $hrRole = $this->makeRole(['hr' => 'manage', 'finance' => 'view'], 'HR Officer');
         $hrRole->users()->attach($hr->id);
 
-        $big = GymRole::create(['name' => 'Finance Head', 'permissions' => ['finance' => 'approve']]);
-        $small = GymRole::create(['name' => 'Cashier', 'permissions' => ['finance' => 'view']]);
+        $big = $this->makeRole(['finance' => 'approve'], 'Finance Head');
+        $small = $this->makeRole(['finance' => 'view'], 'Cashier');
 
         $assigner = app(GymRoleAssigner::class);
         $assigner->replace($hr, $this->gym, $colleague, [$small->id]);

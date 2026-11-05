@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth'
 import { approvedGym, homePath } from '@/lib/gym-access'
 import AcceptInvite from '@/pages/AcceptInvite'
 import AdminHome from '@/pages/admin/AdminHome'
+import AdminPermissions from '@/pages/admin/AdminPermissions'
 import ReviewApplication from '@/pages/admin/ReviewApplication'
 import ApplicationDetail from '@/pages/ApplicationDetail'
 import FirstPassword from '@/pages/FirstPassword'
@@ -154,6 +155,7 @@ export default function App() {
           </Route>
           <Route element={<AdminOnly />}>
             <Route path="/admin" element={<AdminHome />} />
+            <Route path="/admin/permissions" element={<AdminPermissions />} />
             <Route path="/admin/applications/:id" element={<ReviewApplication />} />
           </Route>
         </Route>

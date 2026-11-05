@@ -25,13 +25,12 @@ import { api, ApiError } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { approvedGym, can } from '@/lib/gym-access'
 import {
-  type AccessTemplates,
+  type PermissionCatalog,
   type GymRole,
-  LEVEL_LABELS,
   type StaffList,
   type StaffMember,
   type StaffOwner,
-  moduleLabel,
+   moduleLabel,
 } from '@/lib/workspace'
 
 const isCoach = (employee: StaffMember) =>
@@ -49,15 +48,18 @@ const isCoach = (employee: StaffMember) =>
 /** S-17, R-22: the people side of the gym, with roles kept in the same place. */
 export default function GymStaff() {
   const { gymId } = useParams()
-  const { user } = useAuth()
+  const { user, refresh } = useAuth()
   const gym = approvedGym(user, Number(gymId))
-  const canView = gym ? can(gym, 'hr', 'view') : false
-  const canManage = gym ? can(gym, 'hr', 'manage') : false
+  const canView = gym ? can(gym, 'hr.staff.view') : false
+  const canManage = gym ? can(gym, 'hr.staff.manage') : false
+  const canViewRoles = gym ? can(gym, 'hr.roles.view') : false
+  const canManageRoles = gym ? can(gym, 'hr.roles.manage') : false
+  const canAssign = canViewRoles && canManageRoles
 
   const [staff, setStaff] = useState<StaffMember[] | null>(null)
   const [owner, setOwner] = useState<StaffOwner | null>(null)
   const [roles, setRoles] = useState<GymRole[] | null>(null)
-  const [templates, setTemplates] = useState<AccessTemplates | null>(null)
+  const [templates, setTemplates] = useState<PermissionCatalog | null>(null)
   const [loadError, setLoadError] = useState('')
   const [version, setVersion] = useState(0)
   const [tab, setTab] = useState<'employees' | 'roles'>('employees')
@@ -69,13 +71,13 @@ export default function GymStaff() {
   const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
-    if (!gymId || !canView) return
+    if (!gymId || (!canView && !canViewRoles)) return
     let live = true
     setLoadError('')
     Promise.all([
-      api<StaffList>(`/gyms/${gymId}/staff`),
-      api<{ roles: GymRole[] }>(`/gyms/${gymId}/roles`),
-      api<AccessTemplates>('/access/templates'),
+      canView ? api<StaffList>(`/gyms/${gymId}/staff`) : Promise.resolve({ staff: [], owner: null }),
+      canViewRoles ? api<{ roles: GymRole[] }>(`/gyms/${gymId}/roles`) : Promise.resolve({ roles: [] }),
+      api<PermissionCatalog>('/permissions/catalog'),
     ])
       .then(([staffResult, rolesResult, templatesResult]) => {
         if (!live) return
@@ -90,11 +92,11 @@ export default function GymStaff() {
     return () => {
       live = false
     }
-  }, [gymId, canView, version])
+  }, [gymId, canView, canViewRoles, version])
 
   if (!gym) return null
 
-  if (!canView) {
+  if (!canView && !canViewRoles) {
     return (
       <Empty className="rounded-xl border">
         <EmptyHeader>
@@ -105,7 +107,21 @@ export default function GymStaff() {
     )
   }
 
-  const reload = () => setVersion((value) => value + 1)
+  const reload = () => { setVersion((value) => value + 1); void refresh() }
+  const canEditRole = (role: GymRole) => canManageRoles && !role.held_by_me && role.permissions.every((key) =>
+    role.inactive_permissions.includes(key) || gym.permissions.includes(key))
+
+  async function toggleRole(role: GymRole) {
+    if (deleting) return
+    setDeleting(true)
+    try {
+      await api(`/gyms/${gymId}/roles/${role.id}/toggle-status`, { method: 'POST' })
+      toastManager.add({ title: role.status === 'active' ? 'Role turned off.' : 'Role turned on.', type: 'success' })
+      reload()
+    } catch (error) {
+      toastManager.add({ title: error instanceof ApiError ? error.message : 'The role status could not be changed.', type: 'error' })
+    } finally { setDeleting(false) }
+  }
 
   async function deleteRole() {
     if (!gymId || !roleDelete) return
@@ -154,13 +170,13 @@ export default function GymStaff() {
           </div>
         )
       ) : (
-        <Tabs value={tab} onValueChange={(value) => setTab(value as 'employees' | 'roles')}>
+        <Tabs value={!canView ? 'roles' : !canViewRoles ? 'employees' : tab} onValueChange={(value) => setTab(value as 'employees' | 'roles')}>
           <TabsList variant="underline" aria-label="Staff sections">
-            <TabsTab value="employees">Employees {staff.length}</TabsTab>
-            <TabsTab value="roles">Roles {roles.length}</TabsTab>
+            {canView && <TabsTab value="employees">Employees {staff.length}</TabsTab>}
+            {canViewRoles && <TabsTab value="roles">Roles {roles.length}</TabsTab>}
           </TabsList>
 
-          <TabsPanel value="employees" keepMounted className="flex flex-col gap-4 pt-4">
+          {canView && <TabsPanel value="employees" keepMounted className="flex flex-col gap-4 pt-4">
             <div className="flex flex-wrap items-center gap-3">
               <p className="mr-auto text-muted-foreground text-sm">
                 {staff.length === 0
@@ -199,7 +215,7 @@ export default function GymStaff() {
                         <TableHead>Job title</TableHead>
                         <TableHead>Roles</TableHead>
                         <TableHead>Coach</TableHead>
-                        {canManage && (
+                        {(canManage || canAssign) && (
                           <TableHead>
                             <span className="sr-only">Actions</span>
                           </TableHead>
@@ -220,7 +236,7 @@ export default function GymStaff() {
                             <Badge variant="secondary">Owner</Badge>
                           </TableCell>
                           <TableCell />
-                          {canManage && (
+                          {(canManage || canAssign) && (
                             <TableCell className="text-right">
                               <span className="text-muted-foreground text-xs">Owner</span>
                             </TableCell>
@@ -256,7 +272,7 @@ export default function GymStaff() {
                               )}
                             </TableCell>
                             <TableCell>{isCoach(employee) && <Badge variant="info">Coach</Badge>}</TableCell>
-                            {canManage && (
+                            {(canManage || canAssign) && (
                               <TableCell className="text-right">
                                 {isOwner ? (
                                   <span className="text-muted-foreground text-xs">Owner</span>
@@ -264,12 +280,12 @@ export default function GymStaff() {
                                   <span className="text-muted-foreground text-xs">You</span>
                                 ) : (
                                   <div className="flex flex-wrap justify-end gap-1">
-                                    <Button size="xs" variant="ghost" onClick={() => setAssignTarget(employee)}>
+                                    {canAssign && <Button size="xs" variant="ghost" onClick={() => setAssignTarget(employee)}>
                                       Edit roles
-                                    </Button>
-                                    <Button size="xs" variant="destructive-outline" onClick={() => setRemoveTarget(employee)}>
+                                    </Button>}
+                                    {canManage && (employee.roles.length === 0 || canAssign) && <Button size="xs" variant="destructive-outline" onClick={() => setRemoveTarget(employee)}>
                                       Remove
-                                    </Button>
+                                    </Button>}
                                   </div>
                                 )}
                               </TableCell>
@@ -293,14 +309,14 @@ export default function GymStaff() {
                 )}
               </div>
             )}
-          </TabsPanel>
+          </TabsPanel>}
 
-          <TabsPanel value="roles" keepMounted className="flex flex-col gap-4 pt-4">
+          {canViewRoles && <TabsPanel value="roles" keepMounted className="flex flex-col gap-4 pt-4">
             <div className="flex flex-wrap items-center gap-3">
               <p className="mr-auto text-muted-foreground text-sm">
-                Roles decide which modules a person can open and how far they can go.
+                Roles hold independent permissions. Turning a role off keeps its grants but gives no access.
               </p>
-              {canManage && (
+              {canManageRoles && (
                 <Button onClick={() => setRoleDialog({ role: null })}>
                   <Plus aria-hidden /> New role
                 </Button>
@@ -311,9 +327,9 @@ export default function GymStaff() {
               <Empty className="rounded-xl border">
                 <EmptyHeader>
                   <EmptyTitle>No roles yet</EmptyTitle>
-                  <EmptyDescription>Start from a template or choose a level for each module, then give the role to an employee.</EmptyDescription>
+                  <EmptyDescription>Start from a template or choose permissions, then give the role to an employee.</EmptyDescription>
                 </EmptyHeader>
-                {canManage && (
+                {canManageRoles && (
                   <EmptyContent>
                     <Button onClick={() => setRoleDialog({ role: null })}>
                       <Plus aria-hidden /> Create the first role
@@ -324,18 +340,23 @@ export default function GymStaff() {
             ) : (
               <div className="grid gap-4 md:grid-cols-2">
                 {roles.map((role) => {
-                  const summary = templates.modules
-                    .filter((module) => role.permissions[module])
-                    .map((module) => ({ module, level: role.permissions[module] }))
+                  const summary = [...new Set(role.permissions.map((key) => key.split('.')[0]))]
                   return (
                     <Card key={role.id}>
                       <CardHeader>
                         <CardTitle render={<h2 />}>{role.name}</CardTitle>
                         <CardDescription>
                           {role.users_count ?? 0} {(role.users_count ?? 0) === 1 ? 'person' : 'people'}
+                          {' · '}{role.permissions.length} permissions{' · '}{role.status === 'active' ? 'On' : 'Off'}
+                          {role.is_system && ' · Starter role'}
+                          {role.held_by_me && ' · You hold this role; another authorized person must edit it.'}
+                          {role.description && <span className="block pt-1">{role.description}</span>}
                         </CardDescription>
-                        {canManage && (
+                        {canEditRole(role) && (
                           <CardAction className="flex gap-1">
+                            <Button size="xs" variant="ghost" disabled={deleting || (role.status === 'inactive' && role.permissions.some((key) => !gym.permissions.includes(key)))} onClick={() => toggleRole(role)}>
+                              {role.status === 'active' ? 'Turn off' : 'Turn on'}
+                            </Button>
                             <Button
                               size="icon-sm"
                               variant="ghost"
@@ -344,24 +365,24 @@ export default function GymStaff() {
                             >
                               <Pencil aria-hidden />
                             </Button>
-                            <Button
+                            {!role.is_system && (role.users_count ?? 0) === 0 && <Button
                               size="icon-sm"
                               variant="ghost"
                               aria-label={`Delete ${role.name}`}
                               onClick={() => setRoleDelete(role)}
                             >
                               <Trash2 aria-hidden />
-                            </Button>
+                            </Button>}
                           </CardAction>
                         )}
                       </CardHeader>
                       <CardPanel className="flex flex-wrap content-start gap-1.5">
                         {summary.length === 0 ? (
-                          <span className="text-muted-foreground text-sm">No module access</span>
+                          <span className="text-muted-foreground text-sm">No permissions</span>
                         ) : (
-                          summary.map(({ module, level }) => (
+                          summary.map((module) => (
                             <Badge key={module} variant="outline">
-                              {moduleLabel(module)}: {LEVEL_LABELS[level] ?? level}
+                              {moduleLabel(module)}: {role.permissions.filter((key) => key.startsWith(`${module}.`)).length}
                             </Badge>
                           ))
                         )}
@@ -371,14 +392,15 @@ export default function GymStaff() {
                 })}
               </div>
             )}
-          </TabsPanel>
+          </TabsPanel>}
         </Tabs>
       )}
 
       {addOpen && gymId && (
         <AddEmployeeDialog
           gymId={Number(gymId)}
-          roles={roles ?? []}
+          roles={(roles ?? []).filter((role) => role.status === 'active' && role.permissions.every((key) => gym.permissions.includes(key)))}
+          canAssign={canAssign}
           onClose={() => setAddOpen(false)}
           onSaved={() => {
             setAddOpen(false)
@@ -392,6 +414,7 @@ export default function GymStaff() {
           gymId={Number(gymId)}
           employee={assignTarget}
           roles={roles ?? []}
+          ownPermissions={gym.permissions}
           onClose={() => setAssignTarget(null)}
           onSaved={() => {
             setAssignTarget(null)
@@ -416,7 +439,8 @@ export default function GymStaff() {
         <RoleDialog
           gymId={Number(gymId)}
           role={roleDialog.role}
-          templates={templates}
+          catalog={templates}
+          ownPermissions={gym.permissions}
           onClose={() => setRoleDialog(null)}
           onSaved={() => {
             setRoleDialog(null)

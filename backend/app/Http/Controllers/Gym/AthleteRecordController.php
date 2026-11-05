@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers\Gym;
 
-use App\Enums\AccessLevel;
 use App\Enums\AthleteEntryType;
-use App\Enums\Module;
 use App\Http\Controllers\Concerns\PresentsMemberships;
 use App\Http\Controllers\Controller;
 use App\Models\AthleteEntry;
@@ -32,12 +30,12 @@ class AthleteRecordController extends Controller
     {
         $viewer = $request->user();
         abort_unless(
-            $viewer->canInGym($gym, Module::Members, AccessLevel::View) || $viewer->canInGym($gym, Module::Training, AccessLevel::View),
+            $viewer->hasPermission($gym, 'members.memberships.view', 'training.athletes.view'),
             403,
             'You do not have access to athlete records.',
         );
 
-        return response()->json(['record' => $this->record($gym, $user, $viewer->canInGym($gym, Module::HealthRecords, AccessLevel::View))]);
+        return response()->json(['record' => $this->record($gym, $user, $viewer->hasPermission($gym, 'health_records.records.view'))]);
     }
 
     /** R-37 to R-39: a permitted coach adds a promotion, assessment, competition or achievement. */
@@ -124,7 +122,7 @@ class AthleteRecordController extends Controller
     public function medicalFile(Request $request, Gym $gym, User $user): StreamedResponse
     {
         $viewer = $request->user();
-        abort_unless($viewer->id === $user->id || $viewer->canInGym($gym, Module::HealthRecords, AccessLevel::View), 403);
+        abort_unless($viewer->id === $user->id || $viewer->hasPermission($gym, 'health_records.records.view'), 403);
 
         $profile = $this->profile($gym, $user);
         abort_unless($profile->medical_file_path, 404);

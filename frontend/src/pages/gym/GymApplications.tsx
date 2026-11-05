@@ -34,7 +34,7 @@ export default function GymApplications() {
   const gymId = Number(gymIdParam)
   const { user } = useAuth()
   const gym = approvedGym(user, gymId)
-  const canDecide = gym ? can(gym, 'members', 'approve') : false
+  const canDecide = gym ? can(gym, 'members.memberships.approve') : false
 
   const [filter, setFilter] = useState<Filter>('applied')
   const [rows, setRows] = useState<Membership[] | null>(null)

@@ -6,7 +6,7 @@ export type GymAccess = {
   name: string
   status: string
   roles: string[]
-  permissions: Record<string, string>
+  permissions: string[]
 }
 
 export type User = {

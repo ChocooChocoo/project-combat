@@ -119,7 +119,7 @@ export default function GymSettings() {
 
   if (!gym) return null
 
-  const canManage = can(gym, 'gym_setup', 'manage')
+  const canManage = can(gym, 'gym_setup.settings.manage')
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((current) => (current ? { ...current, [key]: value } : current))

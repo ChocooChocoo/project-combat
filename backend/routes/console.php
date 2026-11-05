@@ -1,13 +1,27 @@
 <?php
 
 use App\Enums\BookingStatus;
+use App\Enums\GymStatus;
 use App\Enums\MembershipStatus;
+use App\Models\Gym;
 use App\Models\Membership;
 use App\Models\SessionBooking;
 use App\Models\User;
 use App\Support\MembershipLedger;
+use App\Support\PermissionCatalog;
+use App\Support\SystemRoles;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
+
+Artisan::command('app:sync-permissions', function () {
+    PermissionCatalog::sync();
+    $this->info('Permission catalog is up to date.');
+})->purpose('Write system permission keys to the catalog');
+
+Artisan::command('app:seed-system-roles', function () {
+    Gym::where('status', GymStatus::Approved)->each(fn (Gym $gym) => SystemRoles::seed($gym));
+    $this->info('Starter roles are in place.');
+})->purpose('Create starter roles for approved gyms');
 
 // R-07: the only way to create a platform administrator. No screen or request can do it.
 Artisan::command('app:make-admin {email}', function (string $email) {

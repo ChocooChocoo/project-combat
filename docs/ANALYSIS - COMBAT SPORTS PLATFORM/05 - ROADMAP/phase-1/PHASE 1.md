@@ -199,7 +199,7 @@ Nothing. This is the starting point.
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
 | R-07 | Five roles | R-01 | ✅ | Every account has exactly the roles the spec names, and only the platform can create an administrator |
-| R-08 | Owner-made roles with module-by-module permissions | R-07 | ✅ | Owners create their own roles, and an employee reaches only what their roles allow |
+| R-08 | Owner-made roles with named permissions | R-07 | ✅ | Owners create their own roles, and an employee reaches only what their active, unexpired roles allow |
 | R-09 | Each gym's records kept apart | R-07 | ✅ | Nobody from one gym can reach another gym's records |
 
 ### R-07: Five roles
@@ -225,9 +225,9 @@ Nothing. This is the starting point.
 
 **Old system:** `combat_sports_db.sql`, lines 3335 to 3362, 4345 and 4292.
 
-### R-08: Owner-made roles with module-by-module permissions
+### R-08: Owner-made roles with named permissions
 
-**In plain words:** Each owner creates their gym's own roles, such as "Head Coach", "Cashier" or "HR Officer". Each role gets a name and, for every module, a level: view, manage or approve. The owner gives each employee one or more roles. An employee's access in a module is the highest level any of their roles gives. Changing a role changes access for everyone holding it. The four ready-made sets (coach, front desk, finance, HR) only appear as starting templates when a new role is created. An employee can never give anyone more than they themselves hold.
+**In plain words:** Roles hold named permissions from a shared catalog (`config/permissions.php`, written `module.resource.action`). Owners build roles per gym and can turn them off or give them until a date. Owners hold every active permission. Permissions are independent, so Approve does not imply View or Manage. Nobody can grant access they do not hold, change their own assignments or expiry dates, or edit a role they hold. Disabled keys and dormant grants stay until explicitly removed; authorized cleanup does not permit new or reactivated access. The platform admin runs the catalog at `/admin/permissions`. Four starter roles can be customized but not deleted. See [permission operations](../../../implementation-plan/rbac-redesign/rbac-operations.md) for deployment and guarded recovery.
 
 **Why it is needed:** The spec, page 9, section 1.4, and the "by role" note on page 7. Your client asked for "dynamic RBAC", meaning roles the owner can create and change (asked by your client, relayed in conversation, 3 November 2026). You chose owner-made roles (said in conversation, 3 November 2026). In the old system, every staff member counted as HR (`backend/app/Support/RbacPermissionCatalog.php`, lines 52 to 59; `backend/app/Models/User.php`, lines 166 to 180). Owners also skipped every check (`backend/app/Http/Middleware/CheckPermission.php`, lines 32 to 34).
 
@@ -239,10 +239,10 @@ Nothing. This is the starting point.
 
 **Done when:**
 
-- [x] An owner can create, name, edit and delete their gym's own roles, choosing a level for each module.
+- [x] An owner can create, name, edit and delete unused custom roles, choosing independent named permissions.
 - [x] An owner can give an employee one or more roles, and take them away.
 - [x] Changing a role changes access for everyone holding it straight away.
-- [x] The four ready-made sets appear only as starting templates when creating a role.
+- [x] Four starter roles are seeded per gym and are also available as templates. They can be renamed, edited, or turned off, but not deleted.
 - [x] One gym's roles are never visible to, or usable by, another gym.
 - [x] An employee without the finance permission is refused on every finance screen and request, not just hidden from the menu.
 - [x] An employee cannot create an account or a permission set with more access than their own. *(Must still hold once roles exist: nobody may create or give a role above their own access.)*
@@ -252,7 +252,7 @@ The screens for managing roles and giving them to employees are part of R-22 in 
 
 **Still open:** nothing.
 
-**How it was built:** first built per employee with fixed presets, then rebuilt the same day as owner-made roles at your client's request. Roles live in `gym_roles`, linked to employees through `gym_role_user`; the rules are in `backend/app/Http/Controllers/Gym/GymRoleController.php`. The HR and employee management permission (module `hr`) controls who can see and change roles.
+**How it was built:** first built with fixed presets, then owner-made module levels, then converted to exact permission sets on 5 November 2026. Roles live in `gym_roles`, permissions in `permissions`, and links in `gym_role_permission` and `gym_role_user`. The latter records grant expiry and grantor. Role viewing uses `hr.roles.view`; changes use `hr.roles.manage`, separate from staff access. The shared assignment service enforces transactional replacement and self-change and access guards.
 
 **Old system:** `backend/app/Support/RbacPermissionCatalog.php`; `backend/app/Http/Middleware/CheckRole.php`, lines 51 to 53 and 82 to 102. The old system also had per-gym "saved role profiles" (`combat_sports_db.sql`, line 4292), stored as a third role layer that disagreed with the other two.
 
