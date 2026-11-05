@@ -133,6 +133,9 @@ class PlanController extends Controller
             'policy_freezing' => ['required', 'string', 'max:5000'],
             'policy_renewal' => ['required', 'string', 'max:5000'],
             'policy_cancellation' => ['required', 'string', 'max:5000'],
+            // R-36: empty means the plan cannot be frozen.
+            'max_freeze_days' => ['nullable', 'integer', 'min:1', 'max:365'],
+            'refundable' => ['sometimes', 'boolean'],
             'addons' => ['sometimes', 'array'],
             'addons.*' => ['array:service_id,price'],
             'addons.*.service_id' => [
@@ -151,6 +154,7 @@ class PlanController extends Controller
 
         if (! $plan) {
             $data['registration_included'] = $data['registration_included'] ?? false;
+            $data['refundable'] = $data['refundable'] ?? false;
 
             // Only the length that belongs to the chosen billing type is kept.
             if ($data['billing_type'] === PlanBilling::Sessions->value) {
@@ -203,6 +207,8 @@ class PlanController extends Controller
             'policy_freezing' => $plan->policy_freezing,
             'policy_renewal' => $plan->policy_renewal,
             'policy_cancellation' => $plan->policy_cancellation,
+            'max_freeze_days' => $plan->max_freeze_days,
+            'refundable' => $plan->refundable,
             'addons' => $addons->map(fn (MembershipPlanAddon $addon) => [
                 'id' => $addon->id,
                 'service_id' => $addon->gym_service_id,

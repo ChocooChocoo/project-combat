@@ -4,7 +4,18 @@
 
 [00 - START HERE](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) · [05 - ROADMAP](../05%20-%20ROADMAP.md) · Previous: [PHASE 4](../phase-4/PHASE%204.md) · Next: [PHASE 6](../phase-6/PHASE%206.md)
 
-**Status:** ⭕ Not started
+**Status:** 🟨 In progress
+
+> **5 November 2026:** Building started. Open questions answered in conversation, 5 November 2026:
+>
+> - **Q-11:** the member shows a QR code from the app that changes every minute; staff scan it or type its short code.
+> - **Q-12:** a freed place goes automatically to the first athlete on the waiting list, who is notified.
+> - **Q-14:** an athlete is late when they check in after the start time plus the gym's grace period (set by the owner, default 10 minutes).
+> - **Q-18:** one gym-wide booking-approval switch, which each session can override.
+> - **Q-20:** when the gym cancels a paid session, a full refund entry is recorded against the payment and staff hand the money back.
+> - **Q-24:** athletes can cancel their own booking until a cut-off set by the owner (default 2 hours before the start); after that only staff can.
+>
+> Assumption: membership plans have no level, so "who may join" is a level label plus an optional list of allowed plans (empty means any active member).
 
 Citation forms are the same as in [02 - FINDINGS](../../02%20-%20FINDINGS/02%20-%20FINDINGS.md).
 
@@ -24,10 +35,10 @@ Sessions need:
 
 | Waits for | Why | Status |
 |---|---|---|
-| R-21, R-23, R-24, R-25, R-27 in [PHASE 3](../phase-3/PHASE%203.md) | Sessions need rooms and coaches; availability needs schedules, leave and holidays | ⭕ |
-| R-33, R-36 in [PHASE 4](../phase-4/PHASE%204.md) | Only active, eligible members book | ⭕ |
-| R-34 in [PHASE 4](../phase-4/PHASE%204.md) | Add-on fees are recorded as payments | ⭕ |
-| Q-11, Q-12, Q-14, Q-18, Q-20, Q-24 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) | QR method, waiting-list offers, lateness, approval policy, refunds and self-cancelling | ⭕ |
+| R-21, R-23, R-24, R-25, R-27 in [PHASE 3](../phase-3/PHASE%203.md) | Sessions need rooms and coaches; availability needs schedules, leave and holidays | ✅ |
+| R-33, R-36 in [PHASE 4](../phase-4/PHASE%204.md) | Only active, eligible members book | ✅ |
+| R-34 in [PHASE 4](../phase-4/PHASE%204.md) | Add-on fees are recorded as payments | ✅ |
+| Q-11, Q-12, Q-14, Q-18, Q-20, Q-24 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) | QR method, waiting-list offers, lateness, approval policy, refunds and self-cancelling | ✅ Answered 5 November 2026 (see note above) |
 
 ## What it unlocks
 
@@ -322,6 +333,7 @@ Only then does the booking go through. A booking that clashes with the coach's s
 
 - [ ] A booking for a paid session shows the amount owed.
 - [ ] It turns "paid" only after a recorded payment.
+- [ ] Session add-ons and private coaching can be paid online through PayMongo, reusing the payment record and checkout flow from R-35 ([PHASE 4](../phase-4/PHASE%204.md)). *(Moved from R-35 on 5 November 2026.)*
 - [ ] Unpaid add-ons appear in the gym's list of money owed (R-65).
 
 **Still open:** nothing.
@@ -402,6 +414,7 @@ Only then does the booking go through. A booking that clashes with the coach's s
 - [ ] Late arrivals are marked by a set rule.
 - [ ] A booking with no check-in by the end of the session becomes a no-show.
 - [ ] Staff can view attendance by gym, class, session or member; members see their own.
+- [ ] An athlete's attendance appears in their record (R-41 in [PHASE 4](../phase-4/PHASE%204.md)). *(Moved from R-41 on 5 November 2026.)*
 
 **Still open:** Q-14.
 
@@ -422,7 +435,7 @@ Only then does the booking go through. A booking that clashes with the coach's s
 **Done when:**
 
 - [ ] A coach can add a note to a session and to each participant.
-- [ ] An athlete's notes appear in their record over time (R-41).
+- [ ] An athlete's notes appear in their record over time (R-41 in [PHASE 4](../phase-4/PHASE%204.md)). *(Moved from R-41 on 5 November 2026.)*
 
 **Still open:** nothing.
 

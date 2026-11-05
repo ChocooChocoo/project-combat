@@ -33,6 +33,8 @@ type PlanForm = {
   policy_freezing: string
   policy_renewal: string
   policy_cancellation: string
+  max_freeze_days: string
+  refundable: boolean
   addons: AddonForm[]
 }
 
@@ -58,6 +60,8 @@ function fromPlan(plan: PublicPlan | null): PlanForm {
     policy_freezing: plan?.policy_freezing ?? '',
     policy_renewal: plan?.policy_renewal ?? '',
     policy_cancellation: plan?.policy_cancellation ?? '',
+    max_freeze_days: plan?.max_freeze_days != null ? String(plan.max_freeze_days) : '',
+    refundable: plan?.refundable ?? false,
     addons: (plan?.addons ?? []).map((addon) => ({
       service_id: addon.service_id != null ? String(addon.service_id) : '',
       price: addon.price != null ? String(addon.price) : '',
@@ -152,6 +156,8 @@ export function PlanEditor({
         policy_freezing: form.policy_freezing.trim(),
         policy_renewal: form.policy_renewal.trim(),
         policy_cancellation: form.policy_cancellation.trim(),
+        max_freeze_days: numberOrNull(form.max_freeze_days),
+        refundable: form.refundable,
         addons: form.addons.map((addon) => ({
           service_id: addon.service_id === '' ? null : Number(addon.service_id),
           price: numberOrNull(addon.price),
@@ -588,6 +594,33 @@ export function PlanEditor({
                     onChange={(event) => set('policy_cancellation', event.target.value)}
                     placeholder="How cancellation and refunds work."
                   />
+                  <FieldError />
+                </Field>
+
+                <Field name="max_freeze_days" className="w-full">
+                  <FieldLabel>Most days it can be frozen</FieldLabel>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="365"
+                    step="1"
+                    inputMode="numeric"
+                    value={form.max_freeze_days}
+                    onChange={(event) => set('max_freeze_days', event.target.value)}
+                    placeholder="Leave empty if freezing is not allowed"
+                  />
+                  <FieldDescription>Per membership period. Staff cannot freeze for longer than this.</FieldDescription>
+                  <FieldError />
+                </Field>
+
+                <Field name="refundable" className="w-full">
+                  <div className="flex w-full items-center justify-between gap-4 rounded-lg border px-3 py-2.5">
+                    <div>
+                      <FieldLabel>Refund on cancel</FieldLabel>
+                      <p className="text-muted-foreground text-xs">Staff may refund part of what was paid when cancelling.</p>
+                    </div>
+                    <Switch checked={form.refundable} onCheckedChange={(checked) => set('refundable', checked)} />
+                  </div>
                   <FieldError />
                 </Field>
               </CardPanel>

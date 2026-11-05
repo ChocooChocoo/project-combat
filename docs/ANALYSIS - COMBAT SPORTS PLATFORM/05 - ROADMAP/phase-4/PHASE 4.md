@@ -4,7 +4,17 @@
 
 [00 - START HERE](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) · [05 - ROADMAP](../05%20-%20ROADMAP.md) · Previous: [PHASE 3](../phase-3/PHASE%203.md) · Next: [PHASE 5](../phase-5/PHASE%205.md)
 
-**Status:** ⭕ Not started
+**Status:** ✅ Finished
+
+> **5 November 2026:** Phase finished. The three checks that could only pass once later phases exist were moved to the items that build them: online add-on and coaching payments to R-51 (Phase 5), online payments as income to R-63 (Phase 6), expiry reminders to R-82 (Phase 7), and attendance and progress notes in the athlete's record to R-54 and R-55 (Phase 5). Decided in conversation, 5 November 2026.
+
+> **4 November 2026:** Build started. Decisions made before building (said in conversation, 4 November 2026):
+>
+> - **Approval and payment (R-33):** staff approve first. The membership then waits for payment and becomes active once the plan fee is fully paid, at the desk or online. Taking a payment never approves an application.
+> - **Plan rules (R-36):** each plan gets a "most days it can be frozen" limit (empty means no freezing) and a "refund on cancel" yes or no. The written policies stay for people to read.
+> - **Ranks (R-37):** typed freely per discipline. No rank ladders to set up.
+> - **Front desk chain (R-34):** dropped. A permitted staff member records each payment once; corrections are their own entries.
+> - **Assumptions, not blocking:** no member ID check (Q-04 still open); no health risk score (Q-05 still open); the waivers are three standard ones for every gym (assumption of risk, liability, emergency consent), shown with the gym's own policies.
 
 Citation forms are the same as in [02 - FINDINGS](../../02%20-%20FINDINGS/02%20-%20FINDINGS.md).
 
@@ -20,10 +30,10 @@ Members join on a plan (R-29 in [PHASE 3](../phase-3/PHASE%203.md)). Staff need 
 
 | Waits for | Why | Status |
 |---|---|---|
-| R-29 in [PHASE 3](../phase-3/PHASE%203.md) | Members choose a plan | ⭕ |
-| R-30 in [PHASE 3](../phase-3/PHASE%203.md) | Members find the gym first | ⭕ |
-| R-15 in [PHASE 2](../phase-2/PHASE%202.md) | Health files are kept privately | ⭕ |
-| Q-10 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) | Whether an athlete can be a member of two gyms | ⭕ |
+| R-29 in [PHASE 3](../phase-3/PHASE%203.md) | Members choose a plan | ✅ |
+| R-30 in [PHASE 3](../phase-3/PHASE%203.md) | Members find the gym first | ✅ |
+| R-15 in [PHASE 2](../phase-2/PHASE%202.md) | Health files are kept privately | ✅ |
+| Q-10 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) | Whether an athlete can be a member of two gyms | ✅ Yes |
 
 ## What it unlocks
 
@@ -36,9 +46,9 @@ Members join on a plan (R-29 in [PHASE 3](../phase-3/PHASE%203.md)). Staff need 
 
 | Status | How many |
 |---|---|
-| ✅ Finished | 0 |
+| ✅ Finished | 11 |
 | 🟨 Being worked on | 0 |
-| ⭕ Not started | 11 |
+| ⭕ Not started | 0 |
 | ❌ Blocked | 0 |
 | 🔵 Already there | 0 |
 | ⬜ Dropped | 0 |
@@ -53,12 +63,12 @@ Members join on a plan (R-29 in [PHASE 3](../phase-3/PHASE%203.md)). Staff need 
 
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
-| R-31 | Apply for membership | R-29 | ⭕ | A platform user can apply to a gym on a chosen plan |
-| R-32 | Health questionnaire and waivers | R-31 | ⭕ | The application includes a health declaration and signed waivers |
-| R-33 | Approve or reject; athlete profile created | R-31, R-10 | ⭕ | Permitted staff decide, and approval creates the athlete profile |
-| R-34 | Record membership payments | R-31 | ⭕ | Cash, card and e-wallet payments are recorded with a receipt |
-| R-35 | Pay any fee online through PayMongo | R-34 | ⭕ | Any fee can be paid online, and only genuine payments count |
-| R-36 | Membership life: activate, renew, freeze, expire, cancel | R-33 | ⭕ | Each change follows the plan's policy and is kept in history |
+| R-31 | Apply for membership | R-29 | ✅ | A platform user can apply to a gym on a chosen plan |
+| R-32 | Health questionnaire and waivers | R-31 | ✅ | The application includes a health declaration and signed waivers |
+| R-33 | Approve or reject; athlete profile created | R-31, R-10 | ✅ | Permitted staff decide, and approval creates the athlete profile |
+| R-34 | Record membership payments | R-31 | ✅ | Cash, card and e-wallet payments are recorded with a receipt |
+| R-35 | Pay any fee online through PayMongo | R-34 | ✅ | Any fee can be paid online, and only genuine payments count |
+| R-36 | Membership life: activate, renew, freeze, expire, cancel | R-33 | ✅ | Each change follows the plan's policy and is kept in history |
 
 ### R-31: Apply for membership
 
@@ -79,11 +89,11 @@ Members join on a plan (R-29 in [PHASE 3](../phase-3/PHASE%203.md)). Staff need 
 
 **Done when:**
 
-- [ ] A signed-in user can apply to a gym from its page.
-- [ ] The application cannot be sent without a plan and emergency contacts.
-- [ ] The applicant can see the application's status.
+- [x] A signed-in user can apply to a gym from its page.
+- [x] The application cannot be sent without a plan and emergency contacts.
+- [x] The applicant can see the application's status.
 
-**Still open:** Q-04 (whether the platform administrator should also check the applicant's ID, as the old system did; C-01).
+**Still open:** Q-04 (whether the platform administrator should also check the applicant's ID, as the old system did; C-01). Built without an ID check until Q-04 is answered.
 
 **Old system:** `backend/app/Http/Controllers/API/MembershipApplicationController.php`, lines 55 to 199; `frontend/src/pages/MemberDashboard.vue`, lines 1335 to 1500.
 
@@ -107,11 +117,11 @@ Members join on a plan (R-29 in [PHASE 3](../phase-3/PHASE%203.md)). Staff need 
 
 **Done when:**
 
-- [ ] The application cannot be sent until the waivers are accepted and signed.
-- [ ] A medical clearance file, if given, is kept privately (as in R-15).
-- [ ] Answers are visible only to staff with permission for health details (R-40).
+- [x] The application cannot be sent until the waivers are accepted and signed.
+- [x] A medical clearance file, if given, is kept privately (as in R-15).
+- [x] Answers are visible only to staff with permission for health details (R-40).
 
-**Still open:** Q-05 (whether to keep the old automatic "risk score" worked out from the answers).
+**Still open:** Q-05 (whether to keep the old automatic "risk score" worked out from the answers). Built without a risk score until Q-05 is answered.
 
 **Old system:** as above; the risk score is at lines 562 to 597.
 
@@ -129,13 +139,13 @@ Members join on a plan (R-29 in [PHASE 3](../phase-3/PHASE%203.md)). Staff need 
 
 **Done when:**
 
-- [ ] Only staff with membership-approval permission, or the owner, can approve or reject.
-- [ ] Rejection needs a reason, which the applicant sees.
-- [ ] Approval creates the athlete profile, filled in from the application.
-- [ ] Taking a payment never approves a membership by itself.
-- [ ] The applicant gets a notice of the decision.
+- [x] Only staff with membership-approval permission, or the owner, can approve or reject.
+- [x] Rejection needs a reason, which the applicant sees.
+- [x] Approval creates the athlete profile, filled in from the application.
+- [x] Taking a payment never approves a membership by itself.
+- [x] The applicant gets a notice of the decision.
 
-**Still open:** whether approval must wait until the fee is paid is not stated. It should be decided during implementation planning. *Drawn from* the spec, pages 15 and 16; see diagram 8 in [04 - DIAGRAMS](../../04%20-%20DIAGRAMS/04%20-%20DIAGRAMS.md).
+**Still open:** nothing. Decided on 4 November 2026: staff approve first; the membership waits for payment and becomes active once the plan fee is fully paid. This matches diagram 8 in [04 - DIAGRAMS](../../04%20-%20DIAGRAMS/04%20-%20DIAGRAMS.md).
 
 **Old system:** `backend/app/Http/Controllers/API/MembershipPaymentController.php`, lines 78 to 85; `MembershipApplicationController.php`, lines 479 to 560.
 
@@ -160,12 +170,12 @@ Most in-person payments still happen at the front desk; the system records them.
 
 **Done when:**
 
-- [ ] A permitted staff member can record a payment with its method and get a receipt number.
-- [ ] Each payment shows who recorded it and when.
-- [ ] A member can see their own payments and receipts.
-- [ ] A recorded payment cannot be silently changed; corrections are kept as their own entries.
+- [x] A permitted staff member can record a payment with its method and get a receipt number.
+- [x] Each payment shows who recorded it and when.
+- [x] A member can see their own payments and receipts.
+- [x] A recorded payment cannot be silently changed; corrections are kept as their own entries.
 
-**Still open:** whether the old two-step "front desk passes money to finance" chain is kept is not stated in the spec. It should be decided during implementation planning.
+**Still open:** nothing. Decided on 4 November 2026: the old two-step chain is dropped. A permitted staff member records each payment once.
 
 **Old system:** `MembershipPaymentController.php`, lines 31 to 276; `combat_sports_db.sql`, line 2134.
 
@@ -191,11 +201,12 @@ The payment is recorded only when PayMongo confirms it, and the confirmation is 
 
 **Done when:**
 
-- [ ] A person can pay a membership fee online and come back to a clear confirmation.
-- [ ] Session add-ons and private coaching can be paid online the same way, once Phase 5 exists.
-- [ ] A payment is recorded only after PayMongo confirms it, and fake confirmations are rejected.
-- [ ] Paying twice for the same fee is prevented or refunded.
-- [ ] Every online payment appears in the gym's income records (R-63) like a desk payment.
+- [x] A person can pay a membership fee online and come back to a clear confirmation.
+- [x] A payment is recorded only after PayMongo confirms it, and fake confirmations are rejected.
+- [x] Paying twice for the same fee is prevented or refunded.
+- [x] Online and desk payments sit in the same payments list, with receipts.
+
+*Moved on 5 November 2026:* paying session add-ons and private coaching online is checked in R-51 ([PHASE 5](../phase-5/PHASE%205.md)), which reuses this payment record and PayMongo flow. Online payments showing as income is checked in R-63 ([PHASE 6](../phase-6/PHASE%206.md)).
 
 **Still open:** nothing. Q-22 was answered: online payment covers every fee.
 
@@ -215,11 +226,13 @@ The payment is recorded only when PayMongo confirms it, and the confirmation is 
 
 **Done when:**
 
-- [ ] A membership's end date is stored and shown, and the membership stops being active after it.
-- [ ] Permitted staff can renew, freeze, unfreeze and cancel, following the plan's policy.
-- [ ] A frozen membership's end date moves by the frozen days.
-- [ ] Every change is kept in a history the athlete can see.
-- [ ] Expiry reminders are sent (built in R-82, [PHASE 7](../phase-7/PHASE%207.md)).
+- [x] A membership's end date is stored and shown, and the membership stops being active after it.
+- [x] Permitted staff can renew, freeze, unfreeze and cancel, following the plan's policy.
+- [x] A frozen membership's end date moves by the frozen days.
+- [x] Every change is kept in a history the athlete can see.
+- [x] The athlete gets a notice when the membership expires.
+
+*Moved on 5 November 2026:* reminders before expiry are checked in R-82 ([PHASE 7](../phase-7/PHASE%207.md)).
 
 **Still open:** nothing.
 
@@ -233,11 +246,11 @@ The payment is recorded only when PayMongo confirms it, and the confirmation is 
 
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
-| R-37 | Rank, promotions and skill assessments | R-33 | ⭕ | Coaches record rank changes and assessments over time |
-| R-38 | Competition records with divisions | R-33 | ⭕ | Events, divisions and results are kept per athlete |
-| R-39 | Achievements | R-33 | ⭕ | Awards, titles and milestones are kept per athlete |
-| R-40 | Health and emergency details, restricted | R-33, R-08 | ⭕ | Only authorised staff can see health details |
-| R-41 | Athlete sees their own record | R-37, R-38, R-39 | ⭕ | An athlete can view their own attendance, progress, rank, competitions and achievements |
+| R-37 | Rank, promotions and skill assessments | R-33 | ✅ | Coaches record rank changes and assessments over time |
+| R-38 | Competition records with divisions | R-33 | ✅ | Events, divisions and results are kept per athlete |
+| R-39 | Achievements | R-33 | ✅ | Awards, titles and milestones are kept per athlete |
+| R-40 | Health and emergency details, restricted | R-33, R-08 | ✅ | Only authorised staff can see health details |
+| R-41 | Athlete sees their own record | R-37, R-38, R-39 | ✅ | An athlete can view their own attendance, progress, rank, competitions and achievements |
 
 ### R-37: Rank, promotions and skill assessments
 
@@ -253,10 +266,10 @@ The payment is recorded only when PayMongo confirms it, and the confirmation is 
 
 **Done when:**
 
-- [ ] A permitted coach can record a promotion and an assessment for an athlete.
-- [ ] The athlete's rank history shows every promotion in order.
+- [x] A permitted coach can record a promotion and an assessment for an athlete.
+- [x] The athlete's rank history shows every promotion in order.
 
-**Still open:** whether each gym defines its own rank ladders (for example BJJ belts or taekwondo grades) is not stated. It should be decided during implementation planning.
+**Still open:** nothing. Decided on 4 November 2026: ranks are typed freely per discipline; gyms do not set up rank ladders.
 
 **Old system:** none.
 
@@ -276,8 +289,8 @@ The payment is recorded only when PayMongo confirms it, and the confirmation is 
 
 **Done when:**
 
-- [ ] A permitted staff member can add an event, the athlete's division and the result.
-- [ ] The athlete's record lists their competitions with results.
+- [x] A permitted staff member can add an event, the athlete's division and the result.
+- [x] The athlete's record lists their competitions with results.
 
 **Still open:** nothing.
 
@@ -297,8 +310,8 @@ The payment is recorded only when PayMongo confirms it, and the confirmation is 
 
 **Done when:**
 
-- [ ] A permitted staff member can add an achievement with a date.
-- [ ] The athlete's record lists their achievements.
+- [x] A permitted staff member can add an achievement with a date.
+- [x] The athlete's record lists their achievements.
 
 **Still open:** nothing.
 
@@ -318,9 +331,9 @@ The payment is recorded only when PayMongo confirms it, and the confirmation is 
 
 **Done when:**
 
-- [ ] Staff without health permission cannot see health details on any screen or by any request.
-- [ ] Medical files are kept privately.
-- [ ] The athlete can update their own emergency contacts and health declaration.
+- [x] Staff without health permission cannot see health details on any screen or by any request.
+- [x] Medical files are kept privately.
+- [x] The athlete can update their own emergency contacts and health declaration.
 
 **Still open:** nothing.
 
@@ -340,9 +353,10 @@ The payment is recorded only when PayMongo confirms it, and the confirmation is 
 
 **Done when:**
 
-- [ ] An athlete sees their own rank, competitions and achievements.
-- [ ] Attendance and progress notes appear once Phase 5 is built.
-- [ ] An athlete can never see another athlete's record.
+- [x] An athlete sees their own rank, competitions and achievements.
+- [x] An athlete can never see another athlete's record.
+
+*Moved on 5 November 2026:* attendance and progress notes in the record are checked in R-54 and R-55 ([PHASE 5](../phase-5/PHASE%205.md)).
 
 **Still open:** nothing.
 
@@ -352,7 +366,23 @@ The payment is recorded only when PayMongo confirms it, and the confirmation is 
 
 ## Phase blockers
 
-Q-10 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md).
+None inside this phase. Q-10 was answered on 3 November 2026 (a person may belong to several gyms).
+
+Checks that need later phases now sit in the items that build them: R-51 and R-54/R-55 in Phase 5, R-63 in Phase 6, R-82 in Phase 7.
+
+## Where it was built
+
+Built on 4 November 2026. Paths are from the project folder `project-02-combat`.
+
+- **Store:** `backend/database/migrations/2026_11_06_100000_create_membership_tables.php` adds `memberships` (the application and the membership in one row), `payments`, `membership_events` (history), `athlete_profiles`, `athlete_entries`, and two plan rules (`max_freeze_days`, `refundable`).
+- **Applying (R-31, R-32):** `backend/app/Http/Controllers/MembershipApplicationController.php`, `backend/config/membership.php` (health questions, waivers, file rules); screen `frontend/src/pages/member/MembershipApply.tsx`, reached from "Apply on this plan" on `frontend/src/pages/GymPublic.tsx`. Medical files go to the private disk.
+- **Deciding and the membership's life (R-33, R-36):** `backend/app/Http/Controllers/Gym/MembershipController.php`, `backend/app/Support/MembershipLedger.php`, notices `MembershipApplicationSubmitted` and `MembershipUpdated`, and the daily `app:expire-memberships` job in `backend/routes/console.php`; screens `frontend/src/pages/gym/GymApplications.tsx`, `GymMembers.tsx`, `MemberRecord.tsx`. Plan rules are set in `frontend/src/components/offer/plan-editor.tsx`.
+- **Payments (R-34, R-35):** `backend/app/Http/Controllers/Gym/PaymentController.php`, `MyMembershipController.php`, `PayMongoWebhookController.php`, `backend/app/Support/PayMongo.php` (Checkout Sessions; signature checked as HMAC-SHA256 of "time.body" within 5 minutes); screens `frontend/src/pages/gym/GymPayments.tsx` and `frontend/src/pages/member/MyMemberships.tsx`. Payments cannot be edited; corrections and refunds are their own negative entries.
+- **Athlete record (R-37 to R-41):** `backend/app/Http/Controllers/Gym/AthleteRecordController.php`; screens `frontend/src/pages/member/MyRecord.tsx` and the record part of `MemberRecord.tsx`, with shared parts in `frontend/src/components/membership/`.
+- **Permissions used:** deciding needs `members` approve; renew, freeze, unfreeze and cancel need `members` manage; desk payments need `finance` manage; record entries need `training` manage; health answers, emergency contacts and medical files need `health_records` view. Owners have all of these.
+- **Checks:** `php artisan test` passed 153 tests and 1,075 assertions (28 new tests in `MembershipApplicationTest`, `PaymentTest`, `MembershipLifecycleTest`, `AthleteRecordTest`). `pnpm build` passed. `pnpm lint` reported no errors.
+- **Browser check, 4 November 2026:** an applicant applied (empty and half-filled forms were stopped with messages); the owner saw the health answers and approved; a desk cash payment gave receipt OR-1-000001 and made the membership active until 3 December; freezing 7 days moved the end date to 10 December and unfreezing moved it back; a coach added a promotion; a coach without health access saw "Hidden" and got 403 on the medical file; the athlete saw their own record at 375 px with no sideways scrolling; a renewal was paid online through a real PayMongo test checkout (GCash test page) and was recorded once as OR-1-000002; a second application was rejected with a reason, which reached the applicant's notices. Two bugs found and fixed on the way: the approve button skipped its confirm step, and the record pages overflowed on phones. The check data was removed afterwards.
+- **Not checked:** the PayMongo webhook against PayMongo's real servers (it needs a public address; it is covered by automated tests with signed and forged messages). Existing plans have no freeze limit until the owner sets one, so they cannot be frozen yet.
 
 ## Phase is finished when
 

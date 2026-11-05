@@ -419,6 +419,11 @@ export default function Home() {
                       Manage
                     </Button>
                   )}
+                  {approved && gym.roles.includes('member') && (
+                    <Button size="sm" variant="outline" render={<Link to={`/gyms/${gym.id}/my-record`} />}>
+                      My record
+                    </Button>
+                  )}
                 </li>
               )
             })}

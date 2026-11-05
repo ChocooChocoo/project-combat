@@ -15,6 +15,7 @@ import { api, ApiError } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { type GymDetailPayload, labelKey, type PublicCoach, type PublicGymDetail, type PublicPlan, type PublicService, readGymDetail } from '@/lib/discovery'
 import { approvedGym, canManage } from '@/lib/gym-access'
+import { LIVE_STATUSES, STATUS_LABELS, type Membership } from '@/lib/membership'
 import { DAYS } from '@/lib/gyms'
 import { cn } from '@/lib/utils'
 
@@ -138,6 +139,19 @@ export default function GymPublic() {
   const [error, setError] = useState<{ status: number; message: string } | null>(null)
   const [version, setVersion] = useState(0)
   const [gallery, setGallery] = useState<Gallery | null>(null)
+  const [mine, setMine] = useState<Membership | null>(null)
+
+  // R-31: a person with a current application or membership here sees it instead of Apply.
+  useEffect(() => {
+    if (!userId || !Number.isInteger(id) || id <= 0) return
+    let live = true
+    api<{ memberships: Membership[] }>('/my-memberships')
+      .then((result) => live && setMine(result.memberships.find((m) => m.gym_id === id && LIVE_STATUSES.includes(m.status)) ?? null))
+      .catch(() => undefined)
+    return () => {
+      live = false
+    }
+  }, [id, userId])
 
   useEffect(() => {
     if (!userId || !Number.isInteger(id) || id <= 0) {
@@ -174,6 +188,7 @@ export default function GymPublic() {
 
   const access = approvedGym(user, id)
   const manage = access ? canManage(access) : false
+  const canApply = !mine && !access?.roles.includes('owner')
 
   if (authLoading) {
     return (
@@ -319,6 +334,11 @@ export default function GymPublic() {
             {manage && (
               <Button size="sm" render={<Link to={`/gyms/${id}/manage`} />}>
                 Manage gym
+              </Button>
+            )}
+            {mine && (
+              <Button size="sm" variant={manage ? 'outline' : 'default'} render={<Link to={`/memberships/${mine.id}`} />}>
+                My membership · {STATUS_LABELS[mine.status]}
               </Button>
             )}
           </>
@@ -631,6 +651,12 @@ export default function GymPublic() {
                         </dl>
                       </CollapsiblePanel>
                     </Collapsible>
+
+                    {canApply && (
+                      <Button className="self-start" render={<Link to={`/gyms/${id}/apply?plan=${plan.id}`} />}>
+                        Apply on this plan
+                      </Button>
+                    )}
                   </CardPanel>
                 </Card>
               </li>

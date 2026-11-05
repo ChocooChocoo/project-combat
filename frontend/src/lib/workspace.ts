@@ -169,6 +169,8 @@ export type MembershipPlan = {
   policy_freezing: string | null
   policy_renewal: string | null
   policy_cancellation: string | null
+  max_freeze_days: number | null
+  refundable: boolean
   published_at: string | null
   addons: MembershipPlanAddon[]
 }

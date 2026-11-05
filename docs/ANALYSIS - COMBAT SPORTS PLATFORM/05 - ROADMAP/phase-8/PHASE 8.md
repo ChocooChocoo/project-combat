@@ -32,7 +32,7 @@ The platform-wide view for the administrator was built earlier, in R-19 in [PHAS
 | Waits for | Why | Status |
 |---|---|---|
 | R-54, R-55, R-48 in [PHASE 5](../phase-5/PHASE%205.md) | Attendance, progress and bookings to report on | ⭕ |
-| R-36, R-37, R-38, R-39 in [PHASE 4](../phase-4/PHASE%204.md) | Membership and athlete records to report on | ⭕ |
+| R-36, R-37, R-38, R-39 in [PHASE 4](../phase-4/PHASE%204.md) | Membership and athlete records to report on | ✅ |
 | R-56 to R-79 in [PHASE 6](../phase-6/PHASE%206.md) | Staff, money, customer, stock and purchasing records | ⭕ |
 | Q-15 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) | The forecasting method | ⭕ |
 

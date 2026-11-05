@@ -126,6 +126,26 @@ class Gym extends Model
         return $this->hasMany(MembershipPlan::class);
     }
 
+    public function memberships(): HasMany
+    {
+        return $this->hasMany(Membership::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function athleteProfiles(): HasMany
+    {
+        return $this->hasMany(AthleteProfile::class);
+    }
+
+    public function athleteEntries(): HasMany
+    {
+        return $this->hasMany(AthleteEntry::class);
+    }
+
     /** The working week the gym set, or Monday to Friday when it has not set one (Q-21). */
     public function workingDays(): array
     {
