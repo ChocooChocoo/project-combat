@@ -26,7 +26,7 @@ The plan draws on these sources:
 | 1 | People can sign up, prove who they are, and be recognised safely | — | R-01 to R-10 | ✅ | [PHASE 1](phase-1/PHASE%201.md) |
 | 2 | Gyms can apply, be checked, and go live | Phase 1 | R-11 to R-19 | ✅ | [PHASE 2](phase-2/PHASE%202.md) |
 | 3 | Each approved gym runs its own workspace, staff and offer | Phase 2 | R-20 to R-30, R-97, R-98 | ✅ Finished | [PHASE 3](phase-3/PHASE%203.md) |
-| 4 | Athletes can join a gym and have a complete record | Phase 3 | R-31 to R-41 | ⭕ | [PHASE 4](phase-4/PHASE%204.md) |
+| 4 | Athletes can join a gym and have a complete record | Phase 3 | R-31 to R-41 | ✅ Finished | [PHASE 4](phase-4/PHASE%204.md) |
 | 5 | Sessions are scheduled without clashes, booked fairly, and attended | Phases 3 and 4 | R-42 to R-55 | ⭕ | [PHASE 5](phase-5/PHASE%205.md) |
 | 6 | The business side runs in one place, fed by training | Phases 3, 4 and 5 | R-56 to R-79 | ⭕ | [PHASE 6](phase-6/PHASE%206.md) |
 | 7 | Everyone stays informed, on their phone too | Phase 4; some items also wait for Phases 5 and 6 | R-80 to R-84 | ⭕ | [PHASE 7](phase-7/PHASE%207.md) |
@@ -74,14 +74,14 @@ Every module of the spec, and the old-system extras, are accounted for.
 | [PHASE 1](phase-1/PHASE%201.md) | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 10 |
 | [PHASE 2](phase-2/PHASE%202.md) | 9 | 0 | 0 | 0 | 0 | 0 | 0 | 9 |
 | [PHASE 3](phase-3/PHASE%203.md) | 13 | 0 | 0 | 0 | 0 | 0 | 0 | 13 |
-| [PHASE 4](phase-4/PHASE%204.md) | 0 | 0 | 11 | 0 | 0 | 0 | 0 | 11 |
+| [PHASE 4](phase-4/PHASE%204.md) | 11 | 0 | 0 | 0 | 0 | 0 | 0 | 11 |
 | [PHASE 5](phase-5/PHASE%205.md) | 0 | 0 | 14 | 0 | 0 | 0 | 0 | 14 |
 | [PHASE 6](phase-6/PHASE%206.md) | 0 | 0 | 24 | 0 | 0 | 0 | 0 | 24 |
 | [PHASE 7](phase-7/PHASE%207.md) | 0 | 0 | 5 | 0 | 0 | 0 | 0 | 5 |
 | [PHASE 8](phase-8/PHASE%208.md) | 0 | 0 | 12 | 0 | 0 | 0 | 0 | 12 |
-| **All phases** | **19** | **0** | **79** | **0** | **0** | **0** | **0** | **98** |
+| **All phases** | **43** | **0** | **55** | **0** | **0** | **0** | **0** | **98** |
 
-Phases 1, 2 and 3 are finished: 32 items are done. Phase 1 includes owner-made roles (R-08) as your client asked. Phase 2 was built without tier upgrades or document expiry while Q-16 and Q-17 stay open. Phase 3 was built with the old Philippine leave list, Monday to Friday working days by default, and pay kept as a monthly rate, a per-session rate, or both. The other 66 items are waiting their turn.
+Phases 1, 2, 3 and 4 are finished: 43 items are done. Phase 1 includes owner-made roles (R-08) as your client asked. Phase 2 was built without tier upgrades or document expiry while Q-16 and Q-17 stay open. Phase 3 was built with the old Philippine leave list, Monday to Friday working days by default, and pay kept as a monthly rate, a per-session rate, or both. Phase 4 was built without a member ID check (Q-04) or a health risk score (Q-05). The other 55 items are waiting their turn.
 
 ## Deliberately left out
 
@@ -116,7 +116,7 @@ Implementation begins with the next eligible `R-` item: the earliest one that is
 
 **Before the first item: setting up.** The implementation plan for Phase 1 must start by setting up the three parts the rebuild uses, before any `R-` item is built. These are the Laravel backend, a new MySQL store built from scratch rather than imported from the old copy, and the coss UI screen app installed with its official method (the stack was said in conversation, 3 November 2026). The setup also covers the parts the proposed arrangement relies on: private file storage, the background sending line, the scheduled job runner, and secrets kept out of shared folders (see [03 - SYSTEM ARCHITECTURE](../03%20-%20SYSTEM%20ARCHITECTURE/03%20-%20SYSTEM%20ARCHITECTURE.md)). Setup is groundwork, not a capability, so it carries no `R-` number (added in conversation, 3 November 2026).
 
-**The next eligible item right now:** R-31, apply for membership, in [PHASE 4](phase-4/PHASE%204.md). Phases 1, 2 and 3 are finished.
+**The next eligible item right now:** R-42, sessions, in [PHASE 5](phase-5/PHASE%205.md). Phases 1 to 4 are finished. The Phase 4 checks that need later work were moved to R-51, R-54, R-55 (Phase 5), R-63 (Phase 6) and R-82 (Phase 7) on 5 November 2026.
 
 This roadmap decides **what** gets built, **which module it belongs to**, and **in what order**. It deliberately does not decide **how**. A separate implementation-planning workflow breaks the chosen item into tasks, sets technical checks, and hands those tasks to whoever builds them.
 

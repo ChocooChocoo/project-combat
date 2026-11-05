@@ -14,13 +14,20 @@ import ForgotPassword from '@/pages/ForgotPassword'
 import GymApply from '@/pages/GymApply'
 import GymPublic from '@/pages/GymPublic'
 import EmployeeRecord from '@/pages/gym/EmployeeRecord'
+import GymApplications from '@/pages/gym/GymApplications'
 import GymLeave from '@/pages/gym/GymLeave'
+import GymMembers from '@/pages/gym/GymMembers'
+import GymPayments from '@/pages/gym/GymPayments'
 import GymPlans from '@/pages/gym/GymPlans'
 import GymRooms from '@/pages/gym/GymRooms'
 import GymServices from '@/pages/gym/GymServices'
 import GymSettings from '@/pages/gym/GymSettings'
 import GymStaff from '@/pages/gym/GymStaff'
+import MemberRecord from '@/pages/gym/MemberRecord'
 import MyWork from '@/pages/gym/MyWork'
+import MembershipApply from '@/pages/member/MembershipApply'
+import MyMembership, { MyMembershipList } from '@/pages/member/MyMemberships'
+import MyRecord from '@/pages/member/MyRecord'
 import Home from '@/pages/Home'
 import MyApplications from '@/pages/MyApplications'
 import Notifications from '@/pages/Notifications'
@@ -106,7 +113,11 @@ export default function App() {
           <Route path="/applications" element={<MyApplications />} />
           <Route path="/applications/:id" element={<ApplicationDetail />} />
           <Route path="/applications/:id/edit" element={<GymApply />} />
+          <Route path="/gyms/:gymId/apply" element={<MembershipApply />} />
+          <Route path="/memberships" element={<MyMembershipList />} />
+          <Route path="/memberships/:id" element={<MyMembership />} />
           <Route element={<GymMember />}>
+            <Route path="/gyms/:gymId/my-record" element={<MyRecord />} />
             <Route path="/gyms/:gymId/manage" element={<GymWorkspaceLayout />}>
               <Route index element={<WorkspaceHome />} />
               <Route path="settings" element={<GymSettings />} />
@@ -116,6 +127,10 @@ export default function App() {
               <Route path="leave" element={<GymLeave />} />
               <Route path="services" element={<GymServices />} />
               <Route path="plans" element={<GymPlans />} />
+              <Route path="applications" element={<GymApplications />} />
+              <Route path="members" element={<GymMembers />} />
+              <Route path="members/:membershipId" element={<MemberRecord />} />
+              <Route path="payments" element={<GymPayments />} />
               <Route path="my-work" element={<MyWork />} />
             </Route>
           </Route>

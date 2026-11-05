@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\PlatformStatsController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DiscoveryController;
 use App\Http\Controllers\GeoController;
+use App\Http\Controllers\Gym\AthleteRecordController;
 use App\Http\Controllers\Gym\EmployeeProfileController;
 use App\Http\Controllers\Gym\GymApplicationController;
 use App\Http\Controllers\Gym\GymDocumentController;
@@ -12,6 +13,8 @@ use App\Http\Controllers\Gym\GymRoleController;
 use App\Http\Controllers\Gym\GymSetupController;
 use App\Http\Controllers\Gym\HolidayController;
 use App\Http\Controllers\Gym\LeaveController;
+use App\Http\Controllers\Gym\MembershipController;
+use App\Http\Controllers\Gym\PaymentController;
 use App\Http\Controllers\Gym\PlanController;
 use App\Http\Controllers\Gym\RoomController;
 use App\Http\Controllers\Gym\ScheduleController;
@@ -19,7 +22,10 @@ use App\Http\Controllers\Gym\ServiceController;
 use App\Http\Controllers\Gym\StaffController;
 use App\Http\Controllers\Gym\WorkController;
 use App\Http\Controllers\GymPreferenceController;
+use App\Http\Controllers\MembershipApplicationController;
+use App\Http\Controllers\MyMembershipController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PayMongoWebhookController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicGymController;
 use Illuminate\Support\Facades\Route;
@@ -34,6 +40,9 @@ Route::prefix('auth')->middleware('throttle:auth-public')->group(function () {
     Route::post('reset-password', [AuthController::class, 'resetPassword']);
     Route::post('accept-invite', [AuthController::class, 'acceptInvite']);
 });
+
+// R-35: PayMongo confirms payments here. The signature is checked inside; no sign-in.
+Route::post('webhooks/paymongo', PayMongoWebhookController::class)->middleware('throttle:60,1');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
@@ -74,6 +83,15 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('geo/search', [GeoController::class, 'search'])->middleware('throttle:geo');
             Route::get('gym-preferences', [GymPreferenceController::class, 'show']);
             Route::put('gym-preferences', [GymPreferenceController::class, 'update']);
+
+            // Joining a gym (R-31, R-32) and the person's own memberships and online payment (R-35, S-39).
+            // These sit outside the gym check: an applicant does not belong to the gym yet.
+            Route::get('membership-form', [MembershipApplicationController::class, 'form']);
+            Route::post('gyms/{gym}/membership-applications', [MembershipApplicationController::class, 'store'])->whereNumber('gym');
+            Route::get('my-memberships', [MyMembershipController::class, 'index']);
+            Route::get('my-memberships/{membership}', [MyMembershipController::class, 'show'])->whereNumber('membership');
+            Route::post('my-memberships/{membership}/checkout', [MyMembershipController::class, 'checkout'])->whereNumber('membership');
+            Route::post('my-memberships/{membership}/checkout/confirm', [MyMembershipController::class, 'confirm'])->whereNumber('membership');
 
             // Platform administrator: review applications and platform numbers (R-16 to R-19).
             Route::prefix('admin')->middleware('admin')->group(function () {
@@ -155,6 +173,33 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::delete('plans/{plan}', [PlanController::class, 'destroy'])->whereNumber('plan')->middleware('module:members,manage');
                 Route::post('plans/{plan}/publish', [PlanController::class, 'publish'])->whereNumber('plan')->middleware('module:members,manage');
                 Route::post('plans/{plan}/unpublish', [PlanController::class, 'unpublish'])->whereNumber('plan')->middleware('module:members,manage');
+
+                // Applications and memberships (R-33, R-36). Deciding needs membership approval.
+                // Members, coaches and the payments desk all need the list; the controller checks.
+                Route::get('memberships', [MembershipController::class, 'index']);
+                Route::get('memberships/{membership}', [MembershipController::class, 'show'])->whereNumber('membership')->middleware('module:members,view');
+                Route::get('memberships/{membership}/medical-file', [MembershipController::class, 'medicalFile'])->whereNumber('membership');
+                Route::post('memberships/{membership}/decision', [MembershipController::class, 'decide'])->whereNumber('membership')->middleware('module:members,approve');
+                Route::middleware('module:members,manage')->group(function () {
+                    Route::post('memberships/{membership}/renew', [MembershipController::class, 'renew'])->whereNumber('membership');
+                    Route::post('memberships/{membership}/freeze', [MembershipController::class, 'freeze'])->whereNumber('membership');
+                    Route::post('memberships/{membership}/unfreeze', [MembershipController::class, 'unfreeze'])->whereNumber('membership');
+                    Route::post('memberships/{membership}/cancel', [MembershipController::class, 'cancel'])->whereNumber('membership');
+                });
+
+                // Payments desk (R-34).
+                Route::get('payments', [PaymentController::class, 'index'])->middleware('module:finance,view');
+                Route::post('payments', [PaymentController::class, 'store'])->middleware('module:finance,manage');
+                Route::post('payments/{payment}/correct', [PaymentController::class, 'correct'])->whereNumber('payment')->middleware('module:finance,manage');
+
+                // Athlete records (R-37 to R-41). Viewing and health checks are in the controller.
+                Route::get('athletes/{user}/record', [AthleteRecordController::class, 'show']);
+                Route::get('athletes/{user}/medical-file', [AthleteRecordController::class, 'medicalFile']);
+                Route::post('athletes/{user}/entries', [AthleteRecordController::class, 'storeEntry'])->middleware('module:training,manage');
+                Route::get('my-record', [AthleteRecordController::class, 'mine']);
+                // POST as well as PUT: browsers send file uploads as POST.
+                Route::put('my-record/health', [AthleteRecordController::class, 'updateMyHealth']);
+                Route::post('my-record/health', [AthleteRecordController::class, 'updateMyHealth']);
             });
         });
     });

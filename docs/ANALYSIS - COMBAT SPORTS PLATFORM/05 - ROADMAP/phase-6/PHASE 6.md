@@ -32,7 +32,7 @@ Training feeds the business side directly. Coach sessions and attendance feed pa
 | Waits for | Why | Status |
 |---|---|---|
 | R-23, R-24, R-25, R-26, R-27 in [PHASE 3](../phase-3/PHASE%203.md) | Pay rates, schedules, leave and holidays feed payroll | ⭕ |
-| R-34 in [PHASE 4](../phase-4/PHASE%204.md) | Membership payments are income | ⭕ |
+| R-34 in [PHASE 4](../phase-4/PHASE%204.md) | Membership payments are income | ✅ |
 | R-42, R-51 in [PHASE 5](../phase-5/PHASE%205.md) | Coach sessions feed payroll; session fees are income | ⭕ |
 | Q-13, Q-14, Q-21 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) | Coach pay, lateness and working days shape payroll | ⭕ |
 
@@ -282,6 +282,7 @@ Discounts are shown. Staff can also record walk-in and merchandise sales directl
 **Done when:**
 
 - [ ] A recorded membership or session payment appears as income without retyping.
+- [ ] Online PayMongo payments (R-35 in [PHASE 4](../phase-4/PHASE%204.md)) appear as income the same way as desk payments. *(Moved from R-35 on 5 November 2026.)*
 - [ ] Walk-in and merchandise sales can be recorded.
 - [ ] Income can be viewed by type and date range.
 

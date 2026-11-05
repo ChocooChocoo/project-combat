@@ -1,4 +1,4 @@
-import { CalendarDays, ClipboardList, CreditCard, DoorOpen, Dumbbell, Settings2, Users, type LucideIcon } from 'lucide-react'
+import { CalendarDays, ClipboardList, CreditCard, DoorOpen, Dumbbell, Inbox, Receipt, Settings2, UserCheck, Users, type LucideIcon } from 'lucide-react'
 import type { GymAccess } from '@/lib/auth'
 import { can, type AccessLevel, type GymModule } from '@/lib/gym-access'
 
@@ -11,6 +11,9 @@ const ITEMS: { segment: string; label: string; icon: LucideIcon; module: GymModu
   { segment: 'leave', label: 'Leave', icon: CalendarDays, module: 'hr' },
   { segment: 'services', label: 'Services', icon: Dumbbell, module: 'gym_setup' },
   { segment: 'plans', label: 'Plans', icon: CreditCard, module: 'members' },
+  { segment: 'applications', label: 'Applications', icon: Inbox, module: 'members' },
+  { segment: 'members', label: 'Members', icon: UserCheck, module: 'members' },
+  { segment: 'payments', label: 'Payments', icon: Receipt, module: 'finance' },
 ]
 
 /** Workspace links this person may open, in the order the sidebar and sub-navigation show them. */

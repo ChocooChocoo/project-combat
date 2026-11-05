@@ -1,4 +1,4 @@
-import { Building2, Check, ChevronsUpDown, ClipboardCheck, FilePlus2, FileText, House, LogOut, UserRound } from 'lucide-react'
+import { Building2, Check, ChevronsUpDown, ClipboardCheck, FilePlus2, FileText, House, IdCard, LogOut, Medal, UserRound } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { myWorkNav, workspaceNav } from '@/components/gym-nav'
@@ -31,6 +31,7 @@ type Item = { to: string; label: string; icon: React.ComponentType; end?: boolea
 function gymEntry(gym: GymAccess): string {
   if (canManage(gym)) return `/gyms/${gym.id}/manage`
   if (gym.roles.includes('employee')) return `/gyms/${gym.id}/manage/my-work`
+  if (gym.roles.includes('member')) return `/gyms/${gym.id}/my-record`
   return `/gyms/${gym.id}`
 }
 
@@ -151,8 +152,12 @@ export function AppShell() {
   const approvedGyms = user?.gyms.filter((gym) => gym.status === 'approved') ?? []
   const currentGym = approvedGym(user, Number(pathname.match(/^\/gyms\/(\d+)(?:\/|$)/)?.[1]))
 
-  const general: Item[] = [{ to: '/', label: 'Home', icon: House, end: true }]
+  const general: Item[] = [
+    { to: '/', label: 'Home', icon: House, end: true },
+    { to: '/memberships', label: 'My memberships', icon: IdCard },
+  ]
   if (currentGym?.roles.includes('employee')) general.push(myWorkNav(currentGym.id))
+  if (currentGym?.roles.includes('member')) general.push({ to: `/gyms/${currentGym.id}/my-record`, label: 'My record', icon: Medal })
 
   const workspace = currentGym ? workspaceNav(currentGym) : []
   const owner: Item[] = [

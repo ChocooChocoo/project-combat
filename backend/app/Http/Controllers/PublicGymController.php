@@ -227,6 +227,8 @@ class PublicGymController extends Controller
             'policy_freezing' => $plan->policy_freezing,
             'policy_renewal' => $plan->policy_renewal,
             'policy_cancellation' => $plan->policy_cancellation,
+            'max_freeze_days' => $plan->max_freeze_days,
+            'refundable' => $plan->refundable,
             'addons' => $plan->addons->map(fn (MembershipPlanAddon $addon) => [
                 'id' => $addon->id,
                 'service_id' => $addon->gym_service_id,

@@ -25,7 +25,7 @@ The phase can start once [PHASE 4](../phase-4/PHASE%204.md) is done, alongside P
 | Waits for | Why | Status |
 |---|---|---|
 | R-10 in [PHASE 1](../phase-1/PHASE%201.md) | Every notice lands in the inbox | ⭕ |
-| R-33, R-36 in [PHASE 4](../phase-4/PHASE%204.md) | Members to announce to; memberships that expire | ⭕ |
+| R-33, R-36 in [PHASE 4](../phase-4/PHASE%204.md) | Members to announce to; memberships that expire | ✅ |
 | R-42, R-48 in [PHASE 5](../phase-5/PHASE%205.md) | Classes to target; bookings to remind about | ⭕ |
 | R-69, R-71 in [PHASE 6](../phase-6/PHASE%206.md) | Follow-ups to remind about; customer groups to target | ⭕ |
 | Q-23 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) | What platform notices are for | ⭕ |
@@ -129,7 +129,7 @@ Recipients get it in their inbox.
 **Done when:**
 
 - [ ] Booked athletes get a reminder a set time before each session, even if nobody opens the app.
-- [ ] Members get a reminder a set number of days before their membership expires.
+- [ ] Members get a reminder a set number of days before their membership expires. *(Moved from R-36 in [PHASE 4](../phase-4/PHASE%204.md) on 5 November 2026; the expiry itself and its notice are already built there.)*
 - [ ] The assigned staff member is reminded when a follow-up is due.
 - [ ] Nobody gets the same reminder twice.
 
