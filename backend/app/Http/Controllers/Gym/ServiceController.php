@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\Gym;
 
-use App\Enums\AccessLevel;
-use App\Enums\Module;
 use App\Http\Controllers\Controller;
 use App\Models\Gym;
 use App\Models\GymService;
@@ -29,8 +27,7 @@ class ServiceController extends Controller
         // R-29: a plan manager needs the service list to choose add-ons, even
         // without access to the gym setup screens.
         abort_unless(
-            $request->user()->canInGym($gym, Module::GymSetup, AccessLevel::View)
-            || $request->user()->canInGym($gym, Module::Members, AccessLevel::View),
+            $request->user()->hasPermission($gym, 'gym_setup.services.view', 'members.plans.view'),
             403,
             'You do not have access to this part of the gym.',
         );

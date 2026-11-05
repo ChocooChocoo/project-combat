@@ -23,6 +23,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[UsePolicy(GymApplicationPolicy::class)]
 class Gym extends Model
 {
+    public function peopleWithPermission(string $permission): \Illuminate\Support\Collection
+    {
+        return $this->people()->get()->unique('id')
+            ->filter(fn (User $person) => $person->hasPermission($this, $permission))->values();
+    }
     use HasFactory;
 
     /** Profile fields an application needs before it can be sent (R-11). */

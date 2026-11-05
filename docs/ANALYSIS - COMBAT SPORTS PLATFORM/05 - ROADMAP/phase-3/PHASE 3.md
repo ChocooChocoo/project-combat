@@ -29,7 +29,7 @@ A workspace exists only for an approved gym (R-18 in [PHASE 2](../phase-2/PHASE%
 | Waits for | Why | Status |
 |---|---|---|
 | R-18 in [PHASE 2](../phase-2/PHASE%202.md) | Only an approved gym gets a workspace | ✅ |
-| R-08, R-09 in [PHASE 1](../phase-1/PHASE%201.md) | Employees get module permissions inside one gym | ✅ |
+| R-08, R-09 in [PHASE 1](../phase-1/PHASE%201.md) | Employees get exact named permissions inside one gym, through active and unexpired role grants | ✅ |
 | R-06 in [PHASE 1](../phase-1/PHASE%201.md) | New employees must set their own password | ✅ |
 | Q-19 and Q-21 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) | Leave types and working days shape leave and schedules | ✅ |
 
@@ -144,7 +144,7 @@ A workspace exists only for an approved gym (R-18 in [PHASE 2](../phase-2/PHASE%
 - [x] The owner can add an employee and give them roles in one step.
 - [x] The employee receives a sign-in invitation, never a password shown on screen.
 - [x] The owner can change an employee's roles or remove the employee at any time, and removal ends their access straight away.
-- [x] On the staff and roles screen (S-17), the owner creates, edits and deletes roles, choosing a level for each module, and gives roles to employees. *(The screen part of R-08; moved here in conversation, 3 November 2026, and changed to roles at your client's request.)*
+- [x] On the staff and roles screen (S-17), the owner creates and edits roles with named permissions, toggles them, deletes unused custom roles, and assigns roles with optional end dates. Role viewing and editing use separate permissions from staff access. Starter roles cannot be deleted. Self-held roles require another authorized editor. *(R-08 catalog conversion, 5 November 2026; see [operations](../../../implementation-plan/rbac-redesign/rbac-operations.md).)*
 
 **Still open:** nothing. Q-10 answered: a person may work at several gyms.
 

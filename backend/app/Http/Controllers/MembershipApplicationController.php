@@ -2,14 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\AccessLevel;
 use App\Enums\GymPersonType;
 use App\Enums\GymStatus;
 use App\Enums\MembershipStatus;
-use App\Enums\Module;
 use App\Http\Controllers\Concerns\PresentsMemberships;
 use App\Models\Gym;
-use App\Models\GymRole;
 use App\Models\Membership;
 use App\Models\MembershipPlan;
 use App\Notifications\MembershipApplicationSubmitted;
@@ -138,12 +135,6 @@ class MembershipApplicationController extends Controller
     /** Owners, and employees whose roles give membership approval (R-33). */
     private function deciders(Gym $gym)
     {
-        $owners = $gym->people()->wherePivot('role', GymPersonType::Owner->value)->get();
-
-        $approvers = GymRole::where('gym_id', $gym->id)->get()
-            ->filter(fn (GymRole $role) => $role->levelFor(Module::Members)?->covers(AccessLevel::Approve))
-            ->flatMap(fn (GymRole $role) => $role->users()->get());
-
-        return $owners->merge($approvers)->unique('id')->values();
+        return $gym->peopleWithPermission('members.memberships.approve');
     }
 }

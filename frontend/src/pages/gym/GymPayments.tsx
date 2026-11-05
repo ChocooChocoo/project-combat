@@ -20,7 +20,7 @@ export default function GymPayments() {
   const gymId = Number(gymIdParam)
   const { user } = useAuth()
   const gym = approvedGym(user, gymId)
-  const canRecord = gym ? can(gym, 'finance', 'manage') : false
+  const canRecord = gym ? can(gym, 'finance.payments.manage') : false
 
   const [payments, setPayments] = useState<Payment[] | null>(null)
   const [members, setMembers] = useState<Membership[]>([])

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminPermissionController;
 use App\Http\Controllers\Admin\GymReviewController;
 use App\Http\Controllers\Admin\PlatformStatsController;
 use App\Http\Controllers\Auth\AuthController;
@@ -66,7 +67,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::delete('notifications/read', [NotificationController::class, 'clearRead']);
             Route::post('notifications/{id}/read', [NotificationController::class, 'markRead']);
 
-            Route::get('access/templates', [GymRoleController::class, 'templates']);
+            Route::get('permissions/catalog', [GymRoleController::class, 'catalog']);
 
             // Owner applications (R-11 to R-15). The policy limits each one to its applicant and the administrator.
             Route::prefix('gym-applications')->group(function () {
@@ -104,6 +105,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
             // Platform administrator: review applications and platform numbers (R-16 to R-19).
             Route::prefix('admin')->middleware('admin')->group(function () {
+                Route::get('permissions', [AdminPermissionController::class, 'index']);
+                Route::post('permissions', [AdminPermissionController::class, 'store']);
+                Route::put('permissions/{permission}', [AdminPermissionController::class, 'update']);
+                Route::post('permissions/{permission}/toggle-status', [AdminPermissionController::class, 'toggleStatus']);
+                Route::delete('permissions/{permission}', [AdminPermissionController::class, 'destroy']);
                 Route::get('stats', PlatformStatsController::class);
                 Route::get('applications', [GymReviewController::class, 'index']);
                 Route::get('applications/{gym}', [GymReviewController::class, 'show']);
@@ -114,11 +120,12 @@ Route::middleware('auth:sanctum')->group(function () {
             // Everything inside a gym goes through the gym check first (R-09).
             Route::prefix('gyms/{gym}')->middleware('gym')->group(function () {
                 // Owner-made roles (R-08). Viewing needs HR view; changing needs HR manage.
-                Route::middleware('module:hr,view')->group(function () {
+                Route::middleware('permission:hr.roles.view')->group(function () {
                     Route::get('roles', [GymRoleController::class, 'index']);
                     Route::get('staff/{user}/roles', [GymRoleController::class, 'staffRoles']);
                 });
-                Route::middleware('module:hr,manage')->group(function () {
+                Route::middleware('permission:hr.roles.manage')->group(function () {
+                    Route::post('roles/{role}/toggle-status', [GymRoleController::class, 'toggleStatus'])->whereNumber('role');
                     Route::post('roles', [GymRoleController::class, 'store']);
                     Route::put('roles/{role}', [GymRoleController::class, 'update'])->whereNumber('role');
                     Route::delete('roles/{role}', [GymRoleController::class, 'destroy'])->whereNumber('role');
@@ -126,54 +133,54 @@ Route::middleware('auth:sanctum')->group(function () {
                 });
 
                 // Workspace setup (R-20). Options are open to any member.
-                Route::get('setup', [GymSetupController::class, 'show'])->middleware('module:gym_setup,view');
-                Route::put('setup', [GymSetupController::class, 'update'])->middleware('module:gym_setup,manage');
+                Route::get('setup', [GymSetupController::class, 'show'])->middleware('permission:gym_setup.settings.view');
+                Route::put('setup', [GymSetupController::class, 'update'])->middleware('permission:gym_setup.settings.manage');
                 Route::get('options', [GymSetupController::class, 'options']);
 
                 // Rooms (R-21).
-                Route::get('rooms', [RoomController::class, 'index'])->middleware('module:gym_setup,view');
-                Route::post('rooms', [RoomController::class, 'store'])->middleware('module:gym_setup,manage');
-                Route::put('rooms/{room}', [RoomController::class, 'update'])->whereNumber('room')->middleware('module:gym_setup,manage');
-                Route::delete('rooms/{room}', [RoomController::class, 'destroy'])->whereNumber('room')->middleware('module:gym_setup,manage');
+                Route::get('rooms', [RoomController::class, 'index'])->middleware('permission:gym_setup.rooms.view');
+                Route::post('rooms', [RoomController::class, 'store'])->middleware('permission:gym_setup.rooms.manage');
+                Route::put('rooms/{room}', [RoomController::class, 'update'])->whereNumber('room')->middleware('permission:gym_setup.rooms.manage');
+                Route::delete('rooms/{room}', [RoomController::class, 'destroy'])->whereNumber('room')->middleware('permission:gym_setup.rooms.manage');
 
                 // Sessions (R-42, R-43). Options must come before the occurrence id.
                 // R-44, R-47 to R-50: members book without staff module access.
                 Route::get('timetable', [BookingController::class, 'timetable']);
                 // R-52 to R-55: members show codes; only the training desk redeems them.
                 Route::get('my-check-in-code', [AttendanceController::class, 'code'])->middleware('throttle:30,1');
-                Route::get('check-ins/members', [AttendanceController::class, 'members'])->middleware('module:training,manage');
-                Route::get('check-ins', [AttendanceController::class, 'today'])->middleware('module:training,manage');
-                Route::post('check-ins', [AttendanceController::class, 'store'])->middleware(['module:training,manage', 'throttle:60,1']);
-                Route::get('attendance', [AttendanceController::class, 'index'])->middleware('module:training,view');
-                Route::put('bookings/{booking}/attendance', [AttendanceController::class, 'attendance'])->whereNumber('booking')->middleware('module:training,manage');
-                Route::post('bookings/{booking}/check-out', [AttendanceController::class, 'checkOut'])->whereNumber('booking')->middleware('module:training,manage');
+                Route::get('check-ins/members', [AttendanceController::class, 'members'])->middleware('permission:training.check_ins.manage');
+                Route::get('check-ins', [AttendanceController::class, 'today'])->middleware('permission:training.check_ins.manage');
+                Route::post('check-ins', [AttendanceController::class, 'store'])->middleware(['permission:training.check_ins.manage', 'throttle:60,1']);
+                Route::get('attendance', [AttendanceController::class, 'index'])->middleware('permission:training.attendance.view');
+                Route::put('bookings/{booking}/attendance', [AttendanceController::class, 'attendance'])->whereNumber('booking')->middleware('permission:training.attendance.manage');
+                Route::post('bookings/{booking}/check-out', [AttendanceController::class, 'checkOut'])->whereNumber('booking')->middleware('permission:training.attendance.manage');
                 Route::post('sessions/{session}/notes', [SessionNoteController::class, 'store'])->whereNumber('session');
                 Route::get('timetable/{session}', [BookingController::class, 'show'])->whereNumber('session');
                 Route::post('timetable/{session}/book', [BookingController::class, 'book'])->whereNumber('session');
                 Route::get('coaches/{user}/open-slots', [CoachCalendarController::class, 'slots'])->whereNumber('user');
                 Route::get('coaches/{user}/calendar', [CoachCalendarController::class, 'calendar'])->whereNumber('user');
                 Route::post('private-bookings', [CoachCalendarController::class, 'bookPrivate']);
-                Route::get('bookings', [BookingController::class, 'index'])->middleware('module:training,view');
+                Route::get('bookings', [BookingController::class, 'index'])->middleware('permission:training.bookings.view');
                 Route::post('bookings/{booking}/cancel', [BookingController::class, 'cancel'])->whereNumber('booking');
-                Route::post('bookings/{booking}/decision', [BookingController::class, 'decide'])->whereNumber('booking')->middleware('module:training,approve');
-                Route::get('sessions/{session}/roster', [BookingController::class, 'roster'])->whereNumber('session')->middleware('module:training,view');
-                Route::get('sessions/options', [SessionController::class, 'options'])->middleware('module:training,view');
-                Route::get('sessions', [SessionController::class, 'index'])->middleware('module:training,view');
-                Route::get('sessions/{session}', [SessionController::class, 'show'])->whereNumber('session')->middleware('module:training,view');
-                Route::post('sessions', [SessionController::class, 'store'])->middleware('module:training,manage');
-                Route::put('sessions/{session}', [SessionController::class, 'update'])->whereNumber('session')->middleware('module:training,manage');
-                Route::post('sessions/{session}/cancel', [SessionController::class, 'cancel'])->whereNumber('session')->middleware('module:training,manage');
-                Route::get('sessions/{session}/free-coaches', [SessionController::class, 'freeCoaches'])->whereNumber('session')->middleware('module:training,view');
+                Route::post('bookings/{booking}/decision', [BookingController::class, 'decide'])->whereNumber('booking')->middleware('permission:training.bookings.approve');
+                Route::get('sessions/{session}/roster', [BookingController::class, 'roster'])->whereNumber('session')->middleware('permission:training.sessions.view');
+                Route::get('sessions/options', [SessionController::class, 'options'])->middleware('permission:training.sessions.view');
+                Route::get('sessions', [SessionController::class, 'index'])->middleware('permission:training.sessions.view');
+                Route::get('sessions/{session}', [SessionController::class, 'show'])->whereNumber('session')->middleware('permission:training.sessions.view');
+                Route::post('sessions', [SessionController::class, 'store'])->middleware('permission:training.sessions.manage');
+                Route::put('sessions/{session}', [SessionController::class, 'update'])->whereNumber('session')->middleware('permission:training.sessions.manage');
+                Route::post('sessions/{session}/cancel', [SessionController::class, 'cancel'])->whereNumber('session')->middleware('permission:training.sessions.manage');
+                Route::get('sessions/{session}/free-coaches', [SessionController::class, 'freeCoaches'])->whereNumber('session')->middleware('permission:training.sessions.view');
 
                 // Staff (R-22 to R-24). Showing a person is open to that person; the controller checks.
-                Route::get('staff', [StaffController::class, 'index'])->middleware('module:hr,view');
-                Route::post('staff', [StaffController::class, 'store'])->middleware('module:hr,manage');
+                Route::get('staff', [StaffController::class, 'index'])->middleware('permission:hr.staff.view');
+                Route::post('staff', [StaffController::class, 'store'])->middleware('permission:hr.staff.manage');
                 Route::get('staff/{user}', [StaffController::class, 'show']);
-                Route::put('staff/{user}', [StaffController::class, 'update'])->middleware('module:hr,manage');
-                Route::delete('staff/{user}', [StaffController::class, 'destroy'])->middleware('module:hr,manage');
+                Route::put('staff/{user}', [StaffController::class, 'update'])->middleware('permission:hr.staff.manage');
+                Route::delete('staff/{user}', [StaffController::class, 'destroy'])->middleware('permission:hr.staff.manage');
                 Route::put('staff/{user}/profile', [EmployeeProfileController::class, 'update']);
                 Route::get('staff/{user}/schedule', [ScheduleController::class, 'show']);
-                Route::put('staff/{user}/schedule', [ScheduleController::class, 'update'])->middleware('module:hr,manage');
+                Route::put('staff/{user}/schedule', [ScheduleController::class, 'update'])->middleware('permission:hr.schedules.manage');
 
                 // Leave (R-25, R-26). Own requests are open; HR sees all. The controller checks.
                 Route::get('leave-requests', [LeaveController::class, 'index']);
@@ -181,13 +188,13 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('leave-requests/{leave}', [LeaveController::class, 'show'])->whereNumber('leave');
                 Route::get('leave-requests/{leave}/attachment', [LeaveController::class, 'attachment'])->whereNumber('leave');
                 Route::post('leave-requests/{leave}/cancel', [LeaveController::class, 'cancel'])->whereNumber('leave');
-                Route::post('leave-requests/{leave}/decision', [LeaveController::class, 'decide'])->whereNumber('leave')->middleware('module:hr,manage');
+                Route::post('leave-requests/{leave}/decision', [LeaveController::class, 'decide'])->whereNumber('leave')->middleware('permission:hr.leave.manage');
                 Route::get('leave-balances', [LeaveController::class, 'balances']);
 
                 // Holidays (R-27).
                 Route::get('holidays', [HolidayController::class, 'index']);
-                Route::post('holidays', [HolidayController::class, 'store'])->middleware('module:hr,manage');
-                Route::delete('holidays/{holiday}', [HolidayController::class, 'destroy'])->whereNumber('holiday')->middleware('module:hr,manage');
+                Route::post('holidays', [HolidayController::class, 'store'])->middleware('permission:hr.holidays.manage');
+                Route::delete('holidays/{holiday}', [HolidayController::class, 'destroy'])->whereNumber('holiday')->middleware('permission:hr.holidays.manage');
 
                 // The employee's own work view.
                 Route::get('my-work', [WorkController::class, 'show']);
@@ -195,30 +202,30 @@ Route::middleware('auth:sanctum')->group(function () {
                 // Services (R-28).
                 // Viewing is open to gym setup or membership-plan managers, so add-ons can be chosen.
                 Route::get('services', [ServiceController::class, 'index']);
-                Route::post('services', [ServiceController::class, 'store'])->middleware('module:gym_setup,manage');
-                Route::put('services/{service}', [ServiceController::class, 'update'])->whereNumber('service')->middleware('module:gym_setup,manage');
-                Route::delete('services/{service}', [ServiceController::class, 'destroy'])->whereNumber('service')->middleware('module:gym_setup,manage');
-                Route::post('services/{service}/cover', [ServiceController::class, 'cover'])->whereNumber('service')->middleware('module:gym_setup,manage');
-                Route::post('services/{service}/photos', [ServiceController::class, 'storePhoto'])->whereNumber('service')->middleware('module:gym_setup,manage');
-                Route::delete('services/{service}/photos/{photo}', [ServiceController::class, 'destroyPhoto'])->whereNumber('service')->whereNumber('photo')->middleware('module:gym_setup,manage');
-                Route::post('services/{service}/publish', [ServiceController::class, 'publish'])->whereNumber('service')->middleware('module:gym_setup,manage');
-                Route::post('services/{service}/unpublish', [ServiceController::class, 'unpublish'])->whereNumber('service')->middleware('module:gym_setup,manage');
+                Route::post('services', [ServiceController::class, 'store'])->middleware('permission:gym_setup.services.manage');
+                Route::put('services/{service}', [ServiceController::class, 'update'])->whereNumber('service')->middleware('permission:gym_setup.services.manage');
+                Route::delete('services/{service}', [ServiceController::class, 'destroy'])->whereNumber('service')->middleware('permission:gym_setup.services.manage');
+                Route::post('services/{service}/cover', [ServiceController::class, 'cover'])->whereNumber('service')->middleware('permission:gym_setup.services.manage');
+                Route::post('services/{service}/photos', [ServiceController::class, 'storePhoto'])->whereNumber('service')->middleware('permission:gym_setup.services.manage');
+                Route::delete('services/{service}/photos/{photo}', [ServiceController::class, 'destroyPhoto'])->whereNumber('service')->whereNumber('photo')->middleware('permission:gym_setup.services.manage');
+                Route::post('services/{service}/publish', [ServiceController::class, 'publish'])->whereNumber('service')->middleware('permission:gym_setup.services.manage');
+                Route::post('services/{service}/unpublish', [ServiceController::class, 'unpublish'])->whereNumber('service')->middleware('permission:gym_setup.services.manage');
 
                 // Membership plans (R-29).
-                Route::get('plans', [PlanController::class, 'index'])->middleware('module:members,view');
-                Route::post('plans', [PlanController::class, 'store'])->middleware('module:members,manage');
-                Route::put('plans/{plan}', [PlanController::class, 'update'])->whereNumber('plan')->middleware('module:members,manage');
-                Route::delete('plans/{plan}', [PlanController::class, 'destroy'])->whereNumber('plan')->middleware('module:members,manage');
-                Route::post('plans/{plan}/publish', [PlanController::class, 'publish'])->whereNumber('plan')->middleware('module:members,manage');
-                Route::post('plans/{plan}/unpublish', [PlanController::class, 'unpublish'])->whereNumber('plan')->middleware('module:members,manage');
+                Route::get('plans', [PlanController::class, 'index'])->middleware('permission:members.plans.view');
+                Route::post('plans', [PlanController::class, 'store'])->middleware('permission:members.plans.manage');
+                Route::put('plans/{plan}', [PlanController::class, 'update'])->whereNumber('plan')->middleware('permission:members.plans.manage');
+                Route::delete('plans/{plan}', [PlanController::class, 'destroy'])->whereNumber('plan')->middleware('permission:members.plans.manage');
+                Route::post('plans/{plan}/publish', [PlanController::class, 'publish'])->whereNumber('plan')->middleware('permission:members.plans.manage');
+                Route::post('plans/{plan}/unpublish', [PlanController::class, 'unpublish'])->whereNumber('plan')->middleware('permission:members.plans.manage');
 
                 // Applications and memberships (R-33, R-36). Deciding needs membership approval.
                 // Members, coaches and the payments desk all need the list; the controller checks.
                 Route::get('memberships', [MembershipController::class, 'index']);
-                Route::get('memberships/{membership}', [MembershipController::class, 'show'])->whereNumber('membership')->middleware('module:members,view');
+                Route::get('memberships/{membership}', [MembershipController::class, 'show'])->whereNumber('membership')->middleware('permission:members.memberships.view');
                 Route::get('memberships/{membership}/medical-file', [MembershipController::class, 'medicalFile'])->whereNumber('membership');
-                Route::post('memberships/{membership}/decision', [MembershipController::class, 'decide'])->whereNumber('membership')->middleware('module:members,approve');
-                Route::middleware('module:members,manage')->group(function () {
+                Route::post('memberships/{membership}/decision', [MembershipController::class, 'decide'])->whereNumber('membership')->middleware('permission:members.memberships.approve');
+                Route::middleware('permission:members.memberships.manage')->group(function () {
                     Route::post('memberships/{membership}/renew', [MembershipController::class, 'renew'])->whereNumber('membership');
                     Route::post('memberships/{membership}/freeze', [MembershipController::class, 'freeze'])->whereNumber('membership');
                     Route::post('memberships/{membership}/unfreeze', [MembershipController::class, 'unfreeze'])->whereNumber('membership');
@@ -226,15 +233,15 @@ Route::middleware('auth:sanctum')->group(function () {
                 });
 
                 // Payments desk (R-34).
-                Route::get('payments', [PaymentController::class, 'index'])->middleware('module:finance,view');
-                Route::get('payments/owed-bookings', [PaymentController::class, 'owedBookings'])->middleware('module:finance,view');
-                Route::post('payments', [PaymentController::class, 'store'])->middleware('module:finance,manage');
-                Route::post('payments/{payment}/correct', [PaymentController::class, 'correct'])->whereNumber('payment')->middleware('module:finance,manage');
+                Route::get('payments', [PaymentController::class, 'index'])->middleware('permission:finance.payments.view');
+                Route::get('payments/owed-bookings', [PaymentController::class, 'owedBookings'])->middleware('permission:finance.payments.view');
+                Route::post('payments', [PaymentController::class, 'store'])->middleware('permission:finance.payments.manage');
+                Route::post('payments/{payment}/correct', [PaymentController::class, 'correct'])->whereNumber('payment')->middleware('permission:finance.payments.manage');
 
                 // Athlete records (R-37 to R-41). Viewing and health checks are in the controller.
                 Route::get('athletes/{user}/record', [AthleteRecordController::class, 'show']);
                 Route::get('athletes/{user}/medical-file', [AthleteRecordController::class, 'medicalFile']);
-                Route::post('athletes/{user}/entries', [AthleteRecordController::class, 'storeEntry'])->middleware('module:training,manage');
+                Route::post('athletes/{user}/entries', [AthleteRecordController::class, 'storeEntry'])->middleware('permission:training.athletes.manage');
                 Route::get('my-record', [AthleteRecordController::class, 'mine']);
                 // POST as well as PUT: browsers send file uploads as POST.
                 Route::put('my-record/health', [AthleteRecordController::class, 'updateMyHealth']);

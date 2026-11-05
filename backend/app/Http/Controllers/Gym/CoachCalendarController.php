@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers\Gym;
 
-use App\Enums\AccessLevel;
 use App\Enums\LeaveRequestStatus;
-use App\Enums\Module;
 use App\Http\Controllers\Concerns\PresentsBookings;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Gym\Concerns\PresentsHr;
@@ -33,8 +31,7 @@ class CoachCalendarController extends Controller
     {
         $this->ensureCoach($gym, $user);
         abort_unless($request->user()->is($user)
-            || $request->user()->canInGym($gym, Module::Training, AccessLevel::View)
-            || $request->user()->canInGym($gym, Module::Hr, AccessLevel::View), 403);
+            || $request->user()->hasPermission($gym, 'training.sessions.view', 'hr.staff.view'), 403);
         $data = $request->validate([
             'from' => ['sometimes', 'date_format:Y-m-d'],
             'to' => ['sometimes', 'date_format:Y-m-d', 'after_or_equal:from'],

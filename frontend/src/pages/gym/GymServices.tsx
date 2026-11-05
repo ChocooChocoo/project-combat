@@ -43,8 +43,8 @@ export default function GymServices() {
   const { gymId } = useParams()
   const { user } = useAuth()
   const gym = approvedGym(user, Number(gymId))
-  const canView = gym ? can(gym, 'gym_setup', 'view') : false
-  const canManage = gym ? can(gym, 'gym_setup', 'manage') : false
+  const canView = gym ? can(gym, 'gym_setup.services.view') : false
+  const canManage = gym ? can(gym, 'gym_setup.services.manage') : false
 
   const [services, setServices] = useState<PublicService[] | null>(null)
   const [options, setOptions] = useState<WorkspaceOptions | null>(null)

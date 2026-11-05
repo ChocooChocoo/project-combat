@@ -30,7 +30,7 @@ import {
   type SearchResult,
   tierOptions,
 } from '@/lib/discovery'
-import { canManage } from '@/lib/gym-access'
+import { canOpenWorkspace } from '@/lib/gym-access'
 import { DAYS } from '@/lib/gyms'
 
 type SearchFilters = {
@@ -414,9 +414,9 @@ export default function Home() {
                   {gym.roles.map((role) => (
                     <Badge key={role} variant="outline" className="capitalize">{role}</Badge>
                   ))}
-                  {approved && canManage(gym) && (
+                  {approved && canOpenWorkspace(gym) && (
                     <Button size="sm" variant="outline" render={<Link to={`/gyms/${gym.id}/manage`} />}>
-                      Manage
+                      Open workspace
                     </Button>
                   )}
                   {approved && gym.roles.includes('member') && (

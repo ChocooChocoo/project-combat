@@ -21,7 +21,7 @@ export default function GymSession() {
   const { gymId, sessionId } = useParams()
   const { user } = useAuth()
   const gym = approvedGym(user, Number(gymId))
-  const canView = Boolean(gym && can(gym, 'training', 'view'))
+  const canView = Boolean(gym && can(gym, 'training.sessions.view'))
   const [data, setData] = useState<{ session: SessionDetails; bookings: StaffBooking[]; notes: ProgressNote[] } | null>(null)
   const [error, setError] = useState('')
   const [version, setVersion] = useState(0)
@@ -53,25 +53,25 @@ export default function GymSession() {
         <BookingLoading />
       ) : (
         <>
-          <PageHeader title={data.session.name} meta={<Badge variant="outline">{data.session.status === 'cancelled' ? 'Cancelled' : 'Scheduled'}</Badge>} actions={can(gym, 'training', 'manage') && data.session.status === 'scheduled' && <Button variant="destructive-outline" onClick={() => setCancelling(true)}>Cancel session</Button>} />
+          <PageHeader title={data.session.name} meta={<Badge variant="outline">{data.session.status === 'cancelled' ? 'Cancelled' : 'Scheduled'}</Badge>} actions={can(gym, 'training.sessions.manage') && data.session.status === 'scheduled' && <Button variant="destructive-outline" onClick={() => setCancelling(true)}>Cancel session</Button>} />
           {data.session.flagged_at && <Alert variant="warning"><AlertTitle>Needs attention</AlertTitle><AlertDescription>{flagReasonLabel(data.session.flag_reason)}. Use Schedule to reassign, move or cancel.</AlertDescription></Alert>}
           {data.session.cancel_reason && <p className="text-sm">Cancellation reason: {data.session.cancel_reason}</p>}
           <SessionFacts session={data.session} />
           <section className="flex min-w-0 flex-col gap-3">
             <h2 className="font-semibold text-xl">Session notes</h2>
             <ProgressNotes notes={data.notes.filter((note) => note.user_id === null)} />
-            {(can(gym, 'training', 'manage') || data.session.coach.id === user?.id) && <Button variant="outline" className="self-start" onClick={() => setNoteTarget({ userId: null, name: data.session.name })}>Add session note</Button>}
+            {(can(gym, 'training.sessions.manage') || data.session.coach.id === user?.id) && <Button variant="outline" className="self-start" onClick={() => setNoteTarget({ userId: null, name: data.session.name })}>Add session note</Button>}
           </section>
           <section className="flex min-w-0 flex-col gap-4">
             <h2 className="font-semibold text-xl">Roster</h2>
             <p className="text-muted-foreground text-sm">Booked athletes, requests, waiting-list positions, then cancelled or rejected bookings.</p>
             <StaffBookingList
               bookings={data.bookings}
-              canApprove={can(gym, 'training', 'approve')}
-              canManage={can(gym, 'training', 'manage')}
+              canApprove={can(gym, 'training.bookings.approve')}
+              canManage={can(gym, 'training.bookings.manage')}
               onAction={setTarget}
-              onPayment={can(gym, 'finance', 'manage') ? setPaying : undefined}
-              participant={(booking) => <SessionAttendance booking={booking} canManage={can(gym, 'training', 'manage')} notes={data.notes.filter((note) => note.user_id === booking.user_id)} onSaved={() => setVersion((v) => v + 1)} onNote={can(gym, 'training', 'manage') || data.session.coach.id === user?.id ? () => setNoteTarget({ userId: booking.user_id, name: booking.athlete.name }) : undefined} />}
+              onPayment={can(gym, 'finance.payments.manage') ? setPaying : undefined}
+              participant={(booking) => <SessionAttendance booking={booking} canManage={can(gym, 'training.attendance.manage')} notes={data.notes.filter((note) => note.user_id === booking.user_id)} onSaved={() => setVersion((v) => v + 1)} onNote={can(gym, 'training.sessions.manage') || data.session.coach.id === user?.id ? () => setNoteTarget({ userId: booking.user_id, name: booking.athlete.name }) : undefined} />}
             />
           </section>
         </>

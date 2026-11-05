@@ -5,20 +5,32 @@ namespace Database\Seeders;
 use App\Enums\GymPersonType;
 use App\Enums\GymStatus;
 use App\Enums\LeaveRequestStatus;
+use App\Enums\MembershipStatus;
+use App\Enums\PaymentMethod;
+use App\Enums\PlanBilling;
+use App\Models\AthleteProfile;
 use App\Models\Gym;
 use App\Models\GymRole;
 use App\Models\GymService;
+use App\Models\Membership;
 use App\Models\MembershipPlan;
+use App\Models\SessionBooking;
 use App\Models\TrainingSession;
 use App\Models\User;
 use App\Notifications\GymApplicationDecided;
 use App\Notifications\LeaveRequestDecided;
 use App\Notifications\LeaveRequestSubmitted;
+use App\Support\AttendanceLedger;
+use App\Support\BookingLedger;
 use App\Support\CurrentGym;
+use App\Support\MembershipLedger;
+use App\Support\PermissionCatalog;
 use App\Support\SessionScheduler;
+use App\Support\SystemRoles;
 use App\Support\WorkingDays;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -88,6 +100,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->resetData();
+        PermissionCatalog::sync();
 
         $year = (int) now()->year;
 
@@ -138,6 +151,7 @@ class DatabaseSeeder extends Seeder
             'rooms',
             'gym_documents',
             'gym_role_user',
+            'gym_role_permission',
             'gym_roles',
             'gym_user',
             'gyms',
@@ -153,8 +167,11 @@ class DatabaseSeeder extends Seeder
         Schema::enableForeignKeyConstraints();
 
         Storage::disk('public')->deleteDirectory('gym-services');
+        Storage::disk('public')->deleteDirectory('coach-photos');
+        Storage::disk('public')->deleteDirectory('profile-photos');
         Storage::disk('local')->deleteDirectory('gym-applications');
         Storage::disk('local')->deleteDirectory('leave-attachments');
+        Storage::disk('local')->deleteDirectory('medical-files');
     }
 
     /** @return array<string, User> */
@@ -204,10 +221,11 @@ class DatabaseSeeder extends Seeder
             'email' => $email,
             'phone' => $phone,
             'password' => self::PASSWORD,
+            'created_at' => now()->subYear(),
         ]);
 
         $user->forceFill([
-            'email_verified_at' => now(),
+            'email_verified_at' => $user->created_at->copy()->addMinutes(5),
             'is_platform_admin' => $platformAdmin,
             'password_change_required' => false,
         ])->save();
@@ -257,11 +275,10 @@ class DatabaseSeeder extends Seeder
 
             $roles = [];
             foreach (self::ROLES as $name => $permissions) {
-                $roles[$name] = GymRole::create([
-                    'name' => $name,
-                    'permissions' => $permissions,
-                ]);
+                $roles[$name] = GymRole::create(['name' => $name]);
+                $roles[$name]->syncPermissionStrings(PermissionCatalog::expandLevels($permissions));
             }
+            SystemRoles::seed($gym);
 
             $employees = [];
 
@@ -309,6 +326,7 @@ class DatabaseSeeder extends Seeder
                 $service = new GymService($data);
                 $service->gym_id = $gym->id;
                 $service->published_at = now()->subDays(45 - $index);
+                $service->created_at = $service->published_at;
                 $service->save();
 
                 $this->attachServiceArtwork($gym, $service, $spec['palette']);
@@ -320,8 +338,12 @@ class DatabaseSeeder extends Seeder
                 unset($data['addons']);
 
                 $plan = new MembershipPlan($data);
+                $plan->max_freeze_days = preg_match('/(\d+) days/', $plan->policy_freezing ?? '', $freeze) ? (int) $freeze[1] : null;
+                $plan->refundable = str_contains(strtolower($plan->policy_cancellation ?? ''), 'refund')
+                    && ! preg_match('/not refund|non-refundable/', strtolower($plan->policy_cancellation ?? ''));
                 $plan->gym_id = $gym->id;
                 $plan->published_at = now()->subDays(40 - $index);
+                $plan->created_at = $plan->published_at;
                 $plan->save();
 
                 foreach ($addons as $addon) {
@@ -353,37 +375,269 @@ class DatabaseSeeder extends Seeder
     /** R-42: sample classes use the same holiday, leave and clash checks as staff scheduling. */
     private function seedSessions(Gym $gym, User $owner, array $spec, array $employees, array $services): void
     {
-        $classes = array_values(array_filter($services, fn ($service) => $service->activity_type === 'classes'));
-        $room = $gym->rooms()->first();
-        if (! $classes || ! $room) {
-            return;
-        }
+        $memberships = $this->seedGymMemberships($gym, $owner);
+        $active = $memberships->where('status', MembershipStatus::Active)->values();
         $scheduler = app(SessionScheduler::class);
-        foreach (range(1, 13, 2) as $index => $offset) {
+        $occurrence = 0;
+        foreach (range(-21, 14) as $offset) {
             $date = today()->addDays($offset);
             $weekday = strtolower($date->format('D'));
-            $service = $classes[$index % count($classes)];
-            foreach ($spec['staff'] as $staff) {
-                if (empty($staff['coach_public']) || empty($staff['schedule'][$weekday])) {
+            foreach ($services as $service) {
+                $private = $service->activity_type === 'private_coaching';
+                if (! in_array($service->activity_type, ['classes', 'private_coaching'], true)) {
                     continue;
                 }
-                $coach = $employees[$staff['email']];
-                $start = Carbon::parse($date->toDateString().' '.$staff['schedule'][$weekday][0])->addHour();
-                $end = $start->copy()->addMinutes($service->duration_minutes ?? 60);
-                if ($scheduler->problems($coach->id, $room->id, $start, $end) !== []) {
+                if ($private && ! in_array($weekday, ['tue', 'sat'], true)) {
                     continue;
                 }
-                TrainingSession::create([
-                    'gym_service_id' => $service->id, 'type' => 'classes', 'name' => $service->name,
-                    'discipline' => $service->discipline, 'level' => $service->level ?? 'all',
-                    'coach_id' => $coach->id, 'room_id' => $room->id,
-                    'starts_at' => $start, 'ends_at' => $end, 'capacity' => 12,
-                    'content' => $service->overview, 'bring' => $service->bring,
-                    'fee' => $service->price_included ? null : $service->price,
-                    'status' => 'scheduled', 'created_by' => $owner->id,
-                ]);
-                break;
+                if (! $private && (! str_contains(strtolower($service->frequency), $weekday)
+                    || ! preg_match('/(\d{1,2}:\d{2}\s*[AP]M)/i', $service->frequency, $time))) {
+                    continue;
+                }
+                foreach ($spec['staff'] as $staff) {
+                    $specialisation = strtolower($staff['coach_specialisation'] ?? '');
+                    $terms = match ($service->discipline) {
+                        'bjj' => ['bjj', 'jiu-jitsu'],
+                        'muay_thai' => ['muay thai'],
+                        default => [str_replace('_', ' ', $service->discipline)],
+                    };
+                    if (empty($staff['coach_public']) || empty($staff['schedule'][$weekday])
+                        || ! collect($terms)->contains(fn ($term) => str_contains($specialisation, $term))) {
+                        continue;
+                    }
+                    $coach = $employees[$staff['email']];
+                    $clock = $private ? Carbon::parse($staff['schedule'][$weekday][0])->addHour()->format('H:i') : $time[1];
+                    $start = Carbon::parse($date->toDateString().' '.$clock);
+                    $end = $start->copy()->addMinutes($service->duration_minutes ?? 60);
+                    $hours = $gym->operating_hours[$weekday] ?? null;
+                    if (! $hours || $start->format('H:i') < $hours['open'] || $end->format('H:i') > $hours['close']) {
+                        continue;
+                    }
+                    foreach ($gym->rooms()->get() as $room) {
+                        if ($scheduler->problems($coach->id, $room->id, $start, $end) !== []) {
+                            continue;
+                        }
+                        $session = TrainingSession::create([
+                            'gym_service_id' => $service->id, 'type' => $service->activity_type, 'name' => $service->name,
+                            'discipline' => $service->discipline, 'level' => $service->level ?? 'all',
+                            'coach_id' => $coach->id, 'room_id' => $room->id,
+                            'starts_at' => $start, 'ends_at' => $end, 'capacity' => $private ? 1 : 8,
+                            'content' => $service->overview, 'bring' => $service->bring,
+                            'fee' => $service->price_included ? null : $service->price,
+                            'needs_approval' => $private || $occurrence % 3 === 0,
+                            'status' => 'scheduled', 'created_by' => $owner->id,
+                            'created_at' => $start->copy()->subDays(7)->min(now()->subDays(7)),
+                        ]);
+                        $this->seedSessionBookings($gym, $owner, $session, $active, $occurrence++);
+
+                        continue 3;
+                    }
+                }
             }
+        }
+        $cancelled = TrainingSession::where('type', 'private_coaching')->where('starts_at', '>', now())->first();
+        if ($cancelled) {
+            $at = now()->subHour();
+            Carbon::withTestNow($at, function () use ($cancelled, $owner) {
+                $booking = $cancelled->bookings()->first();
+                $ledger = app(BookingLedger::class);
+                if ($ledger->paid($booking) === 0.0) {
+                    $ledger->recordPayment($booking, (float) $booking->fee, PaymentMethod::Cash, $owner);
+                }
+                $cancelled->update(['status' => 'cancelled', 'cancel_reason' => 'Coach unavailable; private session refunded in full.']);
+                $booking->forceFill(['status' => 'cancelled', 'cancelled_by' => $owner->id, 'cancelled_at' => now()])->save();
+                $ledger->refund($booking, $owner);
+            });
+        }
+    }
+
+    private function seedGymMemberships(Gym $gym, User $owner): Collection
+    {
+        $names = [
+            ['Elena', 'Dela Cruz'], ['Rafael', 'Santos'], ['Isabel', 'Garcia'], ['Marco', 'Torres'],
+            ['Diana', 'Flores'], ['Adrian', 'Castillo'], ['Beatriz', 'Ramos'], ['Nico', 'Rivera'],
+            ['Clara', 'Domingo'], ['Enzo', 'Aguilar'], ['Mika', 'Salcedo'], ['Leo', 'Valdez'],
+            ['Julia', 'Pascual'], ['Tomas', 'Estrada'],
+        ];
+        $members = $gym->people()->wherePivot('role', 'member')->get();
+        $existing = $members->count();
+        foreach ($names as $index => [$first, $last]) {
+            $email = Str::slug("{$first} {$last}", '.').".gym{$gym->id}@example.test";
+            $members->push($this->user($first, $last, $email,
+                sprintf('0917 555 %04d', $gym->id * 100 + $index)));
+        }
+        $plans = MembershipPlan::orderBy('id')->get();
+        $timePlan = $plans->firstWhere('billing_type', PlanBilling::Time);
+        $pack = $plans->firstWhere('billing_type', PlanBilling::Sessions);
+        $ledger = app(MembershipLedger::class);
+        $memberships = collect();
+        foreach ($members as $index => $member) {
+            $scenario = $index - $existing;
+            $status = $scenario < 8 ? 'active' : ['applied', 'rejected', 'awaiting_payment', 'frozen', 'expired', 'cancelled'][$scenario - 8];
+            $plan = $scenario === 1 && $pack ? $pack : $timePlan;
+            $applied = today()->subDays($status === 'expired' ? 100 : 28)->setTime(9, 0);
+            $approved = $applied->copy()->addDay();
+            $profile = [
+                'emergency_contacts' => [['name' => 'Alex '.$member->last_name, 'relationship' => 'Sibling', 'phone' => '0917 555 0999']],
+                'background' => $index % 2 ? 'Returning to regular training after recreational classes.' : 'New to structured combat sports training.',
+                'current_rank' => $plan === $pack ? 'Beginner' : 'Recreational athlete',
+                'training_history' => 'Training twice weekly with a focus on technique and conditioning.',
+                'health_answers' => array_fill_keys(array_keys(config('membership.health_questions')), false),
+                'health_notes' => 'No current training restrictions reported in this fictional demo profile.',
+            ];
+            $membership = Membership::create([
+                'user_id' => $member->id, 'membership_plan_id' => $plan->id, ...$profile,
+                'status' => 'applied', 'waivers' => array_keys(config('membership.waivers')),
+                'signature_name' => trim($member->first_name.' '.$member->last_name),
+                'signed_on' => $applied->toDateString(), 'created_at' => $applied, 'updated_at' => $applied,
+            ]);
+            Carbon::withTestNow($applied, fn () => $ledger->log($membership, 'applied', $member));
+            if ($status === 'applied') {
+                $memberships->push($membership);
+
+                continue;
+            }
+            $membership->forceFill([
+                'status' => $status === 'rejected' ? 'rejected' : 'awaiting_payment',
+                'amount_charged' => $status === 'rejected' ? 0 : $plan->total_fee,
+                'decided_by' => $owner->id, 'decided_at' => $approved,
+                'decision_reason' => $status === 'rejected' ? 'Please resubmit with a complete guardian consent form.' : null,
+                'updated_at' => $approved,
+            ])->save();
+            Carbon::withTestNow($approved, fn () => $ledger->log($membership, $status === 'rejected' ? 'rejected' : 'approved', $owner));
+            if ($status === 'rejected') {
+                $memberships->push($membership);
+
+                continue;
+            }
+            if (! $member->hasGymRole($gym, GymPersonType::Member)) {
+                $gym->addPerson($member, GymPersonType::Member);
+            }
+            AthleteProfile::create(['user_id' => $member->id, ...$profile, 'created_at' => $approved, 'updated_at' => $approved]);
+            if ($status === 'awaiting_payment') {
+                Carbon::withTestNow($approved, fn () => $ledger->recordPayment($membership, (float) $plan->total_fee / 2, PaymentMethod::Cash, $owner));
+            } else {
+                Carbon::withTestNow($approved, fn () => $ledger->recordPayment($membership, (float) $plan->total_fee, $index % 2 ? PaymentMethod::Ewallet : PaymentMethod::Cash, $owner));
+                if ($plan->billing_type->value === 'time' && $status !== 'expired') {
+                    $membership->amount_charged = (float) $plan->total_fee * 2;
+                    $membership->ends_on = $membership->ends_on->copy()->addMonthsNoOverflow($plan->duration_months);
+                    $membership->save();
+                    Carbon::withTestNow(today()->subDays(2)->setTime(12, 0), function () use ($ledger, $membership, $plan, $owner) {
+                        $ledger->log($membership, 'renewed', $owner, 'Renewed ahead of expiry.');
+                        $ledger->recordPayment($membership, (float) $plan->total_fee, PaymentMethod::Card, $owner);
+                    });
+                }
+                if ($status !== 'active') {
+                    $membership->status = $status;
+                    if ($status === 'frozen') {
+                        $membership->frozen_until = today()->addDays(6);
+                        $membership->freeze_days_used = 7;
+                        $membership->ends_on = $membership->ends_on->copy()->addDays(7);
+                    }
+                    $membership->save();
+                    Carbon::withTestNow(today()->subDay()->setTime(16, 0), fn () => $ledger->log($membership, $status, $owner,
+                        $status === 'frozen' ? 'Seven-day travel break.' : ($status === 'cancelled' ? 'Relocating for work.' : 'Membership period ended.')));
+                }
+            }
+            DB::table('athlete_entries')->insert([
+                'gym_id' => $gym->id, 'user_id' => $member->id, 'type' => 'assessment',
+                'discipline' => $gym->disciplines[0], 'title' => 'Initial technique and conditioning assessment',
+                'result' => 'Beginner training group recommended', 'occurred_on' => $approved->toDateString(),
+                'notes' => 'Focus on stance, controlled movement and steady conditioning.', 'recorded_by' => $owner->id,
+                'created_at' => $approved, 'updated_at' => $approved,
+            ]);
+            if ($index < 4) {
+                $type = ['assessment', 'competition', 'achievement', 'promotion'][$index];
+                DB::table('athlete_entries')->insert([
+                    'gym_id' => $gym->id, 'user_id' => $member->id, 'type' => $type,
+                    'discipline' => $gym->disciplines[0],
+                    'title' => match ($type) {
+                        'competition' => 'Interclub technical showcase',
+                        'achievement' => 'Completed introductory conditioning block',
+                        'promotion' => 'Progressed to intermediate training group',
+                        default => 'Four-week technique review',
+                    },
+                    'result' => $type === 'competition' ? 'Completed exhibition rounds' : 'Training milestone completed',
+                    'occurred_on' => today()->subDays(4)->toDateString(), 'recorded_by' => $owner->id,
+                    'created_at' => today()->subDays(4), 'updated_at' => today()->subDays(4),
+                ]);
+            }
+            $memberships->push($membership->refresh());
+        }
+
+        return $memberships;
+    }
+
+    private function seedSessionBookings(Gym $gym, User $owner, TrainingSession $session, Collection $memberships, int $occurrence): void
+    {
+        $past = $session->ends_at->lt(now());
+        $private = $session->type === 'private_coaching';
+        $count = $private ? 1 : ($past ? 5 + $occurrence % 3 : ($occurrence % 2 === 0 ? $memberships->count() : 6));
+        $at = $session->starts_at->copy()->subDays(3);
+        if ($at->gt(now())) {
+            $at = now()->subHours(2);
+        }
+        if ($past && ! $private) {
+            // Keep some pack credits available for upcoming demo bookings.
+            $memberships = $memberships->filter(function ($membership) {
+                $remaining = $membership->fresh()->sessions_remaining;
+
+                return $remaining === null || $remaining > 3;
+            })->values();
+        }
+        foreach ($memberships->take($count) as $index => $membership) {
+            $status = 'booked';
+            if (! $past && ! $private) {
+                $status = match (true) {
+                    $index === $count - 1 => 'cancelled',
+                    $index === $count - 2 => 'rejected',
+                    $index >= $session->capacity => 'waitlisted',
+                    $session->needs_approval => 'requested',
+                    default => 'booked',
+                };
+            } elseif (! $past && $private) {
+                $status = 'requested';
+            }
+            $included = ! $private && ($membership->sessions_remaining !== null || $membership->plan->billing_type->value === 'time');
+            $booking = SessionBooking::create([
+                'training_session_id' => $session->id, 'user_id' => $membership->user_id,
+                'membership_id' => $membership->id, 'status' => $status,
+                'fee' => $included ? 0 : ($session->fee ?? 0),
+                'waitlisted_at' => $status === 'waitlisted' ? $at->copy()->addSeconds($index) : null,
+                'decided_by' => in_array($status, ['booked', 'rejected']) ? $owner->id : null,
+                'decided_at' => in_array($status, ['booked', 'rejected']) ? $at->copy()->addMinutes(20) : null,
+                'decision_reason' => $status === 'rejected' ? 'Please complete the beginner assessment before this class.' : null,
+                'cancelled_by' => $status === 'cancelled' ? $membership->user_id : null,
+                'cancelled_at' => $status === 'cancelled' ? $at->copy()->addHour() : null,
+                'created_at' => $at, 'updated_at' => $at,
+            ]);
+            if ($past) {
+                $attendance = ['present', 'present', 'late', 'present', 'absent'][$index % 5];
+                $checkIn = $session->starts_at->copy()->addMinutes($attendance === 'late' ? 15 : -5);
+                Carbon::withTestNow($session->ends_at, function () use ($booking, $attendance, $owner, $checkIn, $session) {
+                    app(AttendanceLedger::class)->mark($booking, $attendance, $owner, 'account', $checkIn);
+                    if ($attendance !== 'absent') {
+                        $booking->forceFill(['check_out_at' => $session->ends_at->copy()->addMinutes(5)])->save();
+                    }
+                });
+                if ($index === 0) {
+                    DB::table('session_notes')->insert([
+                        'gym_id' => $gym->id, 'training_session_id' => $session->id, 'user_id' => $membership->user_id,
+                        'author_id' => $session->coach_id, 'body' => 'Footwork is more balanced. Keep the guard up when returning to stance; practise three controlled rounds before the next class.',
+                        'created_at' => $session->ends_at, 'updated_at' => $session->ends_at,
+                    ]);
+                }
+            }
+            if ((float) $booking->fee > 0 && ($past || $occurrence % 2 === 0)) {
+                Carbon::withTestNow($at->copy()->addHour(), fn () => app(BookingLedger::class)->recordPayment($booking, (float) $booking->fee, PaymentMethod::Cash, $owner));
+            }
+        }
+        if ($past && ! $private) {
+            DB::table('gym_visits')->insert([
+                'gym_id' => $gym->id, 'user_id' => $memberships->last()->user_id,
+                'checked_in_at' => $session->ends_at->copy()->addMinutes(15), 'checked_in_by' => $owner->id, 'method' => 'account',
+                'created_at' => $session->ends_at->copy()->addMinutes(15), 'updated_at' => $session->ends_at->copy()->addMinutes(15),
+            ]);
         }
     }
 
@@ -437,6 +691,7 @@ class DatabaseSeeder extends Seeder
         $gym->submitted_at = isset($spec['submitted_days_ago'])
             ? now()->subDays($spec['submitted_days_ago'])
             : null;
+        $gym->created_at = $gym->submitted_at?->copy()->subDay() ?? now()->subDay();
 
         if (in_array($status, [GymStatus::Approved, GymStatus::Returned, GymStatus::Rejected], true)) {
             $gym->reviewed_by = $admin->id;
@@ -530,12 +785,14 @@ class DatabaseSeeder extends Seeder
             'working_days' => app(WorkingDays::class)->count($gym, $employee, $from, $to),
             'reason' => $data['reason'],
             'status' => $status->value,
+            'created_at' => $from->copy()->subDays(14)->min(now()->subDays(2)),
+            'updated_at' => $from->copy()->subDays(14)->min(now()->subDays(2)),
         ]);
 
         if (in_array($status, [LeaveRequestStatus::Approved, LeaveRequestStatus::Rejected], true)) {
             $leave->forceFill([
                 'decided_by' => $owner->id,
-                'decided_at' => now()->subDays($data['decided_days_ago'] ?? 3),
+                'decided_at' => $from->copy()->subDays(7)->min(now()->subDay()),
                 'decision_note' => $data['decision_note'] ?? null,
             ])->save();
 
@@ -1136,7 +1393,7 @@ SVG;
                 'facilities' => ['200 sqm competition mat', 'Octagon cage', 'Heavy bag area', 'Strength and conditioning area', 'Locker rooms', 'Showers', 'Sauna'],
                 'activity_types' => ['classes', 'programs', 'private_coaching', 'sparring', 'open_mat'],
                 'working_days' => ['mon', 'tue', 'wed', 'thu', 'fri'],
-                'policies' => "Respect the mats and your training partners. No shoes on the mat, and flip-flops are allowed only on the sides. Tap early and tap often. Monthly dues are due on the 1st, and cancellations need 15 days notice.",
+                'policies' => 'Respect the mats and your training partners. No shoes on the mat, and flip-flops are allowed only on the sides. Tap early and tap often. Monthly dues are due on the 1st, and cancellations need 15 days notice.',
                 'palette' => ['#0f172a', '#164e63', '#22d3ee'],
                 'submitted_days_ago' => 160,
                 'reviewed_days_ago' => 158,
@@ -1452,7 +1709,7 @@ SVG;
                 'facilities' => ['Wooden training hall', 'Mirrored wall', 'Heavy bag area', 'Weapon rack', 'Changing rooms'],
                 'activity_types' => ['classes', 'private_coaching', 'open_mat'],
                 'working_days' => ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'],
-                'policies' => "Training starts on time. Bring your own sticks and protective gear. Children under 12 must be accompanied by a guardian. Monthly fees are paid on or before the 10th, and the hall is closed on Sundays and national holidays.",
+                'policies' => 'Training starts on time. Bring your own sticks and protective gear. Children under 12 must be accompanied by a guardian. Monthly fees are paid on or before the 10th, and the hall is closed on Sundays and national holidays.',
                 'palette' => ['#1c1917', '#78350f', '#fbbf24'],
                 'submitted_days_ago' => 220,
                 'reviewed_days_ago' => 218,
@@ -1962,7 +2219,7 @@ SVG;
                 'facilities' => ['200 sqm competition mat', 'Octagon cage', 'Heavy bag area', 'Strength area', 'Showers', 'Physiotherapy room'],
                 'activity_types' => ['classes', 'programs', 'private_coaching', 'sparring', 'open_mat'],
                 'working_days' => ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'],
-                'policies' => "All members must sign the mat waiver before their first class. No shoes on the mat. Sparring is coach-supervised and requires a mouthguard and groin guard. Monthly dues are due on the 5th, and one 30-day freeze is allowed per year.",
+                'policies' => 'All members must sign the mat waiver before their first class. No shoes on the mat. Sparring is coach-supervised and requires a mouthguard and groin guard. Monthly dues are due on the 5th, and one 30-day freeze is allowed per year.',
                 'palette' => ['#0c0a09', '#3f1d38', '#f472b6'],
                 'submitted_days_ago' => 120,
                 'reviewed_days_ago' => 118,

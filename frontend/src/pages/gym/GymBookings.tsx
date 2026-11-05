@@ -12,7 +12,7 @@ export default function GymBookings() {
   const { gymId } = useParams()
   const { user } = useAuth()
   const gym = approvedGym(user, Number(gymId))
-  const canView = Boolean(gym && can(gym, 'training', 'view'))
+  const canView = Boolean(gym && can(gym, 'training.bookings.view'))
   const [bookings, setBookings] = useState<StaffBooking[] | null>(null)
   const [error, setError] = useState('')
   const [version, setVersion] = useState(0)
@@ -41,8 +41,8 @@ export default function GymBookings() {
       ) : (
         <StaffBookingList
           bookings={bookings}
-          canApprove={can(gym, 'training', 'approve')}
-          canManage={can(gym, 'training', 'manage')}
+          canApprove={can(gym, 'training.bookings.approve')}
+          canManage={can(gym, 'training.bookings.manage')}
           onAction={setTarget}
         />
       )}

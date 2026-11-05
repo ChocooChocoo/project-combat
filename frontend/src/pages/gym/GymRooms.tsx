@@ -66,7 +66,7 @@ export default function GymRooms() {
 
   if (!gym) return null
 
-  const canManage = can(gym, 'gym_setup', 'manage')
+  const canManage = can(gym, 'gym_setup.rooms.manage')
   const reload = () => {
     setRooms(null)
     setVersion((value) => value + 1)

@@ -3,7 +3,6 @@
 namespace App\Http\Resources;
 
 use App\Enums\GymPersonType;
-use App\Enums\Module;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
@@ -32,9 +31,7 @@ class UserResource extends JsonResource
                     'name' => $gym->name,
                     'status' => $gym->status,
                     'roles' => $roles,
-                    'permissions' => collect(Module::cases())
-                        ->mapWithKeys(fn (Module $m) => [$m->value => $this->resource->accessLevel($gym, $m)?->value])
-                        ->filter(),
+                    'permissions' => $this->resource->permissionsIn($gym)->values(),
                 ];
             })->values(),
         ];

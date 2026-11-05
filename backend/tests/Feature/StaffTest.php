@@ -20,7 +20,7 @@ use Tests\TestCase;
 /** R-22 and R-23: staff list, adding, removing, pay visibility and coach profiles. */
 class StaffTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, \Tests\Feature\Concerns\GivesGymRoles;
 
     private Gym $gym;
 
@@ -43,7 +43,7 @@ class StaffTest extends TestCase
 
     private function role(array $permissions, string $name): GymRole
     {
-        return GymRole::create(['name' => $name, 'permissions' => $permissions]);
+        return $this->makeRole($permissions, $name);
     }
 
     private function employee(string $firstName = 'Ella', string $lastName = 'Santos'): User

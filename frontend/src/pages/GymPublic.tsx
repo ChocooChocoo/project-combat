@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { api, ApiError } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { type GymDetailPayload, labelKey, type PublicCoach, type PublicGymDetail, type PublicPlan, type PublicService, readGymDetail } from '@/lib/discovery'
-import { approvedGym, canManage } from '@/lib/gym-access'
+import { approvedGym, canOpenWorkspace } from '@/lib/gym-access'
 import { LIVE_STATUSES, STATUS_LABELS, type Membership } from '@/lib/membership'
 import { DAYS } from '@/lib/gyms'
 import { cn } from '@/lib/utils'
@@ -187,7 +187,7 @@ export default function GymPublic() {
   }, [id, userId, version])
 
   const access = approvedGym(user, id)
-  const manage = access ? canManage(access) : false
+  const manage = access ? canOpenWorkspace(access) : false
   const canApply = !mine && !access?.roles.includes('owner')
 
   if (authLoading) {
@@ -333,7 +333,7 @@ export default function GymPublic() {
             </Button>
             {manage && (
               <Button size="sm" render={<Link to={`/gyms/${id}/manage`} />}>
-                Manage gym
+                Open workspace
               </Button>
             )}
             {mine && (

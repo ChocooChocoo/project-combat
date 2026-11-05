@@ -31,9 +31,9 @@ export default function MemberRecord() {
   const gymId = Number(gymIdParam)
   const { user } = useAuth()
   const gym = approvedGym(user, gymId)
-  const canManage = gym ? can(gym, 'members', 'manage') : false
-  const canPay = gym ? can(gym, 'finance', 'manage') : false
-  const canCoach = gym ? can(gym, 'training', 'manage') : false
+  const canManage = gym ? can(gym, 'members.memberships.manage') : false
+  const canPay = gym ? can(gym, 'finance.payments.manage') : false
+  const canCoach = gym ? can(gym, 'training.athletes.manage') : false
 
   const [membership, setMembership] = useState<Membership | null>(null)
   const [record, setRecord] = useState<AthleteRecord | null>(null)

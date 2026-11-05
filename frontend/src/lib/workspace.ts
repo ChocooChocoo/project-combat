@@ -1,4 +1,3 @@
-import type { AccessLevel } from '@/lib/gym-access'
 import type { Day } from '@/lib/gyms'
 
 /** Shared types for the Phase 3 gym workspace responses. */
@@ -274,14 +273,29 @@ export type ScheduleWeek = {
 export type GymRole = {
   id: number
   name: string
-  permissions: Record<string, AccessLevel>
+  description: string | null
+  status: 'active' | 'inactive'
+  is_system: boolean
+  permissions: string[]
+  inactive_permissions: string[]
+  held_by_me: boolean
   users_count?: number
+  expires_at?: string | null
 }
 
-export type AccessTemplates = {
-  modules: string[]
-  levels: AccessLevel[]
-  templates: Record<string, Record<string, AccessLevel>>
+export type CatalogPermission = {
+  id: number
+  module: string
+  resource: string
+  action: string
+  permission_string: string
+  name: string
+  description: string | null
+}
+
+export type PermissionCatalog = {
+  permissions: CatalogPermission[]
+  templates: Record<string, { name: string; permissions: string[] }>
 }
 
 export const MODULE_LABELS: Record<string, string> = {
@@ -306,6 +320,13 @@ export const LEVEL_LABELS: Record<string, string> = {
 }
 
 export const moduleLabel = (module: string) => MODULE_LABELS[module] ?? module.replaceAll('_', ' ')
+
+export const resourceLabel = (resource: string) => {
+  const words = resource.replaceAll('_', ' ')
+  return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+export const actionLabel = (action: string) => LEVEL_LABELS[action] ?? resourceLabel(action)
 
 /** "front_desk" -> "Front desk", for the role template names the backend sends. */
 export const templateLabel = (key: string) => {

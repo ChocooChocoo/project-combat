@@ -2,13 +2,9 @@
 
 namespace App\Support;
 
-use App\Enums\AccessLevel;
 use App\Enums\BookingStatus;
-use App\Enums\GymPersonType;
 use App\Enums\MembershipStatus;
-use App\Enums\Module;
 use App\Enums\SessionStatus;
-use App\Models\GymRole;
 use App\Models\Membership;
 use App\Models\SessionBooking;
 use App\Models\TrainingSession;
@@ -107,7 +103,7 @@ class BookingDesk
 
     public function decide(SessionBooking $booking, User $by, string $decision, ?string $reason): SessionBooking
     {
-        abort_unless($by->canInGym($booking->gym_id, Module::Training, AccessLevel::Approve), 403);
+        abort_unless($by->hasPermission($booking->gym_id, 'training.bookings.approve'), 403);
         if ($decision === 'reject' && blank($reason)) {
             throw ValidationException::withMessages(['reason' => 'Give a reason for rejecting this booking.']);
         }
@@ -139,7 +135,7 @@ class BookingDesk
         if (! $booking->status->isLive()) {
             return 'This booking is no longer active.';
         }
-        if ($by->canInGym($booking->gym_id, Module::Training, AccessLevel::Manage)) {
+        if ($by->hasPermission($booking->gym_id, 'training.bookings.manage')) {
             return null;
         }
         if ($by->id !== $booking->user_id) {
@@ -154,7 +150,7 @@ class BookingDesk
 
     public function cancel(SessionBooking $booking, User $by): SessionBooking
     {
-        abort_unless($by->id === $booking->user_id || $by->canInGym($booking->gym_id, Module::Training, AccessLevel::Manage), 403);
+        abort_unless($by->id === $booking->user_id || $by->hasPermission($booking->gym_id, 'training.bookings.manage'), 403);
 
         return DB::transaction(function () use ($booking, $by) {
             $session = TrainingSession::lockForUpdate()->findOrFail($booking->training_session_id);
@@ -208,10 +204,7 @@ class BookingDesk
     {
         $booking->user->notify(new BookingUpdated($booking, $type));
         if ($booking->status === BookingStatus::Requested) {
-            $owners = $booking->gym->people()->wherePivot('role', GymPersonType::Owner->value)->get();
-            $approvers = GymRole::all()->filter(fn (GymRole $role) => $role->levelFor(Module::Training)?->covers(AccessLevel::Approve))
-                ->flatMap(fn (GymRole $role) => $role->users()->get());
-            foreach ($owners->merge($approvers)->unique('id') as $approver) {
+            foreach ($booking->gym->peopleWithPermission('training.bookings.approve') as $approver) {
                 $approver->notify(new BookingRequested($booking));
             }
         }

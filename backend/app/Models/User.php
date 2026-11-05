@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-use App\Enums\AccessLevel;
 use App\Enums\GymPersonType;
-use App\Enums\Module;
+use App\Support\PermissionCatalog;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -72,23 +73,30 @@ class User extends Authenticatable
         return $this->gyms()->where('gyms.id', $gymId)->wherePivotIn('role', $values)->exists();
     }
 
-    /** Access level in one module of one gym. Owners hold every module in full (spec, page 7). */
-    public function accessLevel(Gym|int $gym, Module $module): ?AccessLevel
+    /** Active permissions from active, unexpired grants in this gym only. */
+    public function permissionsIn(Gym|int $gym): Collection
     {
-        if ($this->hasGymRole($gym, GymPersonType::Owner)) {
-            return AccessLevel::Approve;
+        $gymId = $gym instanceof Gym ? $gym->id : $gym;
+        if ($this->hasGymRole($gymId, GymPersonType::Owner)) {
+            return Permission::active()->pluck('permission_string');
+        }
+        if (! $this->hasGymRole($gymId, GymPersonType::Employee)) {
+            return collect();
         }
 
-        if (! $this->hasGymRole($gym, GymPersonType::Employee)) {
-            return null;
-        }
+        return Permission::active()->whereHas('roles', fn (Builder $role) => $role
+            ->where('gym_roles.gym_id', $gymId)->where('gym_roles.status', 'active')
+            ->whereHas('users', fn (Builder $user) => $user->whereKey($this->id)
+                ->where(fn (Builder $grant) => $grant->whereNull('gym_role_user.expires_at')
+                    ->orWhere('gym_role_user.expires_at', '>', now()))))
+            ->pluck('permission_string');
+    }
 
-        // The highest level any of this person's roles in that gym gives (R-08).
-        return $this->gymRoles($gym)->get()
-            ->map(fn (GymRole $role) => $role->levelFor($module))
-            ->filter()
-            ->sortByDesc(fn (AccessLevel $level) => $level->rank())
-            ->first();
+    public function hasPermission(Gym|int $gym, string ...$anyOf): bool
+    {
+        PermissionCatalog::assertKnown(...$anyOf);
+
+        return $this->permissionsIn($gym)->intersect($anyOf)->isNotEmpty();
     }
 
     /** This person's owner-made roles in one gym. Explicit gym filter, so it works outside a request too. */
@@ -99,23 +107,14 @@ class User extends Authenticatable
             ->whereHas('users', fn ($q) => $q->whereKey($this->id));
     }
 
-    public function canInGym(Gym|int $gym, Module $module, AccessLevel $needed): bool
-    {
-        return (bool) $this->accessLevel($gym, $module)?->covers($needed);
-    }
-
     /** Pay stays hidden unless the viewer owns the gym, runs HR, or sees payroll or finance (R-23). */
     public function canSeePay(Gym|int $gym): bool
     {
-        return $this->hasGymRole($gym, GymPersonType::Owner)
-            || $this->canInGym($gym, Module::Hr, AccessLevel::Manage)
-            || $this->canInGym($gym, Module::Payroll, AccessLevel::View)
-            || $this->canInGym($gym, Module::Finance, AccessLevel::View);
+        return $this->hasPermission($gym, 'hr.staff.manage', 'payroll.general.view', 'finance.payments.view');
     }
 
     public function canApproveLeave(Gym|int $gym): bool
     {
-        return $this->hasGymRole($gym, GymPersonType::Owner)
-            || $this->canInGym($gym, Module::Hr, AccessLevel::Manage);
+        return $this->hasPermission($gym, 'hr.leave.manage');
     }
 }

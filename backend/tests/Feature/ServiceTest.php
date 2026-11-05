@@ -18,7 +18,7 @@ use Tests\TestCase;
 /** R-28: services, their gallery, the price rule and publish checks. */
 class ServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, \Tests\Feature\Concerns\GivesGymRoles;
 
     private Gym $gym;
 
@@ -51,7 +51,7 @@ class ServiceTest extends TestCase
     private function give(User $user, array $permissions, string $name = 'Test role'): void
     {
         app(CurrentGym::class)->set($this->gym);
-        $role = GymRole::create(['name' => $name, 'permissions' => $permissions]);
+        $role = $this->makeRole($permissions, $name);
         $role->users()->attach($user->id);
         $this->app->forgetScopedInstances();
     }

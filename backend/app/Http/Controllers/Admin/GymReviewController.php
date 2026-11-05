@@ -7,6 +7,7 @@ use App\Enums\GymStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Gym;
 use App\Notifications\GymApplicationDecided;
+use App\Support\SystemRoles;
 use App\Support\Verification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -104,6 +105,7 @@ class GymReviewController extends Controller
             if ($data['decision'] === 'approve') {
                 $gym->approved_tier = $gym->tier;
                 $gym->addPerson($gym->applicant, GymPersonType::Owner);
+                SystemRoles::seed($gym);
             }
 
             $gym->save();

@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers\Gym;
 
-use App\Enums\AccessLevel;
 use App\Enums\GymPersonType;
-use App\Enums\Module;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Gym\Concerns\PresentsHr;
 use App\Models\Gym;
@@ -25,7 +23,7 @@ class ScheduleController extends Controller
         $this->ensureEmployee($gym, $user);
 
         abort_unless(
-            $request->user()->is($user) || $request->user()->canInGym($gym, Module::Hr, AccessLevel::View),
+            $request->user()->is($user) || $request->user()->hasPermission($gym, 'hr.schedules.view'),
             403,
         );
 

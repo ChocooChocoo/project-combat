@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers\Gym;
 
-use App\Enums\AccessLevel;
 use App\Enums\GymPersonType;
 use App\Enums\MembershipStatus;
-use App\Enums\Module;
 use App\Enums\PaymentMethod;
 use App\Enums\PlanBilling;
 use App\Http\Controllers\Concerns\PresentsMemberships;
@@ -32,8 +30,7 @@ class MembershipController extends Controller
     {
         $viewer = $request->user();
         abort_unless(
-            collect([Module::Members, Module::Training, Module::Finance])
-                ->contains(fn (Module $module) => $viewer->canInGym($gym, $module, AccessLevel::View)),
+            $viewer->hasPermission($gym, 'members.memberships.view', 'training.sessions.view', 'finance.payments.view'),
             403,
             'You do not have access to this part of the gym.',
         );
@@ -286,7 +283,7 @@ class MembershipController extends Controller
 
     private function canSeeHealth(Request $request, Gym $gym): bool
     {
-        return $request->user()->canInGym($gym, Module::HealthRecords, AccessLevel::View);
+        return $request->user()->hasPermission($gym, 'health_records.records.view');
     }
 
     private function respond(Request $request, Gym $gym, Membership $model): JsonResponse

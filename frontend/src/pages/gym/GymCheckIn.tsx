@@ -16,7 +16,7 @@ export default function GymCheckIn() {
   const { gymId } = useParams()
   const { user } = useAuth()
   const gym = approvedGym(user, Number(gymId))
-  const allowed = Boolean(gym && can(gym, 'training', 'manage'))
+  const allowed = Boolean(gym && can(gym, 'training.check_ins.manage'))
   const field = useRef<HTMLInputElement>(null)
   const inFlight = useRef(false)
   const [code, setCode] = useState('')
