@@ -49,9 +49,15 @@ class WorkspaceFoundationTest extends TestCase
             $this->assertTrue(Schema::hasTable($table), "Missing table {$table}.");
         }
 
-        foreach (['activity_types', 'working_days', 'policies'] as $column) {
+        foreach (['activity_types', 'working_days', 'policies', 'payroll_frequency', 'payroll_steps', 'staff_grace_minutes', 'overtime_min_minutes'] as $column) {
             $this->assertTrue(Schema::hasColumn('gyms', $column), "Missing gyms.{$column}.");
         }
+
+        $this->assertTrue(Schema::hasColumn('employee_profiles', 'ended_on'), 'Missing employee_profiles.ended_on.');
+        $this->assertTrue(Schema::hasColumn('employee_profiles', 'employment_type'), 'Missing employee_profiles.employment_type.');
+        $this->assertTrue(Schema::hasColumn('payments', 'income_type'), 'Missing payments.income_type.');
+        $this->assertTrue(Schema::hasColumn('payments', 'discount'), 'Missing payments.discount.');
+        $this->assertTrue(Schema::hasColumn('payments', 'payer_name'), 'Missing payments.payer_name.');
     }
 
     public function test_rooms_count_only_active_ones_in_the_active_scope(): void

@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
 /** A gym. Until approved, the same row is its owner application (R-11 to R-18). */
 #[Fillable([
@@ -19,15 +20,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'contact_phone', 'contact_email', 'operating_hours', 'disciplines', 'services', 'facilities',
     'activity_types', 'working_days', 'policies',
     'booking_approval', 'late_grace_minutes', 'cancel_cutoff_hours',
+    'payroll_frequency', 'payroll_steps', 'staff_grace_minutes', 'overtime_min_minutes',
 ])]
 #[UsePolicy(GymApplicationPolicy::class)]
 class Gym extends Model
 {
-    public function peopleWithPermission(string $permission): \Illuminate\Support\Collection
+    public function peopleWithPermission(string $permission): Collection
     {
         return $this->people()->get()->unique('id')
             ->filter(fn (User $person) => $person->hasPermission($this, $permission))->values();
     }
+
     use HasFactory;
 
     /** Profile fields an application needs before it can be sent (R-11). */
@@ -51,6 +54,9 @@ class Gym extends Model
     /** Q-21: the default working week. The owner can change it in the workspace settings. */
     public const DEFAULT_WORKING_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri'];
 
+    /** R-61: a one-step chain needs only the owner. */
+    public const DEFAULT_PAYROLL_STEPS = ['owner'];
+
     protected function casts(): array
     {
         return [
@@ -68,6 +74,9 @@ class Gym extends Model
             'booking_approval' => 'boolean',
             'late_grace_minutes' => 'integer',
             'cancel_cutoff_hours' => 'integer',
+            'payroll_steps' => 'array',
+            'staff_grace_minutes' => 'integer',
+            'overtime_min_minutes' => 'integer',
             'return_items' => 'array',
             'checklist' => 'array',
             'submitted_at' => 'datetime',
@@ -145,6 +154,11 @@ class Gym extends Model
         return $this->hasMany(Payment::class);
     }
 
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
+
     public function athleteProfiles(): HasMany
     {
         return $this->hasMany(AthleteProfile::class);
@@ -155,9 +169,101 @@ class Gym extends Model
         return $this->hasMany(AthleteEntry::class);
     }
 
+    public function staffAttendance(): HasMany
+    {
+        return $this->hasMany(StaffAttendance::class);
+    }
+
+    public function overtimeRequests(): HasMany
+    {
+        return $this->hasMany(OvertimeRequest::class);
+    }
+
+    public function performanceNotes(): HasMany
+    {
+        return $this->hasMany(PerformanceNote::class);
+    }
+
+    public function stockItems(): HasMany
+    {
+        return $this->hasMany(StockItem::class);
+    }
+
+    public function stockMovements(): HasMany
+    {
+        return $this->hasMany(StockMovement::class);
+    }
+
+    public function customers(): HasMany
+    {
+        return $this->hasMany(Customer::class);
+    }
+
+    public function customerInteractions(): HasMany
+    {
+        return $this->hasMany(CustomerInteraction::class);
+    }
+
+    public function customerFollowUps(): HasMany
+    {
+        return $this->hasMany(CustomerFollowUp::class);
+    }
+
+    public function customerGroups(): HasMany
+    {
+        return $this->hasMany(CustomerGroup::class);
+    }
+
+    public function suppliers(): HasMany
+    {
+        return $this->hasMany(Supplier::class);
+    }
+
+    public function supplyNeeds(): HasMany
+    {
+        return $this->hasMany(SupplyNeed::class);
+    }
+
+    public function purchaseRequests(): HasMany
+    {
+        return $this->hasMany(PurchaseRequest::class);
+    }
+
+    public function purchaseOrders(): HasMany
+    {
+        return $this->hasMany(PurchaseOrder::class);
+    }
+
+    public function goodsReceipts(): HasMany
+    {
+        return $this->hasMany(GoodsReceipt::class);
+    }
+
+    public function supplierPayments(): HasMany
+    {
+        return $this->hasMany(SupplierPayment::class);
+    }
+
+    public function payrollRuns(): HasMany
+    {
+        return $this->hasMany(PayrollRun::class);
+    }
+
+    /** Platform rates are reached separately; this is only the gym's own rows. */
+    public function statutoryRates(): HasMany
+    {
+        return $this->hasMany(StatutoryRate::class);
+    }
+
     /** The working week the gym set, or Monday to Friday when it has not set one (Q-21). */
     public function workingDays(): array
     {
         return $this->working_days ?: self::DEFAULT_WORKING_DAYS;
+    }
+
+    /** The payroll approval chain, owner last (R-61). */
+    public function payrollSteps(): array
+    {
+        return $this->payroll_steps ?: self::DEFAULT_PAYROLL_STEPS;
     }
 }

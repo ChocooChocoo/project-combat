@@ -28,7 +28,7 @@ class GymRoleController extends Controller
             'permissions' => $permissions,
             'templates' => collect(config('access.templates'))->map(fn (array $levels, string $key) => [
                 'name' => config("access.names.{$key}", Str::headline($key)),
-                'permissions' => array_values(array_intersect(PermissionCatalog::expandLevels($levels), $permissions->pluck('permission_string')->all())),
+                'permissions' => array_values(array_intersect(PermissionCatalog::expandTemplate($levels), $permissions->pluck('permission_string')->all())),
             ]),
         ]);
     }

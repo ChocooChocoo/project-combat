@@ -141,7 +141,7 @@ class AccessTest extends TestCase
         $this->give($this->employee, $this->role(['finance.payments.view'], name: 'Cashier'));
         $this->actingAs($this->employee)->getJson('/api/me')->assertOk()
             ->assertJsonPath('data.gyms.0.permissions', ['finance.payments.view']);
-        $this->assertCount(51, $this->actingAs($this->owner)->getJson('/api/me')->json('data.gyms.0.permissions'));
+        $this->assertCount(70, $this->actingAs($this->owner)->getJson('/api/me')->json('data.gyms.0.permissions'));
     }
 
     public function test_a_role_still_given_to_employees_cannot_be_deleted(): void
@@ -175,7 +175,7 @@ class AccessTest extends TestCase
         $small = $this->role(['finance' => 'view'], name: 'Cashier');
 
         $hr = $this->actingAs($this->employee);
-        $hr->postJson($this->url('roles'), ['name' => 'Too much', 'permissions' => ['payroll.general.view']])->assertForbidden();
+        $hr->postJson($this->url('roles'), ['name' => 'Too much', 'permissions' => ['payroll.runs.view']])->assertForbidden();
         $hr->postJson($this->url('roles'), ['name' => 'Ok', 'permissions' => ['finance.payments.view']])->assertCreated();
         $hr->putJson($this->url("roles/{$big->id}"), ['name' => 'Finance Head', 'permissions' => ['finance.payments.view']])->assertForbidden();
         $hr->deleteJson($this->url("roles/{$big->id}"))->assertForbidden();

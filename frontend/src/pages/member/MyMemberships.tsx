@@ -10,6 +10,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/u
 import { Skeleton } from '@/components/ui/skeleton'
 import { toastManager } from '@/components/ui/toast'
 import { api, ApiError } from '@/lib/api'
+import { balanceSourceLabel, myBalanceFrom, type MyBalance } from '@/lib/finance'
 import { dateLabel, money, periodLabel, type Membership } from '@/lib/membership'
 
 function LoadError({ message, retry }: { message: string; retry: () => void }) {
@@ -31,6 +32,9 @@ export function MyMembershipList() {
   const [memberships, setMemberships] = useState<Membership[] | null>(null)
   const [error, setError] = useState('')
   const [version, setVersion] = useState(0)
+  const [balance, setBalance] = useState<MyBalance | null>(null)
+  const [balanceError, setBalanceError] = useState('')
+  const [balanceVersion, setBalanceVersion] = useState(0)
 
   useEffect(() => {
     let live = true
@@ -48,9 +52,73 @@ export function MyMembershipList() {
     }
   }, [version])
 
+  useEffect(() => {
+    let live = true
+    setBalance(null)
+    setBalanceError('')
+    api<Record<string, unknown>>('/my-balance')
+      .then((payload) => live && setBalance(myBalanceFrom(payload)))
+      .catch((failure) => {
+        if (!live) return
+        setBalance(null)
+        setBalanceError(failure instanceof ApiError ? failure.message : 'Try again in a moment.')
+      })
+    return () => {
+      live = false
+    }
+  }, [balanceVersion])
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="My memberships" description="Your applications and memberships in every gym, what you owe, and your receipts." />
+
+      <Card>
+        <CardHeader>
+          <CardTitle render={<h2 />}>Balance across gyms</CardTitle>
+          <CardDescription>Membership balances, unpaid session add-ons and private coaching fees in one place.</CardDescription>
+        </CardHeader>
+        <CardPanel>
+          {balanceError ? (
+            <Alert variant="error">
+              <AlertTitle>Your balance could not be loaded</AlertTitle>
+              <AlertDescription>{balanceError}</AlertDescription>
+              <AlertAction>
+                <Button size="xs" variant="outline" onClick={() => setBalanceVersion((value) => value + 1)}>
+                  Try again
+                </Button>
+              </AlertAction>
+            </Alert>
+          ) : balance === null ? (
+            <div className="flex flex-col gap-2" aria-busy="true" aria-label="Loading your balance">
+              <Skeleton className="h-9 w-40" />
+              <Skeleton className="h-14" />
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3" aria-live="polite">
+              <p className="text-sm">
+                <span className="text-muted-foreground">Combined balance</span>{' '}
+                <strong className="font-semibold text-xl tabular-nums">{money(balance.balance)}</strong>
+              </p>
+              {balance.sources.length === 0 ? (
+                <p className="text-muted-foreground text-sm">Nothing is outstanding. Paid-up memberships and sessions are not listed here.</p>
+              ) : (
+                <ul className="flex flex-col divide-y rounded-xl border">
+                  {balance.sources.map((source, index) => (
+                    <li
+                      key={`${source.kind ?? 'source'}-${source.id ?? 'none'}-${index}`}
+                      className="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 text-sm"
+                    >
+                      <span className="min-w-0 break-words">{balanceSourceLabel(source)}</span>
+                      <span className="font-medium tabular-nums">{money(source.amount)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </CardPanel>
+      </Card>
+
       {error ? (
         <LoadError message={error} retry={() => setVersion((v) => v + 1)} />
       ) : memberships === null ? (
@@ -102,6 +170,7 @@ export default function MyMembership() {
   const [error, setError] = useState('')
   const [version, setVersion] = useState(0)
   const [busy, setBusy] = useState(false)
+  const [payError, setPayError] = useState('')
   const confirming = useRef(false)
 
   useEffect(() => {
@@ -140,11 +209,17 @@ export default function MyMembership() {
 
   async function payOnline() {
     setBusy(true)
+    setPayError('')
     try {
       const result = await api<{ checkout_url: string }>(`/my-memberships/${id}/checkout`, { method: 'POST' })
       window.location.href = result.checkout_url
     } catch (failure) {
-      toastManager.add({ title: failure instanceof ApiError ? failure.message : 'Online payment could not start.', type: 'error' })
+      const message =
+        failure instanceof ApiError && failure.status < 500
+          ? failure.message
+          : 'Online payment is unavailable right now. Please try again or pay at the front desk.'
+      setPayError(message)
+      toastManager.add({ title: message, type: 'error' })
       setBusy(false)
     }
   }
@@ -245,6 +320,12 @@ export default function MyMembership() {
                   <CreditCard aria-hidden />
                   Pay {money(membership.balance)} online
                 </Button>
+              )}
+              {payError && (
+                <Alert variant="error">
+                  <AlertTitle>Online payment could not start</AlertTitle>
+                  <AlertDescription>{payError}</AlertDescription>
+                </Alert>
               )}
               {canPay && <p className="text-muted-foreground text-xs">GCash, Maya or card through PayMongo. It counts once PayMongo confirms it.</p>}
             </CardPanel>

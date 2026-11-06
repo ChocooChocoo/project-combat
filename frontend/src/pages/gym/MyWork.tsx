@@ -1,8 +1,10 @@
-import { Paperclip, X } from 'lucide-react'
+import { Paperclip, Printer, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { LeaveCalendar, formatDateRange, formatDay, isoDay } from '@/components/leave-calendar'
+import { MyAttendance } from '@/components/hr/my-attendance'
 import { PageHeader } from '@/components/page-header'
+import { PayslipSheet } from '@/components/payroll/payslip-sheet'
 import { CoachCalendar } from '@/components/schedule/coach-calendar'
 import { TextField } from '@/components/text-field'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -16,11 +18,13 @@ import { Form } from '@/components/ui/form'
 import { Meter, MeterIndicator, MeterTrack } from '@/components/ui/meter'
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { toastManager } from '@/components/ui/toast'
 import { api, apiFile, ApiError, type FieldErrors } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { approvedGym } from '@/lib/gym-access'
+import { dateLabel, deductionsOf, money, periodLabel, readPayslipDetail, readPayslips, type Payslip } from '@/lib/payroll'
 import { cn } from '@/lib/utils'
 import type { GymOptions, LeaveRequestStatus } from '@/lib/workspace'
 import { fileProblem, notBefore } from '@/lib/validation'
@@ -118,6 +122,7 @@ export default function MyWork() {
   const [data, setData] = useState<WorkData | null>(null)
   const [error, setError] = useState('')
   const [version, setVersion] = useState(0)
+  const [tab, setTab] = useState('work')
   const [options, setOptions] = useState<GymOptions | null>(null)
   const [optionsError, setOptionsError] = useState('')
   const [optionsVersion, setOptionsVersion] = useState(0)
@@ -171,6 +176,8 @@ export default function MyWork() {
   if (!gym) return null
 
   const schedule = data?.schedule ?? []
+  const todaySchedule = schedule.find((day) => day.weekday === TODAY_KEY)
+  const todayShift = todaySchedule ? { start: todaySchedule.start_time, end: todaySchedule.end_time, dayOff: todaySchedule.is_day_off } : null
   const balances = data?.balances ?? []
   const requests = data?.requests ?? []
   const holidays = data?.holidays ?? []
@@ -265,29 +272,37 @@ export default function MyWork() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="My work"
-        description={`${gym.name}: your schedule, leave and the holidays that affect them.`}
+        description={`${gym.name}: your schedule, leave, the holidays that affect them and your released payslips.`}
         meta={<Badge variant="outline">Employee</Badge>}
       />
 
-      {error ? (
-        <Alert variant="error">
-          <AlertTitle>Your work details could not be loaded</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-          <div className="pt-2">
-            <Button size="sm" variant="outline" onClick={refresh}>
-              Try again
-            </Button>
-          </div>
-        </Alert>
-      ) : data === null ? (
-        <div className="grid gap-6 lg:grid-cols-2" aria-busy="true">
-          <Skeleton className="h-72" />
-          <Skeleton className="h-72" />
-          <Skeleton className="h-96" />
-          <Skeleton className="h-96" />
-        </div>
-      ) : (
+      <Tabs value={tab} onValueChange={(value) => setTab(String(value))}>
+        <TabsList variant="underline" aria-label="My work sections" className="max-w-full overflow-x-auto overflow-y-hidden [scrollbar-width:none]">
+          <TabsTab value="work">My work</TabsTab>
+          <TabsTab value="payslips">Payslips</TabsTab>
+        </TabsList>
+
+        <TabsPanel value="work" keepMounted className="pt-4">
+          {error ? (
+            <Alert variant="error">
+              <AlertTitle>Your work details could not be loaded</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+              <div className="pt-2">
+                <Button size="sm" variant="outline" onClick={refresh}>
+                  Try again
+                </Button>
+              </div>
+            </Alert>
+          ) : data === null ? (
+            <div className="grid gap-6 lg:grid-cols-2" aria-busy="true">
+              <Skeleton className="h-72" />
+              <Skeleton className="h-72" />
+              <Skeleton className="h-96" />
+              <Skeleton className="h-96" />
+            </div>
+          ) : (
         <>
+          {gym.roles.includes('employee') && <MyAttendance gymId={gymId} shift={todayShift} />}
           {data.is_coach && user && <CoachCalendar gymId={gymId} userId={user.id} refreshKey={version} />}
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
             <Card>
@@ -619,6 +634,12 @@ export default function MyWork() {
           </Card>
         </>
       )}
+        </TabsPanel>
+
+        <TabsPanel value="payslips" className="pt-4">
+          <PayslipsPanel gymName={gym.name} />
+        </TabsPanel>
+      </Tabs>
 
       <Dialog open={cancelling !== null} onOpenChange={(open) => !open && setCancelling(null)}>
         <DialogPopup>
@@ -648,4 +669,187 @@ export default function MyWork() {
 
 function typeLabel(type: string, options: GymOptions | null): string {
   return options?.leave_types?.[type]?.label ?? type.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
+}
+
+/** R-62: released payslips only, with the print-friendly sheet behind one button. */
+function PayslipsPanel({ gymName }: { gymName: string }) {
+  const [payslips, setPayslips] = useState<Payslip[] | null>(null)
+  const [error, setError] = useState('')
+  const [version, setVersion] = useState(0)
+  const [viewing, setViewing] = useState<Payslip | null>(null)
+  const [detail, setDetail] = useState<Payslip | null>(null)
+  const [detailBusy, setDetailBusy] = useState(false)
+  const [detailError, setDetailError] = useState('')
+
+  useEffect(() => {
+    let live = true
+    setPayslips(null)
+    setError('')
+    api<Record<string, unknown>>('/me/payslips')
+      .then((payload) => {
+        if (live) setPayslips(readPayslips(payload))
+      })
+      .catch((reason) => {
+        if (!live) return
+        setPayslips([])
+        setError(reason instanceof ApiError ? reason.message : 'Your payslips could not be loaded.')
+      })
+    return () => {
+      live = false
+    }
+  }, [version])
+
+  useEffect(() => {
+    if (!viewing) return
+    if (!viewing.line_id) {
+      setDetail(null)
+      setDetailError('')
+      setDetailBusy(false)
+      return
+    }
+    let live = true
+    setDetail(null)
+    setDetailError('')
+    setDetailBusy(true)
+    api<Record<string, unknown>>(`/me/payslips/${viewing.line_id}`)
+      .then((payload) => {
+        if (live) setDetail(readPayslipDetail(payload))
+      })
+      .catch((reason) => {
+        if (live) setDetailError(reason instanceof ApiError ? reason.message : 'The full payslip could not be loaded.')
+      })
+      .finally(() => {
+        if (live) setDetailBusy(false)
+      })
+    return () => {
+      live = false
+    }
+  }, [viewing])
+
+  function openPayslip(payslip: Payslip) {
+    setDetail(null)
+    setDetailError('')
+    setViewing(payslip)
+  }
+
+  const shown = (payslips ?? [])
+    .filter((payslip) => !payslip.status || payslip.status === 'released')
+    .sort((a, b) => (b.starts_on ?? '').localeCompare(a.starts_on ?? ''))
+  const payslip = detail ?? viewing
+
+  return (
+    <div className="flex flex-col gap-4">
+      {error ? (
+        <Alert variant="error">
+          <AlertTitle>Your payslips could not be loaded</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+          <div className="pt-2">
+            <Button size="sm" variant="outline" onClick={() => setVersion((value) => value + 1)}>
+              Try again
+            </Button>
+          </div>
+        </Alert>
+      ) : payslips === null ? (
+        <div className="flex flex-col gap-2" aria-busy="true" aria-label="Loading payslips">
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+        </div>
+      ) : shown.length === 0 ? (
+        <Empty className="rounded-xl border">
+          <EmptyHeader>
+            <EmptyTitle>No payslips yet</EmptyTitle>
+            <EmptyDescription>
+              A payslip appears here after the owner releases a payroll run that includes you. Draft and in-review runs stay private.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      ) : (
+        <>
+          <p className="text-muted-foreground text-sm" aria-live="polite">
+            {shown.length} released {shown.length === 1 ? 'payslip' : 'payslips'}, newest first
+          </p>
+          <ul className="flex flex-col divide-y rounded-xl border bg-card">
+            {shown.map((row) => (
+              <li key={`${row.line_id}-${row.run_id ?? 'run'}`} className="flex min-w-0 flex-col gap-3 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <span className="font-medium">{periodLabel(row.starts_on, row.ends_on)}</span>
+                    <span className="text-muted-foreground text-sm">{row.gym_name || gymName}</span>
+                  </div>
+                  <Badge variant="success">Released</Badge>
+                </div>
+                <dl className="grid grid-cols-3 gap-2 text-sm">
+                  <div className="flex flex-col gap-0.5">
+                    <dt className="text-muted-foreground text-xs">Gross</dt>
+                    <dd className="tabular-nums">{money(row.gross_pay)}</dd>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <dt className="text-muted-foreground text-xs">Deductions</dt>
+                    <dd className="tabular-nums">{money(deductionsOf(row))}</dd>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <dt className="text-muted-foreground text-xs">Net</dt>
+                    <dd className="font-semibold tabular-nums">{money(row.net_pay)}</dd>
+                  </div>
+                </dl>
+                {row.released_at && <span className="text-muted-foreground text-xs">Released {dateLabel(row.released_at)}</span>}
+                <Button size="sm" variant="outline" className="self-start" onClick={() => openPayslip(row)}>
+                  <Printer aria-hidden />
+                  View and print
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      <Dialog
+        open={viewing !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setViewing(null)
+            setDetail(null)
+            setDetailError('')
+          }
+        }}
+      >
+        <DialogPopup className="sm:max-w-2xl">
+          {payslip && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Payslip</DialogTitle>
+                <DialogDescription>
+                  {periodLabel(payslip.starts_on, payslip.ends_on)} · {payslip.gym_name || gymName}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="max-h-[70vh] overflow-y-auto px-2 print:hidden" aria-busy={detailBusy || undefined}>
+                {detailError && (
+                  <Alert variant="warning" className="m-4">
+                    <AlertTitle>Full breakdown unavailable</AlertTitle>
+                    <AlertDescription>{detailError} You can still print the summary.</AlertDescription>
+                  </Alert>
+                )}
+                <PayslipSheet gymName={payslip.gym_name || gymName} payslip={payslip} />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setViewing(null)}>
+                  Close
+                </Button>
+                <Button onClick={() => window.print()}>
+                  <Printer aria-hidden />
+                  Print payslip
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogPopup>
+      </Dialog>
+
+      {payslip && (
+        <div className="hidden print:block">
+          <PayslipSheet gymName={payslip.gym_name || gymName} payslip={payslip} />
+        </div>
+      )}
+    </div>
+  )
 }

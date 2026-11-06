@@ -96,17 +96,19 @@ The owner holds every active permission for their own gym. Employees see the sam
 | S-30 | Payments desk | Record a cash, card or e-wallet payment at the desk; see online PayMongo payments as they arrive; receipts; outstanding balances | — | D-55, D-56 and D-84, R-34, R-35 and R-65 |
 | S-31 | Finance | Income, expenses, amounts owed to suppliers, budgets against actual, and sustainability reports | — | D-53 to D-58, R-63 to R-68 |
 | S-32 | Customers | Leads and customers, follow-ups, interaction history, concerns, groups | — | D-59 to D-61, R-69 to R-71 |
-| S-33 | Stock | Items, quantities, places, movements, minimum levels | — | D-62 to D-64, R-72 to R-74 |
+| S-33 | Stock | Items, quantities, places, movements, minimum levels | — | D-62 to D-64, R-72 to R-74 (built in Packet 6B) |
 | S-34 | Purchasing | Restock list, purchase requests and approvals, suppliers, purchase orders, receiving, status | — | D-65 to D-69, R-75 to R-79 |
 | S-35 | Announcements | Write an announcement or event; choose all members, a class or a customer group | — | D-70 and D-71, R-80 |
 | S-36 | Decision support for owners | The eight dashboards, trends, forecast, flagged problems, sustainability view | — | D-75 to D-79, R-85 to R-96 |
 
-Several screens cannot be finished until open questions are answered:
+The open questions that used to gate these screens are now settled except one:
 
-- S-26 and S-28 depend on Q-14 (lateness).
-- S-29 depends on Q-13 (coach pay).
-- S-25 depends on Q-12 and Q-18 (waiting lists and approval policy).
-- S-36's forecast depends on Q-15.
+- Q-14 (lateness) is answered, so S-26 and S-28 are built.
+- Q-13 (coach pay) is answered, so S-29 is built.
+- Q-12 and Q-18 (waiting lists and approval policy) are answered, so S-25 is built.
+- S-36's forecast still waits on Q-15, which belongs to Phase 8.
+
+**Built in Phase 6 (6 November 2026):** S-28 Staff attendance and overtime, S-29 Payroll, S-31 Finance (including payables, budgets and reports), S-32 Customers, S-33 Stock and S-34 Purchasing. S-30 Payments desk also gained the income view, and S-38 My work gained the released Payslips tab. Q-13, Q-14, Q-21 and the old-system questions are answered or dropped. Browser verification of these screens was completed on 6 November 2026 at desktop and phone width with owner, HR, Finance, Front Desk, Operations Manager, Coach, employee and member roles; the residual edge checks are listed in Packet 6H.
 
 ## Employee, coaches included
 
@@ -115,9 +117,9 @@ An employee sees S-16 to S-36 only for the modules the owner has allowed. On top
 | # | Screen | What is on it | Where it leads | Where the need came from |
 |---|---|---|---|---|
 | S-37 | My sessions | For coaches: their upcoming sessions, rosters, check-in confirmation and progress notes | S-26 for a session they run | *Drawn from* D-26 and D-30, R-44 and R-55 |
-| S-38 | My work | Their schedule, own attendance, leave requests and balances, and payslips | — | *Drawn from* D-49 and D-51, R-24 to R-26, R-56 and R-62 |
+| S-38 | My work | Their schedule, own attendance, leave requests and balances, and payslips (released only, with a print-friendly sheet) | — | *Drawn from* D-49 and D-51, R-24 to R-26, R-56 and R-62 |
 
-S-38's attendance part depends on Q-03 (GPS check-in) and Q-02 (absence explanations).
+S-38's attendance part uses the plain explanation field (Q-02); GPS-fenced check-in (Q-03) was dropped.
 
 ## Athlete or member
 

@@ -32,6 +32,11 @@ return [
         'both' => 'Monthly and per session',
     ],
 
+    'employment_types' => [
+        'employee' => 'Employee',
+        'contractor' => 'Contractor',
+    ],
+
     'attachment' => [
         'mimes' => ['pdf', 'jpg', 'jpeg', 'png'],
         'max_kb' => 5120,

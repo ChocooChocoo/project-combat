@@ -162,6 +162,10 @@ class StaffTest extends TestCase
             'user_id' => $employee->id,
             'job_title' => 'Front Desk',
         ]);
+        $this->assertSame(
+            now()->toDateString(),
+            EmployeeProfile::withoutGlobalScope('gym')->where('user_id', $employee->id)->firstOrFail()->ended_on->toDateString(),
+        );
 
         $this->actingAs($employee)->getJson($this->url('my-work'))->assertNotFound();
     }

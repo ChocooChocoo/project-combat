@@ -26,7 +26,7 @@ trait PresentsHr
     }
 
     /** One employee as the staff list and employee record show them. */
-    protected function employeePayload(Gym $gym, User $user, bool $canSeePay): array
+    protected function employeePayload(Gym $gym, User $user, bool $canViewCompensation): array
     {
         $profile = $this->profileFor($gym, $user);
         $roles = $user->gymRoles($gym)->orderBy('name')->get();
@@ -40,12 +40,12 @@ trait PresentsHr
             'photo_url' => $user->photo_path ? Storage::disk('public')->url($user->photo_path) : null,
             'is_coach' => $profile?->isCoach() ?? false,
             'roles' => $roles->pluck('name')->values()->all(),
-            'profile' => $this->profilePayload($profile, $canSeePay),
+            'profile' => $this->profilePayload($profile, $canViewCompensation),
             'schedule' => $this->scheduleRows($gym, $user),
         ];
     }
 
-    protected function profilePayload(?EmployeeProfile $profile, bool $canSeePay): ?array
+    protected function profilePayload(?EmployeeProfile $profile, bool $canViewCompensation): ?array
     {
         if (! $profile) {
             return null;
@@ -54,6 +54,8 @@ trait PresentsHr
         $data = [
             'job_title' => $profile->job_title,
             'started_on' => $profile->started_on?->toDateString(),
+            'ended_on' => $profile->ended_on?->toDateString(),
+            'employment_type' => $profile->employment_type,
             'pay_basis' => $profile->pay_basis?->value,
             'coach_photo_url' => $profile->coach_photo_path
                 ? Storage::disk('public')->url($profile->coach_photo_path)
@@ -66,7 +68,7 @@ trait PresentsHr
         ];
 
         // R-23: pay details are omitted entirely when the viewer may not see them.
-        if ($canSeePay) {
+        if ($canViewCompensation) {
             $data['monthly_rate'] = $profile->monthly_rate;
             $data['per_session_rate'] = $profile->per_session_rate;
         }

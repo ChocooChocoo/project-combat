@@ -11,8 +11,10 @@ return [
         'front_desk' => [
             'members' => 'approve',
             'training' => 'manage',
-            'finance' => 'manage',
+            // Exact list: the front desk runs the payments desk, not budgets or payables.
+            'finance' => ['finance.payments.view', 'finance.payments.manage', 'finance.receivables.view'],
             'customers' => 'manage',
+            'inventory' => ['inventory.items.view', 'inventory.movements.manage'],
             'announcements' => 'manage',
         ],
         'finance' => [
@@ -22,7 +24,8 @@ return [
             'decision_support' => 'view',
         ],
         'hr' => [
-            'hr' => 'manage',
+            // Approve adds hr.overtime.approve to the HR starter set.
+            'hr' => 'approve',
             'payroll' => 'manage',
         ],
     ],

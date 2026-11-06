@@ -40,6 +40,23 @@ return new class extends Migration
         return $keys;
     }
 
+    /** The 51 keys this migration froze. It must not read a later catalog. */
+    private function frozenPermissions(): array
+    {
+        $keys = [];
+        foreach (self::RESOURCES as $module => $resources) {
+            foreach ($resources as $resource => $max) {
+                foreach (['view' => 1, 'manage' => 2, 'approve' => 3] as $action => $needed) {
+                    if ($max === 0 ? $needed === 2 : $needed <= $max) {
+                        $keys[] = "{$module}.{$resource}.{$action}";
+                    }
+                }
+            }
+        }
+
+        return $keys;
+    }
+
     public function up(): void
     {
         $converted = [];
@@ -81,7 +98,15 @@ return new class extends Migration
             $table->timestamp('expires_at')->nullable();
             $table->foreignId('granted_by')->nullable()->constrained('users')->nullOnDelete();
         });
-        PermissionCatalog::sync();
+        $now = now();
+        foreach ($this->frozenPermissions() as $permission) {
+            [$module, $resource, $action] = explode('.', $permission);
+            DB::table('permissions')->insertOrIgnore([
+                'module' => $module, 'resource' => $resource, 'action' => $action,
+                'permission_string' => $permission, 'name' => PermissionCatalog::label($resource, $action),
+                'status' => 'active', 'is_system' => true, 'created_at' => $now, 'updated_at' => $now,
+            ]);
+        }
         $ids = DB::table('permissions')->pluck('id', 'permission_string');
         foreach ($converted as $roleId => $keys) {
             foreach ($keys as $key) {

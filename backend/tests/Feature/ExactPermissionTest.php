@@ -37,7 +37,7 @@ class ExactPermissionTest extends TestCase
         app(CurrentGym::class)->set($gym);
         $role = $this->makeRole(['hr.roles.manage']);
         $role->users()->attach($actor->id);
-        $this->assertFalse($actor->canSeePay($gym));
+        $this->assertFalse($actor->canViewCompensation($gym));
         $this->assertFalse($actor->canApproveLeave($gym));
         $role->syncPermissionStrings(['hr.leave.manage']);
         $this->assertTrue($actor->canApproveLeave($gym));

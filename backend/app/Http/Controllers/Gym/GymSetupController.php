@@ -40,6 +40,12 @@ class GymSetupController extends Controller
                 ->all();
         }
 
+        // R-61: the owner is always the last step, whatever order was sent.
+        if (array_key_exists('payroll_steps', $data)) {
+            $steps = array_values(array_unique(array_diff($data['payroll_steps'] ?? [], ['owner'])));
+            $data['payroll_steps'] = [...array_slice($steps, 0, 2), 'owner'];
+        }
+
         $gym->update($data);
 
         return response()->json(['setup' => $this->setup($gym->fresh())]);
@@ -73,6 +79,10 @@ class GymSetupController extends Controller
             'booking_approval' => $gym->booking_approval,
             'late_grace_minutes' => $gym->late_grace_minutes,
             'cancel_cutoff_hours' => $gym->cancel_cutoff_hours,
+            'payroll_frequency' => $gym->payroll_frequency,
+            'payroll_steps' => $gym->payrollSteps(),
+            'staff_grace_minutes' => $gym->staff_grace_minutes,
+            'overtime_min_minutes' => $gym->overtime_min_minutes,
             'services' => $gym->services ?? [],
             'facilities' => $gym->facilities ?? [],
             'options' => $this->optionLists($gym),
@@ -88,8 +98,11 @@ class GymSetupController extends Controller
             'working_days' => $gym->workingDays(),
             'default_working_days' => Gym::DEFAULT_WORKING_DAYS,
             'pay_bases' => config('hr.pay_bases'),
+            'employment_types' => config('hr.employment_types'),
             'leave_types' => config('hr.leave_types'),
             'attachment' => config('hr.attachment'),
+            'payroll_frequencies' => config('payroll.frequencies'),
+            'payroll_steps' => config('payroll.steps'),
             'levels' => config('offer.levels'),
             'frequencies' => config('offer.frequencies'),
             'plan_billing' => config('offer.plan_billing'),
@@ -125,6 +138,11 @@ class GymSetupController extends Controller
             'booking_approval' => ['sometimes', 'required', 'boolean'],
             'late_grace_minutes' => ['sometimes', 'required', 'integer', 'between:0,120'],
             'cancel_cutoff_hours' => ['sometimes', 'required', 'integer', 'between:0,72'],
+            'payroll_frequency' => ['sometimes', 'required', Rule::in(array_keys(config('payroll.frequencies')))],
+            'payroll_steps' => ['sometimes', 'array', 'max:3'],
+            'payroll_steps.*' => ['distinct', Rule::in(array_keys(config('payroll.steps')))],
+            'staff_grace_minutes' => ['sometimes', 'required', 'integer', 'between:0,120'],
+            'overtime_min_minutes' => ['sometimes', 'required', 'integer', 'between:0,240'],
         ];
     }
 }

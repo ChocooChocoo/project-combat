@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Gym;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Gym\Concerns\PresentsHr;
 use App\Models\Gym;
+use App\Support\PayrollLock;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 
 /** R-27: national holidays and the gym's own extra holidays. */
@@ -32,6 +34,8 @@ class HolidayController extends Controller
             'name' => ['required', 'string', 'max:120'],
         ]);
 
+        PayrollLock::assertOpen($gym, Carbon::parse($data['date'])->startOfDay());
+
         if ($gym->holidays()->whereDate('date', $data['date'])->exists()) {
             throw ValidationException::withMessages([
                 'date' => 'This date already has a holiday.',
@@ -52,7 +56,9 @@ class HolidayController extends Controller
 
     public function destroy(Gym $gym, int $holiday): JsonResponse
     {
-        $gym->holidays()->findOrFail($holiday)->delete();
+        $row = $gym->holidays()->findOrFail($holiday);
+        PayrollLock::assertOpen($gym, $row->date);
+        $row->delete();
 
         return response()->json(['message' => 'Holiday removed.']);
     }

@@ -19,18 +19,27 @@ import GymApplications from '@/pages/gym/GymApplications'
 import GymBookings from '@/pages/gym/GymBookings'
 import GymCheckIn from '@/pages/gym/GymCheckIn'
 import GymAttendance from '@/pages/gym/GymAttendance'
+import CustomerRecord from '@/pages/gym/CustomerRecord'
+import GymCustomers from '@/pages/gym/GymCustomers'
+import GymFinance from '@/pages/gym/GymFinance'
 import GymLeave from '@/pages/gym/GymLeave'
 import GymMembers from '@/pages/gym/GymMembers'
 import GymPayments from '@/pages/gym/GymPayments'
+import GymPayroll from '@/pages/gym/GymPayroll'
+import GymPayrollRun from '@/pages/gym/GymPayrollRun'
 import GymPlans from '@/pages/gym/GymPlans'
+import GymPurchasing from '@/pages/gym/GymPurchasing'
 import GymRooms from '@/pages/gym/GymRooms'
 import GymSchedule from '@/pages/gym/GymSchedule'
 import GymSession from '@/pages/gym/GymSession'
 import GymServices from '@/pages/gym/GymServices'
 import GymSettings from '@/pages/gym/GymSettings'
 import GymStaff from '@/pages/gym/GymStaff'
+import GymStaffAttendance from '@/pages/gym/GymStaffAttendance'
+import GymStock from '@/pages/gym/GymStock'
 import MemberRecord from '@/pages/gym/MemberRecord'
 import MyWork from '@/pages/gym/MyWork'
+import PurchaseOrder from '@/pages/gym/PurchaseOrder'
 import MembershipApply from '@/pages/member/MembershipApply'
 import MyMembership, { MyMembershipList } from '@/pages/member/MyMemberships'
 import MyRecord from '@/pages/member/MyRecord'
@@ -143,13 +152,22 @@ export default function App() {
               <Route path="attendance" element={<GymAttendance />} />
               <Route path="staff" element={<GymStaff />} />
               <Route path="staff/:userId" element={<EmployeeRecord />} />
+              <Route path="staff-attendance" element={<GymStaffAttendance />} />
+              <Route path="payroll" element={<GymPayroll />} />
+              <Route path="payroll/:runId" element={<GymPayrollRun />} />
               <Route path="leave" element={<GymLeave />} />
               <Route path="services" element={<GymServices />} />
               <Route path="plans" element={<GymPlans />} />
               <Route path="applications" element={<GymApplications />} />
               <Route path="members" element={<GymMembers />} />
               <Route path="members/:membershipId" element={<MemberRecord />} />
+              <Route path="customers" element={<GymCustomers />} />
+              <Route path="customers/:customerId" element={<CustomerRecord />} />
+              <Route path="finance" element={<GymFinance />} />
               <Route path="payments" element={<GymPayments />} />
+              <Route path="stock" element={<GymStock />} />
+              <Route path="purchasing" element={<GymPurchasing />} />
+              <Route path="purchasing/orders/:orderId" element={<PurchaseOrder />} />
               <Route path="my-work" element={<MyWork />} />
             </Route>
           </Route>

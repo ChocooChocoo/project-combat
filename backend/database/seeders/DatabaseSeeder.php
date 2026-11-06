@@ -9,6 +9,7 @@ use App\Enums\MembershipStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PlanBilling;
 use App\Models\AthleteProfile;
+use App\Models\Budget;
 use App\Models\Gym;
 use App\Models\GymRole;
 use App\Models\GymService;
@@ -24,8 +25,13 @@ use App\Support\AttendanceLedger;
 use App\Support\BookingLedger;
 use App\Support\CurrentGym;
 use App\Support\MembershipLedger;
+use App\Support\Payroll\Workflow as PayrollWorkflow;
 use App\Support\PermissionCatalog;
+use App\Support\Procurement\Ordering;
+use App\Support\Procurement\Payables;
+use App\Support\Procurement\Receiving;
 use App\Support\SessionScheduler;
+use App\Support\StockLedger;
 use App\Support\SystemRoles;
 use App\Support\WorkingDays;
 use Illuminate\Database\Seeder;
@@ -75,12 +81,14 @@ class DatabaseSeeder extends Seeder
         'Front Desk' => [
             'members' => 'approve',
             'training' => 'manage',
-            'finance' => 'manage',
+            // Exact list: the desk runs payments, not budgets or payables.
+            'finance' => ['finance.payments.view', 'finance.payments.manage', 'finance.receivables.view'],
             'customers' => 'manage',
+            'inventory' => ['inventory.items.view', 'inventory.movements.manage'],
             'announcements' => 'manage',
         ],
         'HR Officer' => [
-            'hr' => 'manage',
+            'hr' => 'approve',
             'payroll' => 'manage',
             'announcements' => 'view',
         ],
@@ -101,6 +109,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->resetData();
         PermissionCatalog::sync();
+        $this->call(StatutoryRateSeeder::class);
 
         $year = (int) now()->year;
 
@@ -133,10 +142,37 @@ class DatabaseSeeder extends Seeder
             'gym_visits',
             'session_bookings',
             'training_sessions',
+            'staff_attendance_changes',
+            'overtime_requests',
+            'performance_notes',
+            'staff_attendance',
+            'payroll_line_items',
+            'payroll_approvals',
+            'payroll_lines',
+            'payroll_runs',
+            'statutory_rates',
+            'supplier_payments',
+            'goods_receipt_lines',
+            'goods_receipts',
+            'purchase_order_lines',
+            'purchase_orders',
+            'purchase_request_lines',
+            'purchase_requests',
+            'supply_needs',
+            'suppliers',
+            'stock_movements',
+            'stock_items',
+            'customer_group_members',
+            'customer_interactions',
+            'customer_follow_ups',
+            'customer_groups',
+            'customers',
             'athlete_entries',
             'athlete_profiles',
             'membership_events',
             'payments',
+            'budgets',
+            'expenses',
             'memberships',
             'gym_service_photos',
             'membership_plan_addons',
@@ -276,7 +312,7 @@ class DatabaseSeeder extends Seeder
             $roles = [];
             foreach (self::ROLES as $name => $permissions) {
                 $roles[$name] = GymRole::create(['name' => $name]);
-                $roles[$name]->syncPermissionStrings(PermissionCatalog::expandLevels($permissions));
+                $roles[$name]->syncPermissionStrings(PermissionCatalog::expandTemplate($permissions));
             }
             SystemRoles::seed($gym);
 
@@ -367,9 +403,355 @@ class DatabaseSeeder extends Seeder
             }
 
             $this->seedSessions($gym, $owner, $spec, $employees, $services);
+            $this->seedStock($gym, $owner, array_values($employees));
+            $this->seedExpenses($gym, $owner);
+            $this->seedBudgets($gym, $owner);
+            $this->seedCustomers($gym, $owner, array_values($employees));
+            $this->seedProcurement($gym, $owner, array_values($employees));
+            $this->seedPayroll($gym, $owner, array_values($employees));
 
             $owner->notify(new GymApplicationDecided($gym));
         }
+    }
+
+    private function seedStock(Gym $gym, User $owner, array $employees): void
+    {
+        $ledger = app(StockLedger::class);
+        $prefix = Str::upper(Str::substr(Str::slug($gym->name, ''), 0, 2));
+        $specs = [
+            ['Boxing gloves 14 oz', 'protective_gear', 'pair', 'Equipment cage', 16, 6, 10, '1850.00', null],
+            ['Hand wraps 180 in', 'protective_gear', 'pair', 'Front desk cabinet', 30, 15, 30, '180.00', null],
+            ['Mouth guards', 'protective_gear', 'piece', 'Front desk cabinet', 12, 10, 20, '120.00', null],
+            ['Focus mitts', 'equipment', 'pair', 'Equipment cage', 8, 2, 4, '1450.00', null],
+            ['Skipping ropes', 'equipment', 'piece', 'Strength area rack', 20, 5, 10, '250.00', null],
+            ['Disinfectant spray', 'supplies', 'litre', 'Storage room shelf B', 6, 4, 12, '320.00', null],
+            ['First aid refill kit', 'supplies', 'box', 'Front desk cabinet', 3, 2, 4, '950.00', null],
+            ['Gym T-shirt', 'merchandise', 'piece', 'Front desk display', 25, 8, 30, '280.00', '650.00'],
+            ['Gym water bottle', 'merchandise', 'piece', 'Front desk display', 4, 5, 24, '150.00', '380.00'],
+        ];
+        $items = [];
+        $openedAt = now()->subDays(30)->setTime(9, 0);
+        foreach ($specs as $index => [$name, $category, $unit, $location, $quantity, $minimum, $reorder, $cost, $price]) {
+            $items[] = Carbon::withTestNow($openedAt, fn () => $ledger->open($gym, [
+                'name' => $name, 'sku' => $prefix.'-'.str_pad((string) ($index + 1), 3, '0', STR_PAD_LEFT),
+                'category' => $category, 'unit' => $unit, 'location' => $location,
+                'min_level' => $minimum, 'reorder_qty' => $reorder, 'unit_cost' => $cost, 'sale_price' => $price,
+            ], $quantity, $owner));
+        }
+        Carbon::withTestNow(now()->subDays(20)->setTime(9, 0), fn () => $ledger->move($items[1], 'receipt', 10, $owner, ['note' => 'Delivery from supplier']));
+        $issue = Carbon::withTestNow(now()->subDays(14)->setTime(9, 0), fn () => $ledger->move($items[0], 'issue', 2, $owner, array_filter([
+            'issued_to_user_id' => ($employees[0] ?? null)?->id, 'note' => 'For the beginners class',
+        ], fn ($value) => $value !== null)));
+        Carbon::withTestNow(now()->subDays(7)->setTime(9, 0), fn () => $ledger->move($items[0], 'return', 1, $owner, ['returns_movement_id' => $issue->id]));
+        Carbon::withTestNow(now()->subDays(5)->setTime(9, 0), fn () => $ledger->move($items[3], 'damaged', 1, $owner, ['note' => 'Torn padding']));
+        Carbon::withTestNow(now()->subDays(3)->setTime(9, 0), fn () => $ledger->move($items[4], 'adjustment', -1, $owner, ['note' => 'Monthly count check']));
+        Carbon::withTestNow(now()->subDays(2)->setTime(9, 0), fn () => $ledger->move($items[2], 'issue', 3, $owner, ['note' => 'For the front desk']));
+    }
+
+    /** R-75 to R-79, R-66: two suppliers and one part-received purchase per demo gym. */
+    private function seedProcurement(Gym $gym, User $owner, array $employees): void
+    {
+        $items = $gym->stockItems()->orderBy('id')->get();
+
+        if ($items->isEmpty()) {
+            return;
+        }
+
+        $suppliers = [
+            $gym->suppliers()->create([
+                'name' => 'Manila Fight Gear Supply',
+                'contact_person' => 'Cesar Lim',
+                'phone' => '0917 555 0301',
+                'email' => 'orders@manilafightgear.test',
+                'address' => '18 Quezon Avenue, Quezon City',
+                'payment_terms' => '50% deposit, balance on delivery',
+                'notes' => 'Gloves, wraps and protective gear. Delivers every Tuesday.',
+                'status' => 'active',
+            ]),
+            $gym->suppliers()->create([
+                'name' => 'Quezon Sports Medical Trading',
+                'contact_person' => 'Nina Perez',
+                'phone' => '0917 555 0302',
+                'email' => 'sales@quezonmedical.test',
+                'address' => '7 Banawe Street, Quezon City',
+                'payment_terms' => 'Net 15',
+                'notes' => 'First aid, disinfectant and recovery supplies.',
+                'status' => 'active',
+            ]),
+        ];
+
+        $primary = $items->firstWhere('name', 'Mouth guards') ?? $items->first();
+        $secondary = $items->first(fn ($item) => $item->id !== $primary->id) ?? $primary;
+        $requester = collect($employees)->first(fn (User $person) => $person->id !== $owner->id) ?? $owner;
+        $session = TrainingSession::query()
+            ->where('gym_id', $gym->id)
+            ->where('status', 'scheduled')
+            ->orderBy('starts_at')
+            ->first();
+
+        $request = Carbon::withTestNow(now()->subDays(16)->setTime(10, 0), function () use ($gym, $owner, $requester, $session, $primary, $secondary) {
+            $need = $gym->supplyNeeds()->create([
+                'stock_item_id' => $primary->id,
+                'training_session_id' => $session?->id,
+                'needed_by' => now()->addDays(6)->toDateString(),
+                'quantity' => 8,
+                'note' => 'Replacement stock for the beginners programme.',
+                'status' => 'open',
+                'created_by' => $owner->id,
+            ]);
+
+            $request = $gym->purchaseRequests()->create([
+                'number' => 'TMP-'.Str::upper(Str::random(16)),
+                'status' => 'pending',
+                'requested_by' => $requester->id,
+                'needed_by' => now()->addDays(8)->toDateString(),
+                'note' => 'Restock before the weekend classes.',
+            ]);
+            $request->forceFill(['number' => sprintf('PR-%d-%06d', $gym->id, $request->id)])->save();
+
+            $request->lines()->create([
+                'stock_item_id' => $primary->id,
+                'quantity' => 8,
+                'est_unit_cost' => '130.00',
+                'supply_need_id' => $need->id,
+            ]);
+            $request->lines()->create([
+                'stock_item_id' => $secondary->id,
+                'quantity' => 10,
+                'est_unit_cost' => '190.00',
+            ]);
+
+            $need->forceFill(['status' => 'requested'])->save();
+
+            return $request;
+        });
+
+        Carbon::withTestNow(now()->subDays(15)->setTime(9, 30), function () use ($request, $owner) {
+            $request->forceFill([
+                'status' => 'approved',
+                'decided_by' => $owner->id,
+                'decided_at' => now(),
+                'decision_reason' => 'Approved for the coming class block.',
+            ])->save();
+        });
+
+        $request = $request->fresh(['lines']);
+        $order = Carbon::withTestNow(now()->subDays(14)->setTime(11, 0), fn () => app(Ordering::class)->fromRequest(
+            $gym,
+            $request,
+            $suppliers[0],
+            $request->lines->map(fn ($line) => [
+                'purchase_request_line_id' => $line->id,
+                'quantity' => $line->quantity,
+                'unit_cost' => $line->stock_item_id === $primary->id ? '125.00' : '185.00',
+            ])->all(),
+            $owner,
+            now()->addDays(3),
+        ));
+
+        $received = Carbon::withTestNow(now()->subDays(6)->setTime(14, 0), fn () => app(Receiving::class)->receive(
+            $gym,
+            $order,
+            $order->lines->map(fn ($line) => [
+                'purchase_order_line_id' => $line->id,
+                'quantity' => max(1, intdiv($line->quantity_ordered, 2)),
+            ])->all(),
+            $owner,
+            now()->subDays(6)->startOfDay(),
+            'First delivery; the balance follows next week.',
+        ));
+
+        $order = $received[0];
+        $receipt = $received[1];
+
+        if ((float) $receipt->total > 0) {
+            Carbon::withTestNow(now()->subDays(3)->setTime(16, 0), fn () => app(Payables::class)->pay(
+                $suppliers[0],
+                number_format((float) $receipt->total * 0.4, 2, '.', ''),
+                [
+                    'method' => 'bank',
+                    'paid_on' => now()->toDateString(),
+                    'reference' => 'BPI-'.str_pad((string) $gym->id, 4, '0', STR_PAD_LEFT),
+                    'note' => 'Partial payment for the first delivery.',
+                    'purchase_order_id' => $order->id,
+                ],
+                $owner,
+            ));
+        }
+
+        $gym->supplyNeeds()->create([
+            'stock_item_id' => $secondary->id,
+            'training_session_id' => $session?->id,
+            'needed_by' => now()->addDays(5)->toDateString(),
+            'quantity' => 4,
+            'note' => 'Extra wraps for the sparring session.',
+            'status' => 'open',
+            'created_by' => $owner->id,
+        ]);
+    }
+
+    /** R-69 to R-71: realistic leads, history, follow-ups and one audience group per demo gym. */
+    private function seedCustomers(Gym $gym, User $owner, array $employees): void
+    {
+        $memberships = $gym->memberships()->with('user')->orderBy('id')->get();
+        $active = $memberships->where('status', MembershipStatus::Active)->take(2)->values();
+        $applicant = $memberships->where('status', MembershipStatus::Applied)->first();
+        $staff = $employees[0] ?? $owner;
+        $customers = [];
+
+        if ($active->count() >= 2) {
+            $firstMember = $active[0];
+            $secondMember = $active[1];
+            $created = now()->subDays(26)->setTime(10, 15);
+
+            $customers[] = Carbon::withTestNow($created, fn () => $gym->customers()->create([
+                'name' => trim("{$firstMember->user->first_name} {$firstMember->user->last_name}"),
+                'email' => $firstMember->user->email,
+                'phone' => $firstMember->user->phone,
+                'source' => 'referral',
+                'inquiry' => 'Interested in adding two private boxing sessions each month.',
+                'user_id' => $firstMember->user_id,
+                'assigned_to' => $owner->id,
+                'status' => 'open',
+                'created_by' => $owner->id,
+            ]));
+            $customers[0]->forceFill([
+                'membership_id' => $firstMember->id,
+                'linked_at' => $created->copy()->addDay(),
+            ])->save();
+
+            $secondCreated = now()->subDays(18)->setTime(15, 40);
+            $customers[] = Carbon::withTestNow($secondCreated, fn () => $gym->customers()->create([
+                'name' => trim("{$secondMember->user->first_name} {$secondMember->user->last_name}"),
+                'email' => $secondMember->user->email,
+                'phone' => $secondMember->user->phone,
+                'source' => 'walk_in',
+                'inquiry' => 'Asked about the beginner Muay Thai class and weekend schedule.',
+                'user_id' => $secondMember->user_id,
+                'assigned_to' => $staff->id,
+                'status' => 'open',
+                'created_by' => $owner->id,
+            ]));
+            $customers[1]->forceFill([
+                'membership_id' => $secondMember->id,
+                'linked_at' => $secondCreated->copy()->addDay(),
+            ])->save();
+        }
+
+        if ($applicant) {
+            $customers[] = Carbon::withTestNow(now()->subDays(7)->setTime(11, 20), fn () => $gym->customers()->create([
+                'name' => trim("{$applicant->user->first_name} {$applicant->user->last_name}"),
+                'email' => $applicant->user->email,
+                'phone' => $applicant->user->phone,
+                'source' => 'website',
+                'inquiry' => 'Submitted an application for the monthly unlimited plan.',
+                'user_id' => $applicant->user_id,
+                'assigned_to' => $staff->id,
+                'status' => 'open',
+                'created_by' => $owner->id,
+            ]));
+            $customers[array_key_last($customers)]->forceFill([
+                'membership_id' => $applicant->id,
+                'linked_at' => now()->subDays(7)->setTime(12, 0),
+            ])->save();
+        }
+
+        $lead = Carbon::withTestNow(now()->subDays(3)->setTime(18, 0), fn () => $gym->customers()->create([
+            'name' => 'Rico Dizon',
+            'email' => "rico.dizon.gym{$gym->id}@example.test",
+            'phone' => sprintf('0917 555 %04d', $gym->id * 100 + 71),
+            'source' => 'social',
+            'inquiry' => 'Messaged about a free trial class for a group of three friends.',
+            'assigned_to' => $staff->id,
+            'status' => 'open',
+            'created_by' => $owner->id,
+        ]));
+        $customers[] = $lead;
+
+        $customers[] = Carbon::withTestNow(now()->subDays(12)->setTime(9, 30), fn () => $gym->customers()->create([
+            'name' => 'Mara Velasco',
+            'email' => "mara.velasco.gym{$gym->id}@example.test",
+            'phone' => sprintf('0917 555 %04d', $gym->id * 100 + 72),
+            'source' => 'event',
+            'inquiry' => 'Signed up at the mall booth but did not attend the trial.',
+            'assigned_to' => $owner->id,
+            'status' => 'lost',
+            'created_by' => $owner->id,
+        ]));
+
+        if ($customers === []) {
+            return;
+        }
+
+        $first = $customers[0];
+        $timeline = [
+            ['interaction', 'phone', 'Called about the beginner boxing schedule and asked which gloves to bring.', 23, null, null],
+            ['preference', 'messenger', 'Prefers evening classes and asked to be contacted after 6 PM.', 19, null, null],
+            ['feedback', 'walk_in', 'Enjoyed the trial class and said the coach explained footwork clearly.', 11, null, null],
+            ['concern', 'email', 'Raised a concern about the locker room showers being cold after the evening class.', 5, 'Maintenance checked the heater the next morning; the member confirmed the water was warm again.', 4],
+        ];
+
+        foreach ($timeline as [$kind, $channel, $body, $daysAgo, $resolution, $resolvedDaysAgo]) {
+            $at = now()->subDays($daysAgo)->setTime(14, 30);
+            $resolvedAt = $resolution ? now()->subDays($resolvedDaysAgo)->setTime(9, 0) : null;
+            Carbon::withTestNow($at, fn () => $first->interactions()->create([
+                'kind' => $kind,
+                'channel' => $channel,
+                'body' => $body,
+                'occurred_at' => $at,
+                'recorded_by' => $owner->id,
+                'resolution' => $resolution,
+                'resolved_at' => $resolvedAt,
+                'resolved_by' => $resolution ? $owner->id : null,
+            ]));
+        }
+
+        if (count($customers) > 1) {
+            Carbon::withTestNow(now()->subDays(12)->setTime(16, 10), fn () => $customers[1]->interactions()->create([
+                'kind' => 'feedback',
+                'channel' => 'sms',
+                'body' => 'Said the Saturday class time works better than the weekday schedule.',
+                'occurred_at' => now()->subDays(12)->setTime(16, 10),
+                'recorded_by' => $staff->id,
+            ]));
+        }
+
+        $openDue = now()->addDays(2)->setTime(10, 0);
+        $doneDue = now()->subDays(4)->setTime(16, 0);
+        $doneAt = now()->subDays(5)->setTime(17, 10);
+        $cancelledDue = now()->subDay()->setTime(11, 0);
+
+        Carbon::withTestNow(now()->subDays(2)->setTime(9, 0), fn () => $first->followUps()->create([
+            'assigned_to' => $staff->id,
+            'due_at' => $openDue,
+            'note' => 'Confirm whether the member wants to add private coaching this month.',
+            'status' => 'open',
+        ]));
+
+        Carbon::withTestNow(now()->subDays(6)->setTime(13, 30), fn () => $first->followUps()->create([
+            'assigned_to' => $owner->id,
+            'due_at' => $doneDue,
+            'note' => 'Call after the first month to check progress and glove fit.',
+            'status' => 'done',
+            'done_at' => $doneAt,
+            'done_by' => $owner->id,
+            'outcome' => 'Member renewed for another month and booked two private sessions.',
+        ]));
+
+        Carbon::withTestNow(now()->subDays(4)->setTime(10, 0), fn () => $first->followUps()->create([
+            'assigned_to' => $staff->id,
+            'due_at' => $cancelledDue,
+            'note' => 'Ask about the referral programme for their training partner.',
+            'status' => 'cancelled',
+            'outcome' => 'The member asked to be contacted next month instead.',
+        ]));
+
+        $group = Carbon::withTestNow(now()->subDays(8)->setTime(12, 0), fn () => $gym->customerGroups()->create([
+            'name' => 'Beginners class',
+            'description' => 'New members and trial leads for the beginner boxing and Muay Thai classes.',
+        ]));
+
+        $group->members()->attach(collect($customers)->take(3)->pluck('id')->all());
     }
 
     /** R-42: sample classes use the same holiday, leave and clash checks as staff scheduling. */
@@ -656,6 +1038,198 @@ class DatabaseSeeder extends Seeder
 
             if (in_array($gym->status, [GymStatus::Approved, GymStatus::Returned, GymStatus::Rejected], true)) {
                 $owner->notify(new GymApplicationDecided($gym));
+            }
+        }
+    }
+
+    /** R-64: a few manual costs per demo gym, including one corrected entry. */
+    private function seedExpenses(Gym $gym, User $owner): void
+    {
+        $entries = [
+            ['rent', '25000.00', today()->startOfMonth(), 'bank', 'Monthly rent for the training floor.'],
+            ['utilities', '4200.00', today()->subDays(12), 'cash', 'Electricity and water for the past month.'],
+            ['supplies', '1850.00', today()->subDays(20), 'card', 'Cleaning supplies and first-aid refills.'],
+            ['marketing', '3000.00', today()->subDays(8), 'ewallet', 'Boosted posts for the beginners programme.'],
+        ];
+
+        $expenses = [];
+        foreach ($entries as [$category, $amount, $date, $method, $note]) {
+            $expenses[] = Carbon::withTestNow($date->copy()->setTime(10, 0), fn () => $gym->expenses()->create([
+                'category' => $category,
+                'amount' => $amount,
+                'incurred_on' => $date->toDateString(),
+                'method' => $method,
+                'note' => $note,
+                'recorded_by' => $owner->id,
+            ]));
+        }
+
+        Carbon::withTestNow(now()->subDays(4)->setTime(11, 0), fn () => $gym->expenses()->create([
+            'category' => 'supplies',
+            'amount' => '-850.00',
+            'incurred_on' => today()->subDays(4)->toDateString(),
+            'method' => 'card',
+            'note' => "Corrects #{$expenses[2]->id}: duplicate supplier charge.",
+            'corrects_id' => $expenses[2]->id,
+            'recorded_by' => $owner->id,
+        ]));
+    }
+
+    /** R-67: three months of budgets per demo gym, one row per category. */
+    private function seedBudgets(Gym $gym, User $owner): void
+    {
+        $base = [
+            'income' => [
+                'membership' => 45000,
+                'session' => 12000,
+                'private_coaching' => 8000,
+                'walk_in' => 6000,
+                'merchandise' => 4000,
+                'other' => 2500,
+            ],
+            'expense' => [
+                'rent' => 25000,
+                'utilities' => 6000,
+                'equipment' => 5000,
+                'supplies' => 3000,
+                'maintenance' => 2500,
+                'marketing' => 4000,
+                'professional_fees' => 3000,
+                'taxes_licenses' => 3500,
+                'payroll' => 55000,
+                'statutory_contributions' => 7000,
+                'purchases' => 8000,
+                'other' => 2000,
+            ],
+        ];
+
+        foreach (range(0, 2) as $back) {
+            $month = today()->startOfMonth()->subMonthsNoOverflow($back);
+            $scale = 1 - ($back * 0.04);
+
+            foreach ($base as $kind => $categories) {
+                foreach ($categories as $category => $amount) {
+                    Budget::create([
+                        'kind' => $kind,
+                        'category' => $category,
+                        'month' => $month->toDateString(),
+                        'amount' => number_format($amount * $scale, 2, '.', ''),
+                        'updated_by' => $owner->id,
+                    ]);
+                }
+            }
+        }
+    }
+
+    /** One released run for the previous closed period and one draft for the current one. */
+    private function seedPayroll(Gym $gym, User $owner, array $employees): void
+    {
+        $today = today();
+
+        if (($gym->payroll_frequency ?: 'semi_monthly') === 'monthly') {
+            $draftStart = $today->copy()->startOfMonth();
+            $draftEnd = $today->copy()->endOfMonth();
+            $releasedStart = $today->copy()->subMonthNoOverflow()->startOfMonth();
+            $releasedEnd = $today->copy()->subMonthNoOverflow()->endOfMonth();
+        } elseif ($today->day <= 15) {
+            $draftStart = $today->copy()->startOfMonth();
+            $draftEnd = $today->copy()->day(15)->startOfDay();
+            $releasedStart = $today->copy()->subMonthNoOverflow()->day(16)->startOfDay();
+            $releasedEnd = $today->copy()->subMonthNoOverflow()->endOfMonth();
+        } else {
+            $draftStart = $today->copy()->day(16)->startOfDay();
+            $draftEnd = $today->copy()->endOfMonth();
+            $releasedStart = $today->copy()->startOfMonth();
+            $releasedEnd = $today->copy()->day(15)->startOfDay();
+        }
+
+        $preparer = collect($employees)->first(fn (User $user) => $user->id !== $owner->id) ?? $owner;
+
+        $this->seedStaffAttendance($gym, $owner, $employees, $releasedStart, $releasedEnd);
+
+        Carbon::withTestNow($releasedEnd->copy()->addDay()->setTime(10, 0), function () use ($gym, $owner, $preparer, $releasedStart, $releasedEnd) {
+            $run = $gym->payrollRuns()->create([
+                'starts_on' => $releasedStart->toDateString(),
+                'ends_on' => $releasedEnd->toDateString(),
+                'status' => 'draft',
+                'round' => 1,
+                'current_step' => 0,
+                'prepared_by' => $preparer->id,
+            ]);
+
+            $workflow = app(PayrollWorkflow::class);
+            $workflow->compute($gym, $run, $preparer);
+            $run = $run->fresh();
+            $workflow->submit($gym, $run, $preparer);
+            $run = $run->fresh();
+            $workflow->decide($gym, $run, $owner, ['decision' => 'approve']);
+        });
+
+        $gym->payrollRuns()->create([
+            'starts_on' => $draftStart->toDateString(),
+            'ends_on' => $draftEnd->toDateString(),
+            'status' => 'draft',
+            'round' => 1,
+            'current_step' => 0,
+            'prepared_by' => $preparer->id,
+        ]);
+    }
+
+    /** Stored attendance for the released period, so the demo payroll is not all absences. */
+    private function seedStaffAttendance(Gym $gym, User $owner, array $employees, Carbon $from, Carbon $to): void
+    {
+        $profiles = $gym->employees()->get()->keyBy('user_id');
+        $schedules = $gym->workSchedules()->get()->groupBy('user_id');
+        $workingDays = app(WorkingDays::class);
+
+        for ($day = $from->copy(); $day->lessThanOrEqualTo($to); $day->addDay()) {
+            foreach ($employees as $employee) {
+                $profile = $profiles->get($employee->id);
+
+                if (! $profile) {
+                    continue;
+                }
+
+                if ($profile->started_on && $day->lessThan($profile->started_on)) {
+                    continue;
+                }
+
+                if ($profile->ended_on && $day->greaterThan($profile->ended_on)) {
+                    continue;
+                }
+
+                $row = $schedules->get($employee->id, collect())
+                    ->firstWhere('weekday', strtolower($day->format('D')));
+
+                if (! $row || ! $row->start_time || ! $row->end_time) {
+                    continue;
+                }
+
+                if ($workingDays->kind($gym, $employee, $day)->value !== 'working') {
+                    continue;
+                }
+
+                $start = Carbon::parse($day->toDateString().' '.substr($row->start_time, 0, 5));
+                $end = Carbon::parse($day->toDateString().' '.substr($row->end_time, 0, 5));
+
+                if ($end->lessThanOrEqualTo($start)) {
+                    continue;
+                }
+
+                $gym->staffAttendance()->create([
+                    'user_id' => $employee->id,
+                    'work_date' => $day->toDateString(),
+                    'scheduled_start' => substr($row->start_time, 0, 5),
+                    'scheduled_end' => substr($row->end_time, 0, 5),
+                    'clock_in_at' => $start,
+                    'clock_out_at' => $end,
+                    'status' => 'present',
+                    'late_minutes' => 0,
+                    'undertime_minutes' => 0,
+                    'worked_minutes' => (int) round(($end->getTimestamp() - $start->getTimestamp()) / 60),
+                    'source' => 'desk',
+                    'recorded_by' => $owner->id,
+                ]);
             }
         }
     }

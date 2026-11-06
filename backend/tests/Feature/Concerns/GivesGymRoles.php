@@ -20,7 +20,13 @@ trait GivesGymRoles
         $strings = [];
         $levels = [];
         foreach ($access as $key => $value) {
-            is_int($key) ? $strings[] = $value : $levels[$key] = $value;
+            if (is_int($key)) {
+                $strings[] = $value;
+            } elseif (is_array($value)) {
+                $strings = [...$strings, ...$value];
+            } else {
+                $levels[$key] = $value;
+            }
         }
 
         return array_values(array_unique([...$strings, ...PermissionCatalog::expandLevels($levels)]));

@@ -65,4 +65,10 @@ class Membership extends Model
     {
         return $this->hasMany(MembershipEvent::class)->withoutGlobalScope('gym');
     }
+
+    /** CRM records linked to this application or membership (R-71). */
+    public function customers(): HasMany
+    {
+        return $this->hasMany(Customer::class)->withoutGlobalScope('gym');
+    }
 }

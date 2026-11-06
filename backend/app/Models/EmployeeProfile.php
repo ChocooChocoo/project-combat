@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** An employee's employment record in one gym, plus the public coach profile (R-23). */
 #[Fillable([
-    'job_title', 'started_on', 'pay_basis', 'monthly_rate', 'per_session_rate',
+    'job_title', 'started_on', 'ended_on', 'employment_type', 'pay_basis', 'monthly_rate', 'per_session_rate',
     'coach_photo_path', 'coach_experience', 'coach_rank', 'coach_specialisation', 'coach_bio', 'coach_public',
 ])]
 class EmployeeProfile extends Model
@@ -24,6 +24,7 @@ class EmployeeProfile extends Model
     {
         return [
             'started_on' => 'date',
+            'ended_on' => 'date',
             'pay_basis' => PayBasis::class,
             'monthly_rate' => 'decimal:2',
             'per_session_rate' => 'decimal:2',

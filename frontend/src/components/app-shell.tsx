@@ -1,7 +1,7 @@
 import { Building2, CalendarDays, Check, ChevronsUpDown, ClipboardCheck, FilePlus2, FileText, House, IdCard, LogOut, Medal, UserRound } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
-import { myWorkNav, workspaceNav } from '@/components/gym-nav'
+import { myWorkNav, workspaceNavGroups } from '@/components/gym-nav'
 import { NotificationsMenu } from '@/components/notifications-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Menu, MenuGroup, MenuGroupLabel, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
@@ -161,7 +161,7 @@ export function AppShell() {
   if (currentGym?.roles.includes('member')) general.push({ to: `/gyms/${currentGym.id}/my-record`, label: 'My record', icon: Medal })
   if (currentGym?.roles.includes('member')) general.push({ to: `/gyms/${currentGym.id}/sessions`, label: 'Sessions', icon: CalendarDays })
 
-  const workspace = currentGym ? workspaceNav(currentGym) : []
+  const workspaceGroups = currentGym ? workspaceNavGroups(currentGym) : []
   const owner: Item[] = [
     { to: '/applications', label: 'My applications', icon: FileText },
     { to: '/apply', label: 'New application', icon: FilePlus2 },
@@ -189,7 +189,9 @@ export function AppShell() {
         </SidebarHeader>
         <SidebarContent>
           <NavGroup items={general} />
-          {workspace.length > 0 && <NavGroup label={currentGym?.name ?? 'Workspace'} items={workspace} />}
+          {workspaceGroups.map((group) => (
+            <NavGroup key={group.label} label={group.label} items={group.items} />
+          ))}
           {user?.is_platform_admin ? <NavGroup label="Platform" items={admin} /> : <NavGroup label="Run a gym" items={owner} />}
         </SidebarContent>
         <SidebarFooter>

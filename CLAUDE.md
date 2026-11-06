@@ -16,12 +16,18 @@ php artisan test               # backend tests (SQLite in memory, mail not sent,
 php artisan test --filter=LeaveTest            # one test file or test method
 php artisan migrate            # apply database changes
 php artisan app:make-admin you@example.com   # the only way to make a platform admin
+php artisan app:sync-permissions             # sync config/permissions.php catalog into the DB
+php artisan app:seed-system-roles            # add starter roles (config/access.php) to gyms
 
 # Frontend (from frontend/)
 pnpm dev                       # app at http://localhost:5173
 pnpm build                     # type-check and build
 pnpm lint                      # oxlint
+node --test                    # node:test checks in frontend/tests/*.test.mjs (Node 24; not `node --test tests/`)
 ```
+
+Scheduled jobs (membership expiry, no-shows, staff absences, token pruning) are defined in
+`backend/routes/console.php`.
 
 Emails go out through Gmail SMTP (settings in `backend/.env`). The email worker must be running for codes to be sent.
 The frontend calls the API at `VITE_API_URL` (`frontend/.env`).
@@ -29,7 +35,8 @@ The frontend calls the API at `VITE_API_URL` (`frontend/.env`).
 ## Architecture
 
 - **Requirement IDs.** Comments like `(R-09)` point to requirements in the analysis docs. Keep them when editing.
-  Build work follows phase plans in `docs/implementation-plan/` (status and checkboxes kept up to date).
+  Build work follows phase plans in `docs/implementation-plan/<plan>/` (e.g. `roadmap-phase-6/`,
+  `rbac-redesign/`; status and checkboxes kept up to date).
 - **Auth.** Sanctum bearer tokens, stored in `localStorage` by `frontend/src/lib/api.ts`. Route groups in
   `backend/routes/api.php` stack middleware in order: `auth:sanctum` → `password.changed` → `verified.email`.
   Platform admin screens use `admin` middleware; `is_platform_admin` is set only by `app:make-admin`.
@@ -38,10 +45,14 @@ The frontend calls the API at `VITE_API_URL` (`frontend/.env`).
   `BelongsToGym` trait are scoped to that gym by a global scope, fill `gym_id` on create, and return nothing
   when no gym is set. Cross-gym queries must call `withoutGlobalScope('gym')` on purpose.
 - **Permissions.** A person's link to a gym is `owner`, `employee`, or `member` (`GymPersonType`). Owners
-  create job roles (`GymRole`) that grant an `AccessLevel` (view < manage < approve) per `Module`.
-  Routes check with `module:<module>,<level>`; owners always get approve. Some routes skip the middleware and
-  check inside the controller (own staff record, own leave). The frontend mirrors this in
-  `frontend/src/lib/gym-access.ts` (`can()`) only to hide UI; the backend is the real check.
+  create job roles (`GymRole`) that hold exact permission strings `module.resource.action` from the catalog
+  in `config/permissions.php` (`PermissionCatalog`). Routes check with `permission:<string>[,<string>...]`
+  (`RequirePermission`, any-of, via `User::hasPermission`); owners hold every active permission. Checking a
+  string not in the catalog fails loudly, so add new ones to the catalog first. Starter roles come from
+  `config/access.php` templates (`SystemRoles`), where a level like `manage` expands to all catalog actions it
+  covers. Some routes skip the middleware and check inside the controller (own staff record, own leave).
+  The frontend mirrors this in `frontend/src/lib/gym-access.ts` (`can()`) only to hide UI; the backend is
+  the real check.
 - **Frontend.** `src/App.tsx` holds all routes and guards (guest, signed-in, first password, admin, gym member).
   `src/components/ui/` is coss UI (Base UI + Tailwind v4); reuse it before writing new components. `@/` maps to `src/`.
 

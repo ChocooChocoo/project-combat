@@ -25,7 +25,7 @@ class StaffController extends Controller
 
     public function index(Request $request, Gym $gym): JsonResponse
     {
-        $canSeePay = $request->user()->canSeePay($gym);
+        $canViewCompensation = $request->user()->canViewCompensation($gym);
         $owner = $gym->people()
             ->wherePivot('role', GymPersonType::Owner->value)
             ->orderBy('id')
@@ -36,7 +36,7 @@ class StaffController extends Controller
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get()
-            ->map(fn (User $user) => $this->employeePayload($gym, $user, $canSeePay))
+            ->map(fn (User $user) => $this->employeePayload($gym, $user, $canViewCompensation))
             ->values();
 
         return response()->json([
@@ -123,7 +123,7 @@ class StaffController extends Controller
         });
 
         return response()->json([
-            'employee' => $this->employeePayload($gym, $user->fresh(), $request->user()->canSeePay($gym)),
+            'employee' => $this->employeePayload($gym, $user->fresh(), $request->user()->canViewCompensation($gym)),
         ], 201);
     }
 
@@ -132,7 +132,7 @@ class StaffController extends Controller
         $this->ensureEmployee($gym, $user);
         $this->ensureCanView($request->user(), $gym, $user);
 
-        $employee = $this->employeePayload($gym, $user, $request->user()->canSeePay($gym));
+        $employee = $this->employeePayload($gym, $user, $request->user()->canViewCompensation($gym));
         $year = now()->year;
         $employee['balances'] = $this->leaveBalanceTypes($gym, $user, $year);
         $employee['approved_leave_dates'] = $this->approvedLeaveDates($gym, $user, $year);
@@ -148,9 +148,11 @@ class StaffController extends Controller
         $rules = [
             'job_title' => ['nullable', 'string', 'max:100'],
             'started_on' => ['nullable', 'date'],
+            'ended_on' => ['nullable', 'date'],
+            'employment_type' => ['nullable', Rule::in(array_keys(config('hr.employment_types')))],
         ];
 
-        if ($request->user()->canSeePay($gym)) {
+        if ($request->user()->canViewCompensation($gym)) {
             $rules += [
                 'pay_basis' => ['nullable', Rule::in(array_keys(config('hr.pay_bases')))],
                 'monthly_rate' => ['nullable', 'numeric', 'min:0', 'max:9999999999.99'],
@@ -164,7 +166,7 @@ class StaffController extends Controller
         $profile->fill($data)->save();
 
         return response()->json([
-            'employee' => $this->employeePayload($gym, $user, $request->user()->canSeePay($gym)),
+            'employee' => $this->employeePayload($gym, $user, $request->user()->canViewCompensation($gym)),
         ]);
     }
 
@@ -181,6 +183,13 @@ class StaffController extends Controller
                 abort_unless($request->user()->hasPermission($gym, 'hr.roles.manage'), 403);
                 app(GymRoleAssigner::class)->replace($request->user(), $gym, $user, []);
             }
+
+            // R-59: the profile stays for history, with the last day of work recorded.
+            $profile = $gym->employees()->where('user_id', $user->id)->first();
+            if ($profile && ! $profile->ended_on) {
+                $profile->update(['ended_on' => now()->toDateString()]);
+            }
+
             $gym->people()->wherePivot('role', GymPersonType::Employee->value)->detach($user->id);
         });
 

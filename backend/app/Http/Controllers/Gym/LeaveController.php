@@ -13,6 +13,7 @@ use App\Models\TrainingSession;
 use App\Notifications\LeaveRequestDecided;
 use App\Notifications\LeaveRequestSubmitted;
 use App\Notifications\SessionsFlagged;
+use App\Support\PayrollLock;
 use App\Support\WorkingDays;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -72,6 +73,8 @@ class LeaveController extends Controller
 
         $from = Carbon::parse($data['starts_on'])->startOfDay();
         $to = Carbon::parse($data['ends_on'])->startOfDay();
+
+        PayrollLock::assertOpenRange($gym, $from, $to);
 
         $path = $name = $mime = null;
         $size = null;
@@ -166,6 +169,7 @@ class LeaveController extends Controller
             Gym::whereKey($gym->id)->lockForUpdate()->firstOrFail();
             $leave = $gym->leaveRequests()->lockForUpdate()->findOrFail($leave->id);
             abort_unless($leave->status === LeaveRequestStatus::Pending, 409, 'Only pending requests can be decided.');
+            PayrollLock::assertOpenRange($gym, $leave->starts_on, $leave->ends_on);
             $leave->status = $data['decision'] === 'approve'
                 ? LeaveRequestStatus::Approved
                 : LeaveRequestStatus::Rejected;
