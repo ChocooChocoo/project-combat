@@ -14,10 +14,10 @@ class PermissionCatalogTest extends TestCase
         $this->assertEqualsCanonicalizing(array_column(Module::cases(), 'value'), array_keys(config('permissions.catalog')));
     }
 
-    public function test_catalog_has_51_unique_exact_keys(): void
+    public function test_catalog_has_70_unique_exact_keys(): void
     {
         $all = PermissionCatalog::all();
-        $this->assertCount(51, $all);
+        $this->assertCount(70, $all);
         $this->assertSame($all, array_values(array_unique($all)));
         foreach ($all as $key) {
             $this->assertMatchesRegularExpression('/^[a-z_]+\.[a-z_]+\.[a-z_]+$/', $key);
@@ -46,6 +46,39 @@ class PermissionCatalogTest extends TestCase
         PermissionCatalog::assertKnown('finance.payments.view');
         $this->expectException(InvalidArgumentException::class);
         PermissionCatalog::assertKnown('payments.finance.view');
+    }
+
+    public function test_exact_template_lists_and_levels_expand_together(): void
+    {
+        $expanded = PermissionCatalog::expandTemplate([
+            'training' => 'view',
+            'finance' => ['finance.payments.view', 'finance.payments.manage'],
+        ]);
+
+        $this->assertContains('training.sessions.view', $expanded);
+        $this->assertNotContains('training.sessions.manage', $expanded);
+        $this->assertContains('finance.payments.manage', $expanded);
+        $this->assertNotContains('finance.payments.approve', $expanded);
+    }
+
+    public function test_a_placeholder_replacement_never_adds_a_higher_action(): void
+    {
+        $placeholder = fn (string $module, string $action) => implode('.', [$module, 'general', $action]);
+
+        $this->assertEqualsCanonicalizing([
+            'inventory.items.view',
+        ], PermissionCatalog::replacementFor($placeholder('inventory', 'view')));
+
+        $this->assertEqualsCanonicalizing([
+            'inventory.items.view',
+            'inventory.items.manage',
+            'inventory.movements.manage',
+        ], PermissionCatalog::replacementFor($placeholder('inventory', 'manage')));
+
+        $procurement = PermissionCatalog::replacementFor($placeholder('procurement', 'approve'));
+        $this->assertContains('procurement.requests.approve', $procurement);
+        $this->assertNotContains('procurement.requests.approve', PermissionCatalog::replacementFor($placeholder('procurement', 'manage')));
+        $this->assertSame([], PermissionCatalog::replacementFor('finance.payments.view'));
     }
 
     public function test_label_reads_as_plain_words(): void

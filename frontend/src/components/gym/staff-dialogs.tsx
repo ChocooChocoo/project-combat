@@ -58,8 +58,8 @@ export function AddEmployeeDialog({
       await api(`/gyms/${gymId}/staff`, {
         body: {
           email,
-          first_name: firstName,
-          last_name: lastName,
+          ...(firstName.trim() ? { first_name: firstName.trim() } : {}),
+          ...(lastName.trim() ? { last_name: lastName.trim() } : {}),
           job_title: jobTitle || null,
           ...(canAssign ? { role_ids: roleIds.map(Number) } : {}),
         },

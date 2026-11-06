@@ -9,23 +9,49 @@ use App\Http\Controllers\GeoController;
 use App\Http\Controllers\Gym\AthleteRecordController;
 use App\Http\Controllers\Gym\AttendanceController;
 use App\Http\Controllers\Gym\BookingController;
+use App\Http\Controllers\Gym\BudgetController;
 use App\Http\Controllers\Gym\CoachCalendarController;
+use App\Http\Controllers\Gym\CustomerController;
+use App\Http\Controllers\Gym\CustomerGroupController;
 use App\Http\Controllers\Gym\EmployeeProfileController;
+use App\Http\Controllers\Gym\ExpenseController;
+use App\Http\Controllers\Gym\FinanceReportController;
+use App\Http\Controllers\Gym\FollowUpController;
 use App\Http\Controllers\Gym\GymApplicationController;
 use App\Http\Controllers\Gym\GymDocumentController;
 use App\Http\Controllers\Gym\GymRoleController;
 use App\Http\Controllers\Gym\GymSetupController;
 use App\Http\Controllers\Gym\HolidayController;
+use App\Http\Controllers\Gym\IncomeController;
 use App\Http\Controllers\Gym\LeaveController;
 use App\Http\Controllers\Gym\MembershipController;
+use App\Http\Controllers\Gym\MyAttendanceController;
+use App\Http\Controllers\Gym\OvertimeController;
+use App\Http\Controllers\Gym\PayableController;
 use App\Http\Controllers\Gym\PaymentController;
+use App\Http\Controllers\Gym\PayrollRunController;
+use App\Http\Controllers\Gym\PayrollSettingsController;
+use App\Http\Controllers\Gym\PayslipController;
+use App\Http\Controllers\Gym\PerformanceNoteController;
 use App\Http\Controllers\Gym\PlanController;
+use App\Http\Controllers\Gym\PurchaseOrderController;
+use App\Http\Controllers\Gym\PurchaseRequestController;
+use App\Http\Controllers\Gym\ReceivableController as GymReceivableController;
+use App\Http\Controllers\Gym\ReceivingController;
+use App\Http\Controllers\Gym\RestockController;
 use App\Http\Controllers\Gym\RoomController;
+use App\Http\Controllers\Gym\SaleController;
 use App\Http\Controllers\Gym\ScheduleController;
 use App\Http\Controllers\Gym\ServiceController;
 use App\Http\Controllers\Gym\SessionController;
 use App\Http\Controllers\Gym\SessionNoteController;
+use App\Http\Controllers\Gym\StaffAttendanceController;
 use App\Http\Controllers\Gym\StaffController;
+use App\Http\Controllers\Gym\StatutoryRateController;
+use App\Http\Controllers\Gym\StockItemController;
+use App\Http\Controllers\Gym\StockMovementController;
+use App\Http\Controllers\Gym\SupplierController;
+use App\Http\Controllers\Gym\SupplyNeedController;
 use App\Http\Controllers\Gym\WorkController;
 use App\Http\Controllers\GymPreferenceController;
 use App\Http\Controllers\MembershipApplicationController;
@@ -35,6 +61,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PayMongoWebhookController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicGymController;
+use App\Http\Controllers\ReceivableController;
 use Illuminate\Support\Facades\Route;
 
 // Public sign-up and sign-in. 'auth-public' limits requests per address (see AppServiceProvider).
@@ -96,12 +123,17 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('membership-form', [MembershipApplicationController::class, 'form']);
             Route::post('gyms/{gym}/membership-applications', [MembershipApplicationController::class, 'store'])->whereNumber('gym');
             Route::get('my-memberships', [MyMembershipController::class, 'index']);
+            Route::get('my-balance', [ReceivableController::class, 'mine']);
             Route::get('my-bookings', [MyBookingController::class, 'index']);
             Route::post('my-bookings/{booking}/checkout', [MyBookingController::class, 'checkout'])->whereNumber('booking');
             Route::post('my-bookings/{booking}/checkout/confirm', [MyBookingController::class, 'confirm'])->whereNumber('booking');
             Route::get('my-memberships/{membership}', [MyMembershipController::class, 'show'])->whereNumber('membership');
             Route::post('my-memberships/{membership}/checkout', [MyMembershipController::class, 'checkout'])->whereNumber('membership');
             Route::post('my-memberships/{membership}/checkout/confirm', [MyMembershipController::class, 'confirm'])->whereNumber('membership');
+
+            // R-62: released payslips are the employee's own, outside the gym check.
+            Route::get('me/payslips', [PayslipController::class, 'index']);
+            Route::get('me/payslips/{line}', [PayslipController::class, 'show'])->whereNumber('line');
 
             // Platform administrator: review applications and platform numbers (R-16 to R-19).
             Route::prefix('admin')->middleware('admin')->group(function () {
@@ -196,6 +228,37 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::post('holidays', [HolidayController::class, 'store'])->middleware('permission:hr.holidays.manage');
                 Route::delete('holidays/{holiday}', [HolidayController::class, 'destroy'])->whereNumber('holiday')->middleware('permission:hr.holidays.manage');
 
+                // Staff attendance and overtime (R-56, R-57). Own records are open; the controller checks.
+                Route::get('staff-attendance', [StaffAttendanceController::class, 'index'])->middleware('permission:hr.attendance.view');
+                Route::get('staff-attendance/employees', [StaffAttendanceController::class, 'employees'])->middleware('permission:hr.attendance.view');
+                Route::post('staff-attendance', [StaffAttendanceController::class, 'store'])->middleware('permission:hr.attendance.manage');
+                Route::put('staff-attendance/{entry}', [StaffAttendanceController::class, 'update'])->whereNumber('entry')->middleware('permission:hr.attendance.manage');
+                Route::get('staff-attendance/{entry}/changes', [StaffAttendanceController::class, 'changes'])->whereNumber('entry')->middleware('permission:hr.attendance.view');
+                Route::get('my-attendance', [MyAttendanceController::class, 'index']);
+                Route::post('my-attendance/clock-in', [MyAttendanceController::class, 'clockIn']);
+                Route::post('my-attendance/clock-out', [MyAttendanceController::class, 'clockOut']);
+                Route::put('my-attendance/{entry}/explanation', [MyAttendanceController::class, 'explain'])->whereNumber('entry');
+                Route::get('overtime-requests', [OvertimeController::class, 'index'])->middleware('permission:hr.attendance.view,hr.overtime.approve');
+                Route::post('my-overtime-requests', [OvertimeController::class, 'store']);
+                Route::post('overtime-requests/{overtime}/decision', [OvertimeController::class, 'decide'])->whereNumber('overtime')->middleware('permission:hr.overtime.approve');
+
+                // Performance notes (R-58). Never shown to the employee they describe.
+                Route::get('staff/{user}/performance-notes', [PerformanceNoteController::class, 'index'])->middleware('permission:hr.performance.view');
+                Route::post('staff/{user}/performance-notes', [PerformanceNoteController::class, 'store'])->middleware('permission:hr.performance.manage');
+
+                // Payroll (R-59 to R-62). The owner check for the last step is inside the workflow.
+                Route::get('payroll/runs', [PayrollRunController::class, 'index'])->middleware('permission:payroll.runs.view');
+                Route::post('payroll/runs', [PayrollRunController::class, 'store'])->middleware('permission:payroll.runs.manage');
+                Route::get('payroll/runs/{run}', [PayrollRunController::class, 'show'])->whereNumber('run')->middleware('permission:payroll.runs.view');
+                Route::post('payroll/runs/{run}/compute', [PayrollRunController::class, 'compute'])->whereNumber('run')->middleware('permission:payroll.runs.manage');
+                Route::post('payroll/runs/{run}/submit', [PayrollRunController::class, 'submit'])->whereNumber('run')->middleware('permission:payroll.runs.manage');
+                Route::post('payroll/runs/{run}/decision', [PayrollRunController::class, 'decide'])->whereNumber('run')->middleware('permission:payroll.runs.approve');
+                Route::delete('payroll/runs/{run}', [PayrollRunController::class, 'destroy'])->whereNumber('run')->middleware('permission:payroll.runs.manage');
+                Route::get('payroll/settings', [PayrollSettingsController::class, 'show'])->middleware('permission:payroll.runs.view');
+                Route::put('payroll/settings', [PayrollSettingsController::class, 'update']);
+                Route::get('payroll/rates', [StatutoryRateController::class, 'index'])->middleware('permission:payroll.runs.view');
+                Route::post('payroll/rates', [StatutoryRateController::class, 'store'])->middleware('permission:payroll.rates.manage');
+
                 // The employee's own work view.
                 Route::get('my-work', [WorkController::class, 'show']);
 
@@ -237,6 +300,73 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('payments/owed-bookings', [PaymentController::class, 'owedBookings'])->middleware('permission:finance.payments.view');
                 Route::post('payments', [PaymentController::class, 'store'])->middleware('permission:finance.payments.manage');
                 Route::post('payments/{payment}/correct', [PaymentController::class, 'correct'])->whereNumber('payment')->middleware('permission:finance.payments.manage');
+
+                // Finance core (R-63 to R-65): income, desk sales, expenses and receivables.
+                Route::get('finance/income', [IncomeController::class, 'index'])->middleware('permission:finance.payments.view');
+                Route::post('finance/sales', [SaleController::class, 'store'])->middleware('permission:finance.payments.manage');
+                Route::get('finance/expenses', [ExpenseController::class, 'index'])->middleware('permission:finance.expenses.view');
+                Route::post('finance/expenses', [ExpenseController::class, 'store'])->middleware('permission:finance.expenses.manage');
+                Route::post('finance/expenses/{expense}/correct', [ExpenseController::class, 'correct'])->whereNumber('expense')->middleware('permission:finance.expenses.manage');
+                Route::get('finance/receivables', [GymReceivableController::class, 'index'])->middleware('permission:finance.receivables.view');
+
+                // Budgets and sustainability reports (R-67, R-68).
+                Route::get('finance/budgets', [BudgetController::class, 'index'])->middleware('permission:finance.budgets.view');
+                Route::put('finance/budgets', [BudgetController::class, 'update'])->middleware('permission:finance.budgets.manage');
+                Route::get('finance/reports/cash-flow', [FinanceReportController::class, 'cashFlow'])->middleware('permission:finance.reports.view');
+                Route::get('finance/reports/income-expense', [FinanceReportController::class, 'incomeExpense'])->middleware('permission:finance.reports.view');
+                Route::get('finance/reports/payroll', [FinanceReportController::class, 'payroll'])->middleware('permission:finance.reports.view');
+                Route::get('finance/reports/payouts', [FinanceReportController::class, 'payouts'])->middleware('permission:finance.reports.view');
+
+                // Stock (R-72 to R-74). Quantity changes only through movements.
+                Route::get('stock-items', [StockItemController::class, 'index'])->middleware('permission:inventory.items.view');
+                Route::get('stock-items/recipients', [StockMovementController::class, 'recipients'])->middleware('permission:inventory.movements.manage');
+                Route::post('stock-items', [StockItemController::class, 'store'])->middleware('permission:inventory.items.manage');
+                Route::get('stock-items/{item}', [StockItemController::class, 'show'])->whereNumber('item')->middleware('permission:inventory.items.view');
+                Route::put('stock-items/{item}', [StockItemController::class, 'update'])->whereNumber('item')->middleware('permission:inventory.items.manage');
+                Route::post('stock-items/{item}/archive', [StockItemController::class, 'archive'])->whereNumber('item')->middleware('permission:inventory.items.manage');
+                Route::get('stock-items/{item}/movements', [StockMovementController::class, 'index'])->whereNumber('item')->middleware('permission:inventory.items.view');
+                Route::post('stock-items/{item}/movements', [StockMovementController::class, 'store'])->whereNumber('item')->middleware('permission:inventory.movements.manage');
+
+                // Procurement (R-75 to R-79, R-66): restock, approvals, suppliers, orders and payables.
+                Route::get('restock', [RestockController::class, 'index'])->middleware('permission:procurement.requests.view,inventory.items.view');
+                Route::get('supply-needs', [SupplyNeedController::class, 'index'])->middleware('permission:procurement.requests.view');
+                Route::post('supply-needs', [SupplyNeedController::class, 'store'])->middleware('permission:procurement.requests.manage');
+                Route::delete('supply-needs/{need}', [SupplyNeedController::class, 'destroy'])->whereNumber('need')->middleware('permission:procurement.requests.manage');
+                Route::get('purchase-requests', [PurchaseRequestController::class, 'index'])->middleware('permission:procurement.requests.view');
+                Route::post('purchase-requests', [PurchaseRequestController::class, 'store'])->middleware('permission:procurement.requests.manage');
+                Route::post('purchase-requests/{purchaseRequest}/decision', [PurchaseRequestController::class, 'decide'])->whereNumber('purchaseRequest')->middleware('permission:procurement.requests.approve');
+                Route::post('purchase-requests/{purchaseRequest}/cancel', [PurchaseRequestController::class, 'cancel'])->whereNumber('purchaseRequest')->middleware('permission:procurement.requests.manage');
+                Route::get('suppliers', [SupplierController::class, 'index'])->middleware('permission:procurement.suppliers.view');
+                Route::post('suppliers', [SupplierController::class, 'store'])->middleware('permission:procurement.suppliers.manage');
+                Route::put('suppliers/{supplier}', [SupplierController::class, 'update'])->whereNumber('supplier')->middleware('permission:procurement.suppliers.manage');
+                Route::get('purchase-orders', [PurchaseOrderController::class, 'index'])->middleware('permission:procurement.orders.view');
+                Route::get('purchase-orders/{order}', [PurchaseOrderController::class, 'show'])->whereNumber('order')->middleware('permission:procurement.orders.view');
+                Route::post('purchase-orders', [PurchaseOrderController::class, 'store'])->middleware('permission:procurement.orders.manage');
+                Route::post('purchase-orders/direct', [PurchaseOrderController::class, 'direct'])->middleware('permission:procurement.orders.manage');
+                Route::post('purchase-orders/{order}/cancel', [PurchaseOrderController::class, 'cancel'])->whereNumber('order')->middleware('permission:procurement.orders.manage');
+                Route::post('purchase-orders/{order}/close', [PurchaseOrderController::class, 'closeShort'])->whereNumber('order')->middleware('permission:procurement.orders.manage');
+                Route::post('purchase-orders/{order}/receipts', [ReceivingController::class, 'store'])->whereNumber('order')->middleware('permission:procurement.receipts.manage');
+                Route::get('finance/payables', [PayableController::class, 'index'])->middleware('permission:finance.payables.view');
+                Route::get('finance/payables/{supplier}', [PayableController::class, 'show'])->whereNumber('supplier')->middleware('permission:finance.payables.view');
+                Route::post('finance/supplier-payments', [PayableController::class, 'pay'])->middleware('permission:finance.payables.manage');
+
+                // CRM (R-69 to R-71). Records, follow-ups and groups.
+                Route::get('customers/linkable-memberships', [CustomerController::class, 'linkableMemberships'])->middleware('permission:customers.records.view');
+                Route::get('customers', [CustomerController::class, 'index'])->middleware('permission:customers.records.view');
+                Route::get('customers/{customer}', [CustomerController::class, 'show'])->whereNumber('customer')->middleware('permission:customers.records.view');
+                Route::post('customers', [CustomerController::class, 'store'])->middleware('permission:customers.records.manage');
+                Route::put('customers/{customer}', [CustomerController::class, 'update'])->whereNumber('customer')->middleware('permission:customers.records.manage');
+                Route::post('customers/{customer}/interactions', [CustomerController::class, 'addInteraction'])->whereNumber('customer')->middleware('permission:customers.records.manage');
+                Route::post('interactions/{interaction}/resolve', [CustomerController::class, 'resolveInteraction'])->whereNumber('interaction')->middleware('permission:customers.records.manage');
+                Route::get('follow-ups', [FollowUpController::class, 'index'])->middleware('permission:customers.records.view');
+                Route::post('customers/{customer}/follow-ups', [FollowUpController::class, 'store'])->whereNumber('customer')->middleware('permission:customers.records.manage');
+                Route::put('follow-ups/{followUp}', [FollowUpController::class, 'update'])->whereNumber('followUp')->middleware('permission:customers.records.manage');
+                Route::post('customers/{customer}/link-membership', [CustomerController::class, 'linkMembership'])->whereNumber('customer')->middleware('permission:customers.records.manage');
+                Route::get('customer-groups', [CustomerGroupController::class, 'index'])->middleware('permission:customers.records.view');
+                Route::post('customer-groups', [CustomerGroupController::class, 'store'])->middleware('permission:customers.groups.manage');
+                Route::put('customer-groups/{group}', [CustomerGroupController::class, 'update'])->whereNumber('group')->middleware('permission:customers.groups.manage');
+                Route::delete('customer-groups/{group}', [CustomerGroupController::class, 'destroy'])->whereNumber('group')->middleware('permission:customers.groups.manage');
+                Route::put('customer-groups/{group}/members', [CustomerGroupController::class, 'syncMembers'])->whereNumber('group')->middleware('permission:customers.groups.manage');
 
                 // Athlete records (R-37 to R-41). Viewing and health checks are in the controller.
                 Route::get('athletes/{user}/record', [AthleteRecordController::class, 'show']);

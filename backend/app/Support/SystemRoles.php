@@ -26,7 +26,7 @@ final class SystemRoles
                     'gym_id' => $gym->id, 'name' => $name, 'description' => 'Starter role. Change it to fit your gym.',
                     'status' => 'active', 'is_system' => true, 'template_key' => $key,
                 ]));
-                $keys = Permission::active()->whereIn('permission_string', PermissionCatalog::expandLevels($levels))->pluck('permission_string')->all();
+                $keys = Permission::active()->whereIn('permission_string', PermissionCatalog::expandTemplate($levels))->pluck('permission_string')->all();
                 $role->syncPermissionStrings($keys);
             }
         });

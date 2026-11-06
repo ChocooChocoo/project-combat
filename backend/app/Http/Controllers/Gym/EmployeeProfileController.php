@@ -42,7 +42,7 @@ class EmployeeProfileController extends Controller
                 'started_on' => ['nullable', 'date'],
             ];
 
-            if ($viewer->canSeePay($gym)) {
+            if ($viewer->canViewCompensation($gym)) {
                 $rules += [
                     'pay_basis' => ['nullable', Rule::in(array_keys(config('hr.pay_bases')))],
                     'monthly_rate' => ['nullable', 'numeric', 'min:0', 'max:9999999999.99'],
@@ -65,7 +65,7 @@ class EmployeeProfileController extends Controller
         $profile->fill(collect($data)->except('photo')->all())->save();
 
         return response()->json([
-            'employee' => $this->employeePayload($gym, $user, $viewer->canSeePay($gym)),
+            'employee' => $this->employeePayload($gym, $user, $viewer->canViewCompensation($gym)),
         ]);
     }
 }

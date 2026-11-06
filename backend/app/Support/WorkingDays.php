@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Enums\DayKind;
 use App\Models\Gym;
 use App\Models\GymHoliday;
 use App\Models\User;
@@ -59,6 +60,37 @@ class WorkingDays
         }
 
         return $count;
+    }
+
+    /**
+     * The one classification used by staff attendance, the absence job and payroll.
+     * Holidays win over the schedule; a gym holiday counts as a special holiday.
+     */
+    public function kind(Gym $gym, User $employee, Carbon $date): DayKind
+    {
+        $day = $date->copy()->startOfDay();
+
+        $national = collect(NationalHolidays::forYear($day->year))->firstWhere('date', $day->toDateString());
+        if ($national) {
+            return ($national['kind'] ?? 'special') === 'regular'
+                ? DayKind::HolidayRegular
+                : DayKind::HolidaySpecial;
+        }
+
+        $gymHoliday = GymHoliday::withoutGlobalScope('gym')
+            ->where('gym_id', $gym->id)
+            ->whereDate('date', $day->toDateString())
+            ->exists();
+
+        if ($gymHoliday) {
+            return DayKind::HolidaySpecial;
+        }
+
+        $weekday = strtolower($day->format('D'));
+
+        return in_array($weekday, $this->workingDays($gym, $employee), true)
+            ? DayKind::Working
+            : DayKind::Rest;
     }
 
     /** @return array<int, string> */

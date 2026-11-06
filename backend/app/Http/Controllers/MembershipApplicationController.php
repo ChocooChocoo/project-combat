@@ -11,6 +11,7 @@ use App\Models\Membership;
 use App\Models\MembershipPlan;
 use App\Notifications\MembershipApplicationSubmitted;
 use App\Support\CurrentGym;
+use App\Support\CustomerLinker;
 use App\Support\MembershipLedger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,7 +36,7 @@ class MembershipApplicationController extends Controller
         ]);
     }
 
-    public function store(Request $request, int $gym): JsonResponse
+    public function store(Request $request, int $gym, CustomerLinker $linker): JsonResponse
     {
         $user = $request->user();
         $gym = Gym::where('status', GymStatus::Approved->value)->findOrFail($gym);
@@ -87,6 +88,11 @@ class MembershipApplicationController extends Controller
 
         $membership->save();
         app(MembershipLedger::class)->log($membership, 'applied', $user);
+
+        // R-71: a person already kept as a lead is linked the moment they apply.
+        if ($customer = $linker->customerForEmail($gym, $user->email)) {
+            $linker->link($customer, $membership);
+        }
 
         foreach ($this->deciders($gym) as $decider) {
             $decider->notify(new MembershipApplicationSubmitted($membership));

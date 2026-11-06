@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Gym;
-use App\Support\PermissionCatalog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -30,7 +29,15 @@ class PermissionMigrationTest extends TestCase
         $before = (array) DB::table('gym_role_user')->where('id', $grant)->first();
         $migration->up();
         $keys = DB::table('gym_role_permission')->join('permissions', 'permission_id', '=', 'permissions.id')->where('gym_role_id', $id)->pluck('permission_string')->all();
-        $this->assertEqualsCanonicalizing(PermissionCatalog::expandLevels($levels), $keys);
+        // The legacy migration is frozen to the 51 keys it shipped with, not the live catalog.
+        $this->assertEqualsCanonicalizing([
+            'training.sessions.view', 'training.sessions.manage',
+            'training.bookings.view', 'training.bookings.manage',
+            'training.attendance.view', 'training.attendance.manage',
+            'training.check_ins.manage',
+            'training.athletes.view', 'training.athletes.manage',
+            'finance.payments.view',
+        ], $keys);
         $this->assertDatabaseHas('gym_role_user', [...$before, 'expires_at' => null, 'granted_by' => null]);
         $migration->down();
         $this->assertSame($levels, json_decode(DB::table('gym_roles')->where('id', $id)->value('permissions'), true));

@@ -9,7 +9,10 @@ use App\Models\SessionBooking;
 use App\Models\User;
 use App\Support\MembershipLedger;
 use App\Support\PermissionCatalog;
+use App\Support\StaffAbsenceMarker;
+use App\Support\StockLedger;
 use App\Support\SystemRoles;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
@@ -78,6 +81,46 @@ Artisan::command('app:mark-no-shows', function () {
     $this->info("{$count} no-shows marked.");
 })->purpose('Mark ended, unchecked bookings as no-shows');
 Schedule::command('app:mark-no-shows')->everyFifteenMinutes();
+
+// R-56: a working day with no row, no approved leave and no holiday becomes absent.
+Artisan::command('app:mark-staff-absences {--date=} {--from=} {--to=}', function () {
+    $date = $this->option('date');
+    $from = $this->option('from');
+    $to = $this->option('to');
+
+    if ($date) {
+        $start = $end = Carbon::parse($date);
+    } elseif ($from || $to) {
+        $start = Carbon::parse($from ?? $to);
+        $end = Carbon::parse($to ?? $from);
+    } else {
+        $start = $end = today()->subDay();
+    }
+
+    if ($end->lessThan($start)) {
+        $this->error('The end date must be on or after the start date.');
+
+        return 1;
+    }
+
+    $count = app(StaffAbsenceMarker::class)->mark($start->copy()->startOfDay(), $end->copy()->startOfDay());
+    $this->info("{$count} absences marked.");
+})->purpose('Mark missing staff attendance as absent');
+Schedule::command('app:mark-staff-absences')->dailyAt('00:20');
+
+Artisan::command('app:check-stock-counts', function (StockLedger $ledger) {
+    $rows = $ledger->mismatches();
+    if ($rows->isEmpty()) {
+        $this->info('Every stock count matches its movements.');
+
+        return 0;
+    }
+    $this->table(['Item', 'Gym', 'Name', 'Shown', 'Movements'],
+        $rows->map(fn ($row) => [$row->id, $row->gym_id, $row->name, $row->quantity, $row->movement_total])->all());
+    $this->error("{$rows->count()} stock counts differ from their movements. Nothing was changed.");
+
+    return 1;
+})->purpose('Report stock items whose quantity differs from their movements');
 
 // Expired sign-in passes are removed daily (R-03).
 Schedule::command('sanctum:prune-expired --hours=24')->daily();

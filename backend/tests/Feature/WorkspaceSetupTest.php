@@ -97,8 +97,30 @@ class WorkspaceSetupTest extends TestCase
             ->assertJsonPath('setup.badge', 'Tier 1 verified')
             ->assertJsonPath('setup.tier', 1)
             ->assertJsonPath('setup.working_days', ['mon', 'tue', 'wed', 'thu', 'fri'])
+            ->assertJsonPath('setup.payroll_frequency', 'semi_monthly')
+            ->assertJsonPath('setup.payroll_steps', ['owner'])
+            ->assertJsonPath('setup.staff_grace_minutes', 10)
+            ->assertJsonPath('setup.overtime_min_minutes', 30)
             ->assertJsonPath('setup.options.default_working_days', ['mon', 'tue', 'wed', 'thu', 'fri'])
             ->assertJsonPath('setup.options.plan_billing.sessions', 'By sessions');
+    }
+
+    public function test_payroll_and_attendance_settings_keep_the_owner_last(): void
+    {
+        $this->actingAs($this->owner)->putJson($this->url('setup'), [
+            'payroll_frequency' => 'monthly',
+            'payroll_steps' => ['owner', 'hr_review'],
+            'staff_grace_minutes' => 15,
+            'overtime_min_minutes' => 45,
+        ])->assertOk()
+            ->assertJsonPath('setup.payroll_frequency', 'monthly')
+            ->assertJsonPath('setup.payroll_steps', ['hr_review', 'owner'])
+            ->assertJsonPath('setup.staff_grace_minutes', 15)
+            ->assertJsonPath('setup.overtime_min_minutes', 45)
+            ->assertJsonPath('setup.options.payroll_frequencies.monthly', 'Once a month')
+            ->assertJsonPath('setup.options.payroll_steps.owner', 'Owner');
+
+        $this->assertSame(['hr_review', 'owner'], $this->gym->fresh()->payrollSteps());
     }
 
     public function test_options_are_open_to_every_member_but_setup_needs_permission(): void

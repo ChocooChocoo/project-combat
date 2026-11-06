@@ -4,7 +4,7 @@
 
 [00 - START HERE](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) · [05 - ROADMAP](../05%20-%20ROADMAP.md) · Previous: [PHASE 5](../phase-5/PHASE%205.md) · Next: [PHASE 7](../phase-7/PHASE%207.md)
 
-**Status:** ⭕ Not started
+**Status:** ✅ Done
 
 Citation forms are the same as in [02 - FINDINGS](../../02%20-%20FINDINGS/02%20-%20FINDINGS.md).
 
@@ -31,10 +31,10 @@ Training feeds the business side directly. Coach sessions and attendance feed pa
 
 | Waits for | Why | Status |
 |---|---|---|
-| R-23, R-24, R-25, R-26, R-27 in [PHASE 3](../phase-3/PHASE%203.md) | Pay rates, schedules, leave and holidays feed payroll | ⭕ |
+| R-23, R-24, R-25, R-26, R-27 in [PHASE 3](../phase-3/PHASE%203.md) | Pay rates, schedules, leave and holidays feed payroll | ✅ |
 | R-34 in [PHASE 4](../phase-4/PHASE%204.md) | Membership payments are income | ✅ |
-| R-42, R-51 in [PHASE 5](../phase-5/PHASE%205.md) | Coach sessions feed payroll; session fees are income | ⭕ |
-| Q-13, Q-14, Q-21 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) | Coach pay, lateness and working days shape payroll | ⭕ |
+| R-42, R-51 in [PHASE 5](../phase-5/PHASE%205.md) | Coach sessions feed payroll; session fees are income | ✅ |
+| Q-13, Q-14, Q-21 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) | Coach pay, lateness and working days shape payroll | ✅ |
 
 ## What it unlocks
 
@@ -44,14 +44,16 @@ Training feeds the business side directly. Coach sessions and attendance feed pa
 
 | Status | How many |
 |---|---|
-| ✅ Finished | 0 |
+| ✅ Finished | 24 |
 | 🟨 Being worked on | 0 |
-| ⭕ Not started | 24 |
+| ⭕ Not started | 0 |
 | ❌ Blocked | 0 |
 | 🔵 Already there | 0 |
 | ⬜ Dropped | 0 |
 | ❓ Unclear | 0 |
 | **Total** | **24** |
+
+**Built:** 6.0 foundations, 6A HR extras (R-56 to R-58), 6B inventory (R-72 to R-74), 6C CRM (R-69 to R-71), 6D finance core (R-63 to R-65), 6E procurement (R-66, R-75 to R-79), 6F payroll (R-59 to R-62), 6G budgets and reports (R-67, R-68), and 6H integration. Final gates are green on 6 November 2026: 476 backend tests, frontend lint and build, and a throwaway MySQL migrate-and-seed. The Playwright browser pass covered the main flows, role matrix, phone width, notifications, payroll lock and one printed payslip; residual edge checks are listed in Packet 6H. R-69's due reminder belongs to R-82 in Phase 7. Two production-readiness items stay open: the seeded statutory rates are legacy values that need checking against current circulars, and missing attendance is currently a non-blocking warning that can zero pay.
 
 ---
 
@@ -72,9 +74,9 @@ The people side of 5A (adding employees, schedules, leave) is in [PHASE 3](../ph
 
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
-| R-56 | Staff attendance | R-24 | ⭕ | Employees' work times, lateness and absences are recorded |
-| R-57 | Overtime requests | R-56 | ⭕ | Extra hours become a request that a permitted person approves |
-| R-58 | Performance notes | R-23 | ⭕ | Permitted staff can record notes on an employee's performance |
+| R-56 | Staff attendance | R-24 | ✅ | Employees' work times, lateness and absences are recorded |
+| R-57 | Overtime requests | R-56 | ✅ | Extra hours become a request that a permitted person approves |
+| R-58 | Performance notes | R-23 | ✅ | Permitted staff can record notes on an employee's performance |
 
 ### R-56: Staff attendance
 
@@ -86,16 +88,18 @@ The people side of 5A (adding employees, schedules, leave) is in [PHASE 3](../ph
 
 **Depends on:** R-24.
 
-**Blockers:** Q-14 (lateness) and Q-21 (working days).
+**Blockers:** none; Q-14 and Q-21 are answered.
 
 **Done when:**
 
-- [ ] An employee can record their start and finish at the gym.
-- [ ] Days with no attendance, outside approved leave and holidays, are marked absent.
-- [ ] Lateness is marked by a set rule.
-- [ ] Permitted staff can correct an entry, and the correction records who made it.
+- [x] An employee can record their start and finish at the gym.
+- [x] Days with no attendance, outside approved leave and holidays, are marked absent.
+- [x] Lateness is marked by a set rule.
+- [x] Permitted staff can correct an entry, and the correction records who made it.
 
-**Still open:** Q-03 (whether to keep GPS-fenced check-in) and Q-02 (whether to keep absence explanations).
+**Resolved:** Q-03 was dropped (no GPS-fenced check-in); Q-02 was kept as a plain explanation field.
+
+**Status note (6 November 2026):** Built in Packet 6A and integrated into My Work and the desk screen. `StaffAttendanceTest`, `StaffAbsenceJobTest` and `StaffAttendanceTenancyTest` pass; the nightly command marks absences and the 6H run over 16–31 October 2026 marked 0 twice. Browser pass completed 6 November 2026 (Packet 6H); residual edge checks are listed in Packet 6H.
 
 **Old system:** `backend/app/Http/Controllers/API/EmployeeAttendanceController.php`; the nightly absence job, `backend/app/Console/Commands/MarkAbsentEmployees.php`. That job ignored national holidays and disagreed with payroll on Saturdays (C-22).
 
@@ -115,10 +119,12 @@ The people side of 5A (adding employees, schedules, leave) is in [PHASE 3](../ph
 
 **Done when:**
 
-- [ ] Extra time beyond the schedule creates a pending overtime request.
-- [ ] Only approved overtime is paid.
+- [x] Extra time beyond the schedule creates a pending overtime request.
+- [x] Only approved overtime is paid. (The request and decision ship in 6A; payroll applies the approved minutes in 6F.)
 
 **Still open:** nothing.
+
+**Status note (6 November 2026):** Built in Packet 6A; payroll consumes approved minutes in 6F. `OvertimeTest` proves self-decision is refused and only approved minutes count. Browser pass: Dindo requested 60 minutes with a reason from My Work; the owner reviewed it, approved 60 minutes with a note, and the decided list showed `Approved` with the approver note. Residual edge checks are listed in Packet 6H.
 
 **Old system:** as above. The old overtime rate was 1.25 times (`backend/app/Http/Controllers/API/PayrollController.php`).
 
@@ -136,10 +142,12 @@ The people side of 5A (adding employees, schedules, leave) is in [PHASE 3](../ph
 
 **Done when:**
 
-- [ ] A permitted person can add and view performance notes for an employee.
-- [ ] Notes are not visible to other employees.
+- [x] A permitted person can add and view performance notes for an employee.
+- [x] Notes are not visible to other employees.
 
 **Still open:** nothing.
+
+**Status note (6 November 2026):** Built in Packet 6A. `PerformanceNoteTest` proves the employee never sees the note and only `hr.performance.view` can read it. Browser pass: the owner added a performance note on Dindo’s record; Dindo’s own record showed no Performance tab and the note text was absent. Residual edge checks are listed in Packet 6H.
 
 **Old system:** `backend/app/Http/Controllers/API/PerformanceReviewController.php`, which returns "temporarily disabled".
 
@@ -151,10 +159,10 @@ The people side of 5A (adding employees, schedules, leave) is in [PHASE 3](../ph
 
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
-| R-59 | Work out payroll for every employee, coaches included | R-56, R-26, R-27, R-42 | ⭕ | Pay is worked out per period for every employee |
-| R-60 | Philippine statutory deductions | R-59 | ⭕ | SSS, PhilHealth, Pag-IBIG and withholding tax are deducted at the current rates |
-| R-61 | Payroll approval and release | R-59 | ⭕ | Payroll goes through each approval step and cannot skip one |
-| R-62 | Payslips and payroll history | R-61 | ⭕ | Employees see their payslips; history is kept |
+| R-59 | Work out payroll for every employee, coaches included | R-56, R-26, R-27, R-42 | ✅ | Pay is worked out per period for every employee |
+| R-60 | Philippine statutory deductions | R-59 | ✅ | SSS, PhilHealth, Pag-IBIG and withholding tax are deducted at the current rates |
+| R-61 | Payroll approval and release | R-59 | ✅ | Payroll goes through each approval step and cannot skip one |
+| R-62 | Payslips and payroll history | R-61 | ✅ | Employees see their payslips; history is kept |
 
 ### R-59: Work out payroll for every employee, coaches included
 
@@ -166,15 +174,17 @@ The people side of 5A (adding employees, schedules, leave) is in [PHASE 3](../ph
 
 **Depends on:** R-56, R-26, R-27 and R-42.
 
-**Blockers:** Q-13 (how coaches are paid) and Q-21.
+**Blockers:** none; Q-13 and Q-21 are answered.
 
 **Done when:**
 
-- [ ] Running payroll for a period produces a pay line for every active employee, coaches included.
-- [ ] Each line shows how it was worked out: days, leave, overtime, holidays and deductions.
-- [ ] Pay is worked out by the system from stored records, never from figures typed in on the screen.
+- [x] Running payroll for a period produces a pay line for every active employee, coaches included.
+- [x] Each line shows how it was worked out: days, leave, overtime, holidays and deductions.
+- [x] Pay is worked out by the system from stored records, never from figures typed in on the screen.
 
-**Still open:** Q-13 and Q-01.
+**Resolved:** Q-13 and Q-21 answered; Q-01 dropped (no leave-to-cash).
+
+**Status note (6 November 2026):** Built in Packet 6F. `PayrollRunTest` and `Unit\PayrollCalculatorTest` prove a line for every active and just-ended employee, coaches included, from stored records only. Browser pass completed 6 November 2026 (Packet 6H); residual edge checks are listed in Packet 6H.
 
 **Old system:** `PayrollController.php`, lines 183 to 592 and 1084 to 1095 (holiday rates).
 
@@ -194,10 +204,12 @@ The people side of 5A (adding employees, schedules, leave) is in [PHASE 3](../ph
 
 **Done when:**
 
-- [ ] Each payslip shows SSS, PhilHealth, Pag-IBIG and tax.
-- [ ] A permitted person can add new rates with a start date, and old periods keep their old rates.
+- [x] Each payslip shows SSS, PhilHealth, Pag-IBIG and tax.
+- [x] A permitted person can add new rates with a start date, and old periods keep their old rates.
 
 **Still open:** nothing.
+
+**Status note (6 November 2026):** Built in Packet 6F. `StatutoryRateSeeder` seeds SSS, PhilHealth, Pag-IBIG, semi-monthly tax and monthly tax effective 2025-01-01; `Unit\StatutoryTest` covers bracket edges, effective-date choice and semi-monthly halving. Old released runs keep snapshotted rates. Browser pass completed 6 November 2026 (Packet 6H); residual edge checks are listed in Packet 6H. **Production caveat:** the seeded values come from the legacy Combat Sports tables, and each seeded `source` string says to verify the current SSS, PhilHealth, Pag-IBIG and BIR circulars. The mechanism works; the legal values are not verified as current. A low-gross test run produced gross ₱151.79 and employee statutory ₱751.52. Employee deductions are now capped at gross with a `statutory_capped_at_gross` warning; a fresh Sep 1–15 draft showed deductions equal to gross and net ₱0.00.
 
 **Old system:** as above.
 
@@ -215,12 +227,14 @@ The people side of 5A (adding employees, schedules, leave) is in [PHASE 3](../ph
 
 **Done when:**
 
-- [ ] Payroll moves through each step in order and is released only at the end.
-- [ ] A rejected payroll goes back with a reason.
-- [ ] There is no way to mark payroll released without every approval.
-- [ ] Released payroll appears as a pay-out expense (R-64).
+- [x] Payroll moves through each step in order and is released only at the end.
+- [x] A rejected payroll goes back with a reason.
+- [x] There is no way to mark payroll released without every approval.
+- [x] Released payroll appears as a pay-out expense (R-64).
 
-**Still open:** which steps a gym needs, since small gyms may have no separate HR or finance person. It should be decided during implementation planning.
+**Decided:** each gym chooses 1 to 3 steps from HR review, finance review and owner; the owner is always last and the default is owner only.
+
+**Status note (6 November 2026):** Built in Packet 6F. `PayrollRunTest` covers ordered steps, no skipping, preparer refusal, rejection rounds, the flagged one-step owner release and double-release posting each expense once. `PayrollLockTest` closes the period while in review. Browser pass completed 6 November 2026 (Packet 6H); residual edge checks are listed in Packet 6H. The multi-step browser test rejected and re-approved a run and released it when HR prepared, Finance approved and the owner released. An owner-prepared multi-step run initially deadlocked at the owner step; it is fixed so the owner can release the final step they prepared while every earlier step still needs a different approver. Run #2 was released as `Self-released` after the fix.
 
 **Old system:** `PayrollController.php`, lines 594 to 894.
 
@@ -238,10 +252,12 @@ The people side of 5A (adding employees, schedules, leave) is in [PHASE 3](../ph
 
 **Done when:**
 
-- [ ] An employee sees their payslips for released periods only.
-- [ ] Permitted staff can look up any past payroll.
+- [x] An employee sees their payslips for released periods only.
+- [x] Permitted staff can look up any past payroll.
 
 **Still open:** nothing.
+
+**Status note (6 November 2026):** Built in Packet 6F. `PayslipTest` proves released-only own payslips, another employee gets 404, and a removed employee still sees released payslips. Browser pass: Dindo’s My Work listed the released Oct 16–31 payslip with matching gross, deductions and net, and the print button fired `window.print`. The removed-employee UI path is still automated-only because removing a demo employee would damage the payroll fixtures.
 
 **Old system:** `PayrollController.php`, lines 896 to 944.
 
@@ -253,12 +269,12 @@ The people side of 5A (adding employees, schedules, leave) is in [PHASE 3](../ph
 
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
-| R-63 | Income, recorded automatically from training | R-34, R-51 | ⭕ | Membership and session payments appear as income with no retyping |
-| R-64 | Expenses | R-61 | ⭕ | Running costs, payroll pay-outs, supplies and purchases are recorded |
-| R-65 | Money members owe | R-63 | ⭕ | Each member's outstanding balance is visible |
-| R-66 | Money owed to suppliers | R-77 | ⭕ | Each supplier's outstanding amount is visible |
-| R-67 | Budgets and budget against actual | R-63, R-64 | ⭕ | The owner sets budgets and sees actual against them |
-| R-68 | Sustainability reports | R-63, R-64, R-62 | ⭕ | Cash flow, income against expenses, payroll and pay-out summaries can be viewed |
+| R-63 | Income, recorded automatically from training | R-34, R-51 | ✅ | Membership and session payments appear as income with no retyping |
+| R-64 | Expenses | R-61 | ✅ | Running costs, payroll pay-outs, supplies and purchases are recorded |
+| R-65 | Money members owe | R-63 | ✅ | Each member's outstanding balance is visible |
+| R-66 | Money owed to suppliers | R-77 | ✅ | Each supplier's outstanding amount is visible |
+| R-67 | Budgets and budget against actual | R-63, R-64 | ✅ | The owner sets budgets and sees actual against them |
+| R-68 | Sustainability reports | R-63, R-64, R-62 | ✅ | Cash flow, income against expenses, payroll and pay-out summaries can be viewed |
 
 ### R-63: Income, recorded automatically from training
 
@@ -281,12 +297,14 @@ Discounts are shown. Staff can also record walk-in and merchandise sales directl
 
 **Done when:**
 
-- [ ] A recorded membership or session payment appears as income without retyping.
-- [ ] Online PayMongo payments (R-35 in [PHASE 4](../phase-4/PHASE%204.md)) appear as income the same way as desk payments. *(Moved from R-35 on 5 November 2026.)*
-- [ ] Walk-in and merchandise sales can be recorded.
-- [ ] Income can be viewed by type and date range.
+- [x] A recorded membership or session payment appears as income without retyping.
+- [x] Online PayMongo payments (R-35 in [PHASE 4](../phase-4/PHASE%204.md)) appear as income the same way as desk payments. *(Moved from R-35 on 5 November 2026.)*
+- [x] Walk-in and merchandise sales can be recorded.
+- [x] Income can be viewed by type and date range.
 
 **Still open:** nothing.
+
+**Status note (6 November 2026):** Built in Packet 6D. `IncomeTest` covers desk membership, session, private coaching and signed PayMongo rows; `PaymentIncomeTypeTest` covers type derivation and correction copying; `SaleTest` covers walk-in and merchandise. Income is paginated by 25 with type totals. Browser pass: membership, session/private-coaching, walk-in and merchandise rows all appeared with the right type, method and receipt. PayMongo online checkout was attempted with the configured test keys, but `api.paymongo.com` times out from this environment, so no live online payment row could be created; signed PayMongo rows remain covered by automated tests. Residual edge checks are listed in Packet 6H.
 
 **Old system:** `frontend/src/pages/DynamicRoleDashboard.vue`, lines 1418 to 1700.
 
@@ -304,11 +322,13 @@ Discounts are shown. Staff can also record walk-in and merchandise sales directl
 
 **Done when:**
 
-- [ ] Staff can record an expense with category, amount, date and note.
-- [ ] Released payroll appears as an expense automatically.
-- [ ] Received purchase orders appear as expenses automatically.
+- [x] Staff can record an expense with category, amount, date and note.
+- [x] Released payroll appears as an expense automatically.
+- [x] Received purchase orders appear as expenses automatically.
 
 **Still open:** nothing.
+
+**Status note (6 November 2026):** Built in Packet 6D and fed by 6E and 6F. `ExpenseTest` covers add/filter/correct and the append-only guard; `PayrollRunTest` and `ReceivingTest` prove one automatic row per source key. Expenses are paginated by 25. Browser pass completed 6 November 2026 (Packet 6H); residual edge checks are listed in Packet 6H.
 
 **Old system:** none.
 
@@ -326,11 +346,13 @@ Discounts are shown. Staff can also record walk-in and merchandise sales directl
 
 **Done when:**
 
-- [ ] Each member's balance is visible to permitted staff and to the member.
-- [ ] Recording a payment reduces the balance.
-- [ ] Unpaid session add-ons and private coaching fees (R-51 in [PHASE 5](../phase-5/PHASE%205.md)) appear in this list. *(Moved from R-51 on 5 November 2026.)*
+- [x] Each member's balance is visible to permitted staff and to the member.
+- [x] Recording a payment reduces the balance.
+- [x] Unpaid session add-ons and private coaching fees (R-51 in [PHASE 5](../phase-5/PHASE%205.md)) appear in this list. *(Moved from R-51 on 5 November 2026.)*
 
 **Still open:** nothing.
+
+**Status note (6 November 2026):** Built in Packet 6D. `ReceivableTest` compares every staff row with `MembershipLedger::balance()` and `BookingLedger::balance()`, includes requested bookings and private coaching, and proves a member sees only their own balance. The member dashboard reads `GET my-balance`. Browser pass completed 6 November 2026 (Packet 6H); residual edge checks are listed in Packet 6H.
 
 **Old system:** none (the old permission names existed with no screens; `combat_sports_db.sql`, lines 3076 to 3081).
 
@@ -348,10 +370,12 @@ Discounts are shown. Staff can also record walk-in and merchandise sales directl
 
 **Done when:**
 
-- [ ] Each supplier's outstanding amount is visible.
-- [ ] Recording a supplier payment reduces it and appears as an expense.
+- [x] Each supplier's outstanding amount is visible.
+- [x] Recording a supplier payment reduces it and appears as an expense.
 
 **Still open:** nothing.
+
+**Status note (6 November 2026):** Built in Packet 6E. `PayableTest` proves outstanding equals receipts minus payments, overpayment is refused, and a payment appears beside expenses as cash out without changing the expense count or total. This follows the locked decision that a supplier payment settles the payable and is not a second cost. Browser pass completed 6 November 2026 (Packet 6H); residual edge checks are listed in Packet 6H.
 
 **Old system:** none. The old "payables" screen showed released payroll only.
 
@@ -369,10 +393,12 @@ Discounts are shown. Staff can also record walk-in and merchandise sales directl
 
 **Done when:**
 
-- [ ] The owner can set a budget per category per month.
-- [ ] A view shows budget, actual and the difference.
+- [x] The owner can set a budget per category per month.
+- [x] A view shows budget, actual and the difference.
 
 **Still open:** nothing.
+
+**Status note (6 November 2026):** Built in Packet 6G. `BudgetTest` proves month upsert, unique category, separate income/expense kinds and actual matching source sums. `DatabaseSeederTest` proves three seeded months per demo gym. Browser pass on 6 November 2026 saved November budgets (Membership ₱50,000, Rent ₱25,000, Payroll ₱10,000, Purchases ₱5,000) and saw actual, difference and used percentages update.
 
 **Old system:** none.
 
@@ -390,10 +416,12 @@ Discounts are shown. Staff can also record walk-in and merchandise sales directl
 
 **Done when:**
 
-- [ ] The owner can view each report for any date range.
-- [ ] The figures match the underlying income, expense and payroll records.
+- [x] The owner can view each report for any date range.
+- [x] The figures match the underlying income, expense and payroll records.
 
 **Still open:** nothing.
+
+**Status note (6 November 2026):** Built in Packet 6G. `FinanceReportTest` covers cash flow, income against expenses, payroll summaries, pay-outs, the 62-day bucket switch and the reversed-range refusal; `ReportTenancyTest` proves another gym never leaks in. Browser pass on 6 November 2026 checked a 6-day range (daily buckets), a 98-day range (monthly buckets) and a reversed range (warning, no fetch); totals matched the seeded and UI-created records.
 
 **Old system:** none.
 
@@ -405,9 +433,9 @@ Discounts are shown. Staff can also record walk-in and merchandise sales directl
 
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
-| R-69 | Leads, customers, inquiries and follow-ups | R-22 | ⭕ | Staff can record a lead and schedule a follow-up assigned to someone |
-| R-70 | Interaction and feedback history | R-69 | ⭕ | Every contact, preference, feedback item and concern is kept per customer |
-| R-71 | Turn a lead into a member | R-69, R-31 | ⭕ | A lead can be linked to their membership application |
+| R-69 | Leads, customers, inquiries and follow-ups | R-22 | ✅ | Staff can record a lead and schedule a follow-up assigned to someone |
+| R-70 | Interaction and feedback history | R-69 | ✅ | Every contact, preference, feedback item and concern is kept per customer |
+| R-71 | Turn a lead into a member | R-69, R-31 | ✅ | A lead can be linked to their membership application |
 
 ### R-69: Leads, customers, inquiries and follow-ups
 
@@ -423,11 +451,13 @@ Discounts are shown. Staff can also record walk-in and merchandise sales directl
 
 **Done when:**
 
-- [ ] Staff can add a lead or customer with contact details and their inquiry.
-- [ ] A follow-up can be scheduled and assigned.
-- [ ] The assigned person is reminded when it is due (built in R-82).
+- [x] Staff can add a lead or customer with contact details and their inquiry.
+- [x] A follow-up can be scheduled and assigned.
+- [ ] The assigned person is reminded when it is due (built in R-82). **Not in Phase 6; R-82 in Phase 7 owns this.**
 
-**Still open:** Q-07 (newsletter and contact form).
+**Out of scope:** Q-07 (newsletter and contact form). The due reminder is R-82.
+
+**Status note (6 November 2026):** Built in Packet 6C. `CustomerTest` and `FollowUpTest` cover add, search, stage filter, assignee validation, scheduling, reassignment, done with outcome, cancel and the assignment notice. Customer and follow-up lists now paginate in 6H. The due reminder itself is R-82 and stays open. Browser pass completed 6 November 2026 (Packet 6H); residual edge checks are listed in Packet 6H.
 
 **Old system:** none beyond `combat_sports_db.sql`, line 4004 (newsletter subscribers).
 
@@ -445,10 +475,12 @@ Discounts are shown. Staff can also record walk-in and merchandise sales directl
 
 **Done when:**
 
-- [ ] Staff can log an interaction, feedback item or concern against a customer.
-- [ ] Concerns can be marked resolved, with who resolved them.
+- [x] Staff can log an interaction, feedback item or concern against a customer.
+- [x] Concerns can be marked resolved, with who resolved them.
 
-**Still open:** Q-06 (whether public gym reviews are kept, which overlaps with feedback).
+**Out of scope:** Q-06 (whether public gym reviews are kept, which overlaps with feedback).
+
+**Status note (6 November 2026):** Built in Packet 6C. `CustomerInteractionTest` covers all four kinds, append-only behaviour, and concern resolution recording who and when; only concerns can be resolved and a second resolution is refused. Browser pass completed 6 November 2026 (Packet 6H); residual edge checks are listed in Packet 6H.
 
 **Old system:** none.
 
@@ -466,10 +498,12 @@ Discounts are shown. Staff can also record walk-in and merchandise sales directl
 
 **Done when:**
 
-- [ ] A lead can be linked to a membership application, or linked automatically by email.
-- [ ] Staff can group customers, and the groups can be chosen as announcement audiences.
+- [x] A lead can be linked to a membership application, or linked automatically by email.
+- [x] Staff can group customers, and the groups can be chosen as announcement audiences.
 
 **Still open:** nothing.
+
+**Status note (6 November 2026):** Built in Packet 6C. `CustomerConversionTest` covers manual and email links in both directions, case-insensitive matching and another gym's application returning 404; `CustomerGroupTest` covers unique names, member sync, user-to-customer creation and permissions. `CustomerTest` follows a lead to applied to member. Announcement sending itself is R-80 in Phase 7. Browser pass completed 6 November 2026 (Packet 6H); residual edge checks are listed in Packet 6H.
 
 **Old system:** none.
 
@@ -481,9 +515,9 @@ Discounts are shown. Staff can also record walk-in and merchandise sales directl
 
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
-| R-72 | Stock items | R-20 | ⭕ | Equipment, gear, supplies and merchandise are listed with quantity and place |
-| R-73 | Stock movements and history | R-72 | ⭕ | Every issue, return, adjustment and loss changes the quantity and is kept in history |
-| R-74 | Minimum levels and low-stock alerts | R-73, R-10 | ⭕ | When stock falls below its minimum, stock staff and the owner are told |
+| R-72 | Stock items | R-20 | ✅ | Equipment, gear, supplies and merchandise are listed with quantity and place |
+| R-73 | Stock movements and history | R-72 | ✅ | Every issue, return, adjustment and loss changes the quantity and is kept in history |
+| R-74 | Minimum levels and low-stock alerts | R-73, R-10 | ✅ | When stock falls below its minimum, stock staff and the owner are told |
 
 ### R-72: Stock items
 
@@ -499,9 +533,11 @@ Discounts are shown. Staff can also record walk-in and merchandise sales directl
 
 **Done when:**
 
-- [ ] Permitted staff can add items with category, quantity and storage place.
+- [x] Permitted staff can add items with category, quantity and storage place.
 
 **Still open:** nothing.
+
+**Status note (6 November 2026):** Built in Packet 6B. `StockTest` proves item creation, category and storage place, merchandise pricing rules and archive behaviour. Browser pass completed 6 November 2026 (Packet 6H); residual edge checks are listed in Packet 6H.
 
 **Old system:** none.
 
@@ -523,11 +559,13 @@ Discounts are shown. Staff can also record walk-in and merchandise sales directl
 
 **Done when:**
 
-- [ ] Each movement type changes the quantity correctly.
-- [ ] An item's full movement history can be viewed.
-- [ ] Quantity can never be changed without a recorded movement.
+- [x] Each movement type changes the quantity correctly.
+- [x] An item's full movement history can be viewed.
+- [x] Quantity can never be changed without a recorded movement.
 
 **Still open:** nothing.
+
+**Status note (6 November 2026):** Built in Packet 6B. `StockTest` covers every movement type, returns, issue balances and the direct-write guard; `StockTenancyTest` covers another gym; `app:check-stock-counts` returned `Every stock count matches its movements.` on the throwaway MySQL seed. Movement history is paginated and loads older pages on demand. Browser pass completed 6 November 2026 (Packet 6H); residual edge checks are listed in Packet 6H.
 
 **Old system:** none.
 
@@ -545,10 +583,12 @@ Discounts are shown. Staff can also record walk-in and merchandise sales directl
 
 **Done when:**
 
-- [ ] A minimum level can be set per item.
-- [ ] Dropping to it sends a notice to stock staff and the owner.
+- [x] A minimum level can be set per item.
+- [x] Dropping to it sends a notice to stock staff and the owner.
 
 **Still open:** nothing.
+
+**Status note (6 November 2026):** Built in Packet 6B. `LowStockTest` proves one notice at the crossing to owner and stock manager, no repeat while it stays low, a cleared flag above the minimum, a fresh notice after a new drop, and no notice for archived items. Browser pass completed 6 November 2026 (Packet 6H); residual edge checks are listed in Packet 6H.
 
 **Old system:** none.
 
@@ -560,11 +600,11 @@ Discounts are shown. Staff can also record walk-in and merchandise sales directl
 
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
-| R-75 | Work out what needs restocking | R-74, R-42 | ⭕ | A list shows items to restock from minimum levels and upcoming activities |
-| R-76 | Purchase requests with approval | R-75, R-10 | ⭕ | A request goes to a permitted approver and is approved or rejected |
-| R-77 | Suppliers and purchase orders | R-76 | ⭕ | Approved requests become purchase orders to a recorded supplier |
-| R-78 | Receiving updates stock | R-77, R-73 | ⭕ | Recording received items raises stock quantities automatically |
-| R-79 | Purchase status tracking | R-77, R-10 | ⭕ | Each purchase shows pending, partly received, completed or cancelled, and status changes notify the people involved |
+| R-75 | Work out what needs restocking | R-74, R-42 | ✅ | A list shows items to restock from minimum levels and upcoming activities |
+| R-76 | Purchase requests with approval | R-75, R-10 | ✅ | A request goes to a permitted approver and is approved or rejected |
+| R-77 | Suppliers and purchase orders | R-76 | ✅ | Approved requests become purchase orders to a recorded supplier |
+| R-78 | Receiving updates stock | R-77, R-73 | ✅ | Recording received items raises stock quantities automatically |
+| R-79 | Purchase status tracking | R-77, R-10 | ✅ | Each purchase shows pending, partly received, completed or cancelled, and status changes notify the people involved |
 
 ### R-75: Work out what needs restocking
 
@@ -576,14 +616,16 @@ Discounts are shown. Staff can also record walk-in and merchandise sales directl
 
 **Depends on:** R-74 and R-42.
 
-**Blockers:** how scheduled activities turn into supply needs is not stated (the spec, page 17). It should be decided during implementation planning.
+**Blockers:** none; needs are entered by hand and linked to a session or a date, with no automatic usage rules.
 
 **Done when:**
 
-- [ ] A restock list shows every item at or below its minimum.
-- [ ] Staff can add needs for upcoming scheduled activities.
+- [x] A restock list shows every item at or below its minimum.
+- [x] Staff can add needs for upcoming scheduled activities.
 
-**Still open:** as in blockers.
+**Still open:** nothing.
+
+**Status note (6 November 2026):** Built in Packet 6E. `RestockTest` proves at-or-below-minimum appears, above does not, open needs add, on-order subtracts and the suggested quantity respects the reorder quantity. Browser pass completed 6 November 2026 (Packet 6H); residual edge checks are listed in Packet 6H.
 
 **Old system:** none.
 
@@ -601,10 +643,12 @@ Discounts are shown. Staff can also record walk-in and merchandise sales directl
 
 **Done when:**
 
-- [ ] A request can be created with items and quantities.
-- [ ] Only a permitted approver, never the requester, can approve it.
+- [x] A request can be created with items and quantities.
+- [x] Only a permitted approver, never the requester, can approve it.
 
 **Still open:** nothing.
+
+**Status note (6 November 2026):** Built in Packet 6E. `PurchaseRequestTest` proves creation with lines, requester and owner-requester refusal, rejection reason, pending-only cancel, and the decision notice to the requester only. Request list now paginates. Browser pass completed 6 November 2026 (Packet 6H); residual edge checks are listed in Packet 6H.
 
 **Old system:** none.
 
@@ -622,10 +666,12 @@ Discounts are shown. Staff can also record walk-in and merchandise sales directl
 
 **Done when:**
 
-- [ ] Permitted staff can add and edit suppliers.
-- [ ] An approved request can be turned into a purchase order for one supplier.
+- [x] Permitted staff can add and edit suppliers.
+- [x] An approved request can be turned into a purchase order for one supplier.
 
 **Still open:** nothing.
+
+**Status note (6 November 2026):** Built in Packet 6E. `PurchaseOrderTest` proves one order per approved request, quantities cannot exceed the request, unit cost is required, direct buying is owner-only and flagged, and cancel/close-short rules hold. Supplier and order lists now paginate. Browser pass completed 6 November 2026 (Packet 6H); residual edge checks are listed in Packet 6H.
 
 **Old system:** none.
 
@@ -643,11 +689,13 @@ Discounts are shown. Staff can also record walk-in and merchandise sales directl
 
 **Done when:**
 
-- [ ] Recording a delivery increases each item's stock by the amount received.
-- [ ] A part delivery leaves the rest of the order open.
-- [ ] The received amount is recorded as owed to the supplier (R-66) and as an expense (R-64).
+- [x] Recording a delivery increases each item's stock by the amount received.
+- [x] A part delivery leaves the rest of the order open.
+- [x] The received amount is recorded as owed to the supplier (R-66) and as an expense (R-64).
 
 **Still open:** nothing.
+
+**Status note (6 November 2026):** Built in Packet 6E. `ReceivingTest` proves a partial receipt raises stock and leaves the order open, over-receipt is refused, a full receipt completes it, a duplicate returns the same receipt, and the expense is posted once. The stock cache equals movements. Browser pass completed 6 November 2026 (Packet 6H); residual edge checks are listed in Packet 6H.
 
 **Old system:** none.
 
@@ -665,10 +713,12 @@ Discounts are shown. Staff can also record walk-in and merchandise sales directl
 
 **Done when:**
 
-- [ ] Every purchase shows one of the four statuses.
-- [ ] Each status change sends a notice to the requester and approver.
+- [x] Every purchase shows one of the four statuses.
+- [x] Each status change sends a notice to the requester and approver.
 
 **Still open:** nothing.
+
+**Status note (6 November 2026):** Built in Packet 6E. `PurchaseRequestTest` and `PurchaseOrderTest` count the decision and status notices and prove the actor is excluded. `PurchaseOrderTest` covers the four status transitions. Browser pass completed 6 November 2026 (Packet 6H); residual edge checks are listed in Packet 6H.
 
 **Old system:** none.
 
@@ -676,7 +726,7 @@ Discounts are shown. Staff can also record walk-in and merchandise sales directl
 
 ## Phase blockers
 
-Q-13, Q-14 and Q-21 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) for payroll and attendance. Q-01 to Q-03 for the old-system extras around leave and attendance.
+None. Q-13, Q-14 and Q-21 are answered and applied; Q-01 was dropped, Q-02 kept as the plain explanation field, and Q-03 dropped. The remaining close-out item is the browser matrix and one printed payslip, not a product decision.
 
 ## Phase is finished when
 

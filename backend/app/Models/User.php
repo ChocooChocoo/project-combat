@@ -4,17 +4,17 @@ namespace App\Models;
 
 use App\Enums\GymPersonType;
 use App\Support\PermissionCatalog;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 use Laravel\Sanctum\HasApiTokens;
 
 // is_platform_admin and password_change_required are deliberately not fillable.
@@ -43,6 +43,11 @@ class User extends Authenticatable
     public function employeeProfiles(): HasMany
     {
         return $this->hasMany(EmployeeProfile::class);
+    }
+
+    public function payrollLines(): HasMany
+    {
+        return $this->hasMany(PayrollLine::class);
     }
 
     public function workSchedules(): HasMany
@@ -108,9 +113,9 @@ class User extends Authenticatable
     }
 
     /** Pay stays hidden unless the viewer owns the gym, runs HR, or sees payroll or finance (R-23). */
-    public function canSeePay(Gym|int $gym): bool
+    public function canViewCompensation(Gym|int $gym): bool
     {
-        return $this->hasPermission($gym, 'hr.staff.manage', 'payroll.general.view', 'finance.payments.view');
+        return $this->hasPermission($gym, 'hr.staff.manage', 'payroll.runs.view', 'finance.payments.view');
     }
 
     public function canApproveLeave(Gym|int $gym): bool

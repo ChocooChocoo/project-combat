@@ -1,6 +1,7 @@
 import { ArrowLeft, Camera } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
+import { PerformanceNotes } from '@/components/hr/performance-notes'
 import { PageHeader } from '@/components/page-header'
 import { CoachCalendar } from '@/components/schedule/coach-calendar'
 import { TextField } from '@/components/text-field'
@@ -56,6 +57,8 @@ export default function EmployeeRecord() {
   const canManageHr = gym ? can(gym, 'hr.staff.manage') : false
   const canReadSchedule = gym ? can(gym, 'hr.schedules.view') : false
   const canEditSchedule = gym ? can(gym, 'hr.schedules.manage') : false
+  const canReadPerformance = gym ? can(gym, 'hr.performance.view') : false
+  const canManagePerformance = gym ? can(gym, 'hr.performance.manage') : false
   const targetIsSelf = Number(userId) === user?.id
   const canOpen = Boolean(gym) && (canViewHr || targetIsSelf)
 
@@ -178,6 +181,7 @@ export default function EmployeeRecord() {
           <TabsTab value="coach">Coach profile</TabsTab>
           {(targetIsSelf || canReadSchedule) && <TabsTab value="schedule">Schedule</TabsTab>}
           <TabsTab value="leave">Leave</TabsTab>
+          {canReadPerformance && <TabsTab value="performance">Performance</TabsTab>}
         </TabsList>
 
         <TabsPanel value="employment" keepMounted className="pt-4">
@@ -212,6 +216,12 @@ export default function EmployeeRecord() {
             balances={employee.balances ?? []}
           />
         </TabsPanel>
+
+        {canReadPerformance && (
+          <TabsPanel value="performance" keepMounted className="pt-4">
+            <PerformanceNotes gymId={Number(gymId)} userId={Number(userId)} canManage={canManagePerformance} />
+          </TabsPanel>
+        )}
       </Tabs>
     </div>
   )
