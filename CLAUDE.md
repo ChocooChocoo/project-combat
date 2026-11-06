@@ -53,8 +53,18 @@ The frontend calls the API at `VITE_API_URL` (`frontend/.env`).
   covers. Some routes skip the middleware and check inside the controller (own staff record, own leave).
   The frontend mirrors this in `frontend/src/lib/gym-access.ts` (`can()`) only to hide UI; the backend is
   the real check.
+- **Backend layout.** Controllers stay thin. Business rules and multi-step writes live in `app/Support`
+  (`*Ledger`, `Payroll/`, `Finance/`, `Procurement/`), usually inside `DB::transaction` with
+  `lockForUpdate`. JSON shapes come from `Presents*` traits in `Http/Controllers/**/Concerns`, not API Resources.
+  Stock quantity changes only through `StockLedger` movements. `PayrollLock::assertOpen` blocks edits to
+  dates inside an in-review or released payroll run (409). Payroll math uses integer centavos
+  (`Payroll\Money`); statutory rates live in the `statutory_rates` table, not config.
+- **Time and SQL.** App timezone is `Asia/Manila`; frontend formats dates with `gymDate()` in
+  `src/lib/membership.ts`. Tests run on SQLite but production is MySQL, so SQL that differs between them goes
+  through `App\Support\Sql`.
 - **Frontend.** `src/App.tsx` holds all routes and guards (guest, signed-in, first password, admin, gym member).
   `src/components/ui/` is coss UI (Base UI + Tailwind v4); reuse it before writing new components. `@/` maps to `src/`.
+  Each area has `src/lib/<area>.ts` (response types and display helpers, e.g. `payroll.ts`, `inventory.ts`) used by `src/pages/gym/*`.
 
 ## Rules
 
