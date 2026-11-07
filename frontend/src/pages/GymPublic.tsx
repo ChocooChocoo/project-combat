@@ -278,6 +278,8 @@ export default function GymPublic() {
   const services = gym.services
   const plans = gym.plans
   const coaches = gym.coaches
+  const todayKey = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][new Date().getDay()]
+  const policyParagraphs = gym.policies ? gym.policies.split(/\n{2,}/).filter(Boolean) : []
 
   const openGallery = (service: PublicService, index: number) => {
     const images = serviceImages(service)
@@ -290,14 +292,14 @@ export default function GymPublic() {
       <BrandBar signedIn />
 
       <PageHeader
-        title={gym.name}
+        title={<span className="text-2xl sm:text-3xl">{gym.name}</span>}
+        meta={
+          gym.badge && (
+            <Badge variant={gym.tier === 2 ? 'success' : 'info'}>{gym.badge}</Badge>
+          )
+        }
         description={
           <div className="flex flex-col gap-2">
-            {gym.badge && (
-              <Badge className="w-fit" variant={gym.tier === 2 ? 'success' : 'info'}>
-                {gym.badge}
-              </Badge>
-            )}
             <span className="flex items-start gap-1.5">
               <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden />
               {address || 'Address not listed'}
@@ -340,33 +342,53 @@ export default function GymPublic() {
       />
 
       {(gym.disciplines.length > 0 || gym.activity_types.length > 0) && (
-        <div className="flex flex-wrap gap-2">
-          {gym.disciplines.map((discipline) => (
-            <Badge key={discipline} variant="outline">
-              {DISCIPLINE_LABELS[discipline] ?? labelKey(discipline)}
-            </Badge>
-          ))}
-          {gym.activity_types.map((activity) => (
-            <Badge key={activity} variant="secondary">
-              {ACTIVITY_LABELS[activity] ?? labelKey(activity)}
-            </Badge>
-          ))}
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:gap-x-8">
+          {gym.disciplines.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-muted-foreground text-xs">Disciplines</span>
+              {gym.disciplines.map((discipline) => (
+                <Badge key={discipline} variant="outline">
+                  {DISCIPLINE_LABELS[discipline] ?? labelKey(discipline)}
+                </Badge>
+              ))}
+            </div>
+          )}
+          {gym.activity_types.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-muted-foreground text-xs">Activities</span>
+              {gym.activity_types.map((activity) => (
+                <Badge key={activity} variant="secondary">
+                  {ACTIVITY_LABELS[activity] ?? labelKey(activity)}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid items-start gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle render={<h2 />}>Opening hours</CardTitle>
             <CardDescription>When the gym is open during the week.</CardDescription>
           </CardHeader>
           <CardPanel className="pt-2">
-            <dl className="divide-y rounded-lg border">
+            <dl className="divide-y">
               {DAYS.map((day) => {
                 const hours = gym.operating_hours[day.key]
+                const isToday = day.key === todayKey
                 return (
-                  <div key={day.key} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
-                    <dt className="font-medium">{day.label}</dt>
+                  <div
+                    className={cn(
+                      'flex items-center justify-between gap-3 px-1 py-2.5 text-sm',
+                      isToday && 'rounded-md bg-accent',
+                    )}
+                    key={day.key}
+                  >
+                    <dt className="flex items-center gap-2 font-medium">
+                      {day.label}
+                      {isToday && <span className="font-normal text-muted-foreground text-xs">Today</span>}
+                    </dt>
                     <dd className={cn('tabular-nums', !hours && 'text-muted-foreground')}>
                       {hours ? `${timeLabel(hours.open)} – ${timeLabel(hours.close)}` : 'Closed'}
                     </dd>
@@ -384,8 +406,14 @@ export default function GymPublic() {
               <CardDescription>House rules and what members agree to.</CardDescription>
             </CardHeader>
             <CardPanel className="pt-2">
-              {gym.policies ? (
-                <p className="whitespace-pre-line text-sm leading-relaxed">{gym.policies}</p>
+              {policyParagraphs.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {policyParagraphs.map((paragraph, index) => (
+                    <p className="whitespace-pre-line text-sm leading-relaxed" key={`${index}-${paragraph.slice(0, 24)}`}>
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
               ) : (
                 <p className="text-muted-foreground text-sm">The gym has not published its policies yet.</p>
               )}
@@ -399,13 +427,14 @@ export default function GymPublic() {
             </CardHeader>
             <CardPanel className="pt-2">
               {gym.facilities.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
+                <ul className="grid gap-2 sm:grid-cols-2">
                   {gym.facilities.map((facility) => (
-                    <Badge key={facility} variant="outline">
+                    <li className="flex items-start gap-2 text-sm" key={facility}>
+                      <Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
                       {facility}
-                    </Badge>
+                    </li>
                   ))}
-                </div>
+                </ul>
               ) : (
                 <p className="text-muted-foreground text-sm">No facilities are listed yet.</p>
               )}

@@ -72,16 +72,26 @@ export function GymMap({
   const start = points[0] ?? MANILA
 
   return (
-    <div className={cn('isolate h-72 overflow-hidden rounded-xl border sm:h-96', className)} role="region" aria-label="Gyms on a map">
-      <MapContainer center={start} zoom={points.length > 1 ? 10 : 13} className="size-full">
+    <div className={cn('isolate h-72 overflow-hidden rounded-xl border sm:h-96', className)}>
+      <MapContainer
+        center={start}
+        className="size-full"
+        ref={(map) => {
+          map?.getContainer().setAttribute(
+            'aria-label',
+            'Gyms on a map. Use the arrow keys to pan and plus or minus to zoom.',
+          )
+        }}
+        zoom={points.length > 1 ? 10 : 13}
+      >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <FitBounds boundsKey={boundsKey} />
         {gyms.map((gym) => (
-          <Marker key={gym.id} icon={pin} position={[gym.latitude, gym.longitude]}>
-            <Popup>
+          <Marker key={gym.id} alt={gym.name} icon={pin} position={[gym.latitude, gym.longitude]} title={gym.name}>
+            <Popup maxWidth={260}>
               <div className="flex flex-col gap-1">
                 <span className="font-semibold">{gym.name}</span>
                 <span className="text-muted-foreground text-xs">
