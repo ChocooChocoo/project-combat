@@ -77,6 +77,22 @@ class User extends Authenticatable
         return $this->hasOne(GymPreference::class);
     }
 
+    public function memberships(): HasMany
+    {
+        return $this->hasMany(Membership::class)->withoutGlobalScope('gym');
+    }
+
+    public function sessionBookings(): HasMany
+    {
+        return $this->hasMany(SessionBooking::class)->withoutGlobalScope('gym');
+    }
+
+    /** Whether this account still has member records, so its member screens stay reachable. */
+    public function hasMemberRecords(): bool
+    {
+        return $this->memberships()->exists() || $this->sessionBookings()->exists();
+    }
+
     public function hasGymRole(Gym|int $gym, GymPersonType ...$roles): bool
     {
         $gymId = $gym instanceof Gym ? $gym->id : $gym;

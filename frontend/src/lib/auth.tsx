@@ -15,6 +15,7 @@ export type User = {
   last_name: string
   email: string
   account_type: 'member' | 'owner'
+  has_member_records: boolean
   phone: string | null
   photo_url: string | null
   email_verified: boolean

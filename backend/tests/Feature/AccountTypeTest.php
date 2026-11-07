@@ -4,8 +4,10 @@ namespace Tests\Feature;
 
 use App\Enums\AccountType;
 use App\Models\Gym;
+use App\Models\MembershipPlan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -144,5 +146,45 @@ class AccountTypeTest extends TestCase
         $this->actingAs($owner)->getJson('/api/me')
             ->assertOk()
             ->assertJsonPath('data.account_type', 'owner');
+    }
+
+    public function test_me_reports_whether_member_records_exist(): void
+    {
+        $owner = User::factory()->owner()->create();
+        $member = User::factory()->create();
+
+        $this->actingAs($owner)->getJson('/api/me')
+            ->assertOk()
+            ->assertJsonPath('data.has_member_records', false);
+
+        // Members keep their links from the access type even with no records yet.
+        $this->actingAs($member)->getJson('/api/me')
+            ->assertOk()
+            ->assertJsonPath('data.has_member_records', false);
+
+        $gym = Gym::factory()->approved()->create();
+        $plan = MembershipPlan::factory()->forGym($gym)->create([
+            'published_at' => now(),
+            'total_fee' => 1500,
+            'max_freeze_days' => 30,
+        ]);
+
+        DB::table('memberships')->insert([
+            'gym_id' => $gym->id,
+            'user_id' => $owner->id,
+            'membership_plan_id' => $plan->id,
+            'status' => 'active',
+            'emergency_contacts' => json_encode([]),
+            'health_answers' => json_encode([]),
+            'waivers' => json_encode([]),
+            'signature_name' => 'Ana Reyes',
+            'signed_on' => now()->toDateString(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($owner)->getJson('/api/me')
+            ->assertOk()
+            ->assertJsonPath('data.has_member_records', true);
     }
 }
