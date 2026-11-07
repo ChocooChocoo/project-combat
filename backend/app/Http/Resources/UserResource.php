@@ -23,6 +23,7 @@ class UserResource extends JsonResource
             'is_platform_admin' => $this->is_platform_admin,
             'password_change_required' => $this->password_change_required,
             'account_type' => $this->account_type?->value,
+            'has_member_records' => $this->resource->hasMemberRecords(),
             'gyms' => $this->gyms->groupBy('id')->map(function ($rows) {
                 $gym = $rows->first();
                 $roles = $rows->pluck('pivot.role')->values();

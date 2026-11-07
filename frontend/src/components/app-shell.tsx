@@ -147,11 +147,11 @@ export function AppShell() {
   const approvedGyms = user?.gyms.filter((gym) => gym.status === 'approved') ?? []
   const currentGym = approvedGym(user, Number(pathname.match(/^\/gyms\/(\d+)(?:\/|$)/)?.[1]))
 
-  const general: Item[] = [
-    { to: '/', label: 'Home', icon: House, end: true },
-    { to: '/memberships', label: 'My memberships', icon: IdCard },
-    { to: '/bookings', label: 'My bookings', icon: CalendarDays },
-  ]
+  const general: Item[] = [{ to: '/', label: 'Home', icon: House, end: true }]
+  if (user?.account_type === 'member' || user?.has_member_records) {
+    general.push({ to: '/memberships', label: 'My memberships', icon: IdCard })
+    general.push({ to: '/bookings', label: 'My bookings', icon: CalendarDays })
+  }
   if (currentGym?.roles.includes('employee')) general.push(myWorkNav(currentGym.id))
   if (currentGym?.roles.includes('member')) general.push({ to: `/gyms/${currentGym.id}/my-record`, label: 'My record', icon: Medal })
   if (currentGym?.roles.includes('member')) general.push({ to: `/gyms/${currentGym.id}/sessions`, label: 'Sessions', icon: CalendarDays })
