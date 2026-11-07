@@ -139,7 +139,7 @@ function AccountMenu() {
 }
 
 /** Frame for every signed-in screen: a sidebar that shows only what this person's role allows. */
-export function AppShell() {
+export function AppShell({ children }: { children?: React.ReactNode }) {
   const { user } = useAuth()
   const { pathname } = useLocation()
   const { unread } = useNotifications()
@@ -211,7 +211,7 @@ export function AppShell() {
           </div>
         </header>
         <div className="safe-area-bottom mx-auto w-full min-w-0 max-w-6xl wrap-anywhere px-4 pt-6 [--safe-area-bottom-padding:4rem] md:px-8">
-          <Outlet />
+          {children ?? <Outlet />}
         </div>
       </SidebarInset>
     </SidebarProvider>

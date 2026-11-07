@@ -57,6 +57,24 @@ import Profile from '@/pages/Profile'
 import SignIn from '@/pages/SignIn'
 import SignUp from '@/pages/SignUp'
 import VerifyEmail from '@/pages/VerifyEmail'
+import Landing from '@/pages/Landing'
+
+/** The first frame while the server confirms who is signed in. */
+function BootSkeleton() {
+  return (
+    <div className="flex min-h-svh" aria-busy="true" aria-label="Loading">
+      <Skeleton className="hidden w-64 shrink-0 rounded-none md:block" />
+      <div className="flex flex-1 flex-col">
+        <Skeleton className="h-14 rounded-none" />
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 pt-6 md:px-8">
+          <Skeleton className="h-9 w-64" />
+          <Skeleton className="h-40" />
+          <Skeleton className="h-64" />
+        </div>
+      </div>
+    </div>
+  )
+}
 
 /**
  * Sends each person to the one place they are allowed to be right now.
@@ -66,21 +84,7 @@ function Guard({ need }: { need: 'guest' | 'signed-in' | 'first-password' }) {
   const { user, loading } = useAuth()
   const location = useLocation()
 
-  if (loading) {
-    return (
-      <div className="flex min-h-svh" aria-busy="true" aria-label="Loading">
-        <Skeleton className="hidden w-64 shrink-0 rounded-none md:block" />
-        <div className="flex flex-1 flex-col">
-          <Skeleton className="h-14 rounded-none" />
-          <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 pt-6 md:px-8">
-            <Skeleton className="h-9 w-64" />
-            <Skeleton className="h-40" />
-            <Skeleton className="h-64" />
-          </div>
-        </div>
-      </div>
-    )
-  }
+  if (loading) return <BootSkeleton />
 
   if (need === 'guest') return user ? <Navigate to={homePath(user)} replace /> : <Outlet />
   if (!user) return <Navigate to="/sign-in" replace state={{ from: location }} />
@@ -89,6 +93,22 @@ function Guard({ need }: { need: 'guest' | 'signed-in' | 'first-password' }) {
   if (!user.email_verified) return <Navigate to={`/verify-email?email=${encodeURIComponent(user.email)}`} replace />
 
   return <Outlet />
+}
+
+/** The root is the public landing page for visitors, and the discovery home once signed in. */
+function HomeGate() {
+  const { user, loading } = useAuth()
+
+  if (loading) return <BootSkeleton />
+  if (!user) return <Landing />
+  if (user.password_change_required) return <Navigate to="/first-password" replace />
+  if (!user.email_verified) return <Navigate to={`/verify-email?email=${encodeURIComponent(user.email)}`} replace />
+
+  return (
+    <AppShell>
+      <Home />
+    </AppShell>
+  )
 }
 
 /** Platform administrator screens. The backend refuses everyone else too (403). */
@@ -130,12 +150,12 @@ export default function App() {
       </Route>
       <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="/gyms/:gymId" element={<GymPublic />} />
+      <Route path="/" element={<HomeGate />} />
       <Route element={<Guard need="first-password" />}>
         <Route path="/first-password" element={<FirstPassword />} />
       </Route>
       <Route element={<Guard need="signed-in" />}>
         <Route element={<AppShell />}>
-          <Route path="/" element={<Home />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route element={<AccountOnly type="owner" />}>

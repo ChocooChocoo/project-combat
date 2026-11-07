@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/geist-mono";
+@import "@fontsource/anton/400.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -14,6 +15,7 @@
     --font-heading: 'Inter Variable', sans-serif;
     --font-mono: 'Geist Mono Variable', monospace;
     --font-sans: 'Inter Variable', sans-serif;
+    --font-display: 'Anton', sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
     --color-sidebar-primary: var(--sidebar-primary);

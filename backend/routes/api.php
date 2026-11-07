@@ -63,6 +63,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PayMongoWebhookController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicGymController;
+use App\Http\Controllers\PublicLandingController;
 use App\Http\Controllers\ReceivableController;
 use Illuminate\Support\Facades\Route;
 
@@ -79,6 +80,10 @@ Route::prefix('auth')->middleware('throttle:auth-public')->group(function () {
 
 // R-35: PayMongo confirms payments here. The signature is checked inside; no sign-in.
 Route::post('webhooks/paymongo', PayMongoWebhookController::class)->middleware('throttle:60,1');
+
+// The landing page is for visitors who have no account yet. It reads only approved
+// gyms and what they published, the same information the public gym page shows.
+Route::get('public/landing', PublicLandingController::class)->middleware('throttle:60,1');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
