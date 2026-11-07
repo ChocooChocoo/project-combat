@@ -4,7 +4,7 @@
 
 [00 - START HERE](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) · [05 - ROADMAP](../05%20-%20ROADMAP.md) · Previous: [PHASE 7](../phase-7/PHASE%207.md) · Next: [06 - SCREENS BY ROLE](../../06%20-%20SCREENS%20BY%20ROLE/06%20-%20SCREENS%20BY%20ROLE.md)
 
-**Status:** ⭕ Not started
+**Status:** ✅ Finished (7 November 2026)
 
 Citation forms are the same as in [02 - FINDINGS](../../02%20-%20FINDINGS/02%20-%20FINDINGS.md).
 
@@ -31,10 +31,10 @@ The platform-wide view for the administrator was built earlier, in R-19 in [PHAS
 
 | Waits for | Why | Status |
 |---|---|---|
-| R-54, R-55, R-48 in [PHASE 5](../phase-5/PHASE%205.md) | Attendance, progress and bookings to report on | ⭕ |
+| R-54, R-55, R-48 in [PHASE 5](../phase-5/PHASE%205.md) | Attendance, progress and bookings to report on | ✅ |
 | R-36, R-37, R-38, R-39 in [PHASE 4](../phase-4/PHASE%204.md) | Membership and athlete records to report on | ✅ |
-| R-56 to R-79 in [PHASE 6](../phase-6/PHASE%206.md) | Staff, money, customer, stock and purchasing records | ⭕ |
-| Q-15 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) | The forecasting method | ⭕ |
+| R-56 to R-79 in [PHASE 6](../phase-6/PHASE%206.md) | Staff, money, customer, stock and purchasing records | ✅ |
+| Q-15 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) | The forecasting method | ✅ Answered 7 November 2026 |
 
 ## What it unlocks
 
@@ -44,9 +44,9 @@ Nothing; this is the last phase. It answers the spec's research questions 3 and 
 
 | Status | How many |
 |---|---|
-| ✅ Finished | 0 |
+| ✅ Finished | 12 |
 | 🟨 Being worked on | 0 |
-| ⭕ Not started | 12 |
+| ⭕ Not started | 0 |
 | ❌ Blocked | 0 |
 | 🔵 Already there | 0 |
 | ⬜ Dropped | 0 |
@@ -65,14 +65,14 @@ Every item here can be viewed for a chosen date range and opened as a report (th
 
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
-| R-85 | Attendance dashboard | R-54 | ⭕ | Shows attendance rate per class, peak hours and days, and no-show rate |
-| R-86 | Membership activity dashboard | R-36 | ⭕ | Shows new, renewed, expired and cancelled memberships, and retention |
-| R-87 | Athlete performance dashboard | R-37, R-38, R-55 | ⭕ | Shows progress, promotions, competition results and training effectiveness |
-| R-88 | Service use dashboard | R-48 | ⭕ | Shows most and least booked services, class fill rate and coach use |
-| R-89 | Customer engagement dashboard | R-69, R-70, R-71 | ⭕ | Shows leads, conversion rate, feedback and concerns |
-| R-90 | Employee dashboard | R-56, R-62 | ⭕ | Shows employee attendance, workload and payroll summary |
-| R-91 | Money and revenue dashboard | R-63, R-64, R-65 | ⭕ | Shows revenue by service, income against expenses, and outstanding balances |
-| R-92 | Stock and purchasing dashboard | R-74, R-79 | ⭕ | Shows stock levels, items below minimum and purchase status |
+| R-85 | Attendance dashboard | R-54 | ✅ | Built and packet checks pass |
+| R-86 | Membership activity dashboard | R-36 | ✅ | Built and packet checks pass |
+| R-87 | Athlete performance dashboard | R-37, R-38, R-55 | ✅ | Built with accepted attendance-based coach context |
+| R-88 | Service use dashboard | R-48 | ✅ | Built and packet checks pass |
+| R-89 | Customer engagement dashboard | R-69, R-70, R-71 | ✅ | Built and packet checks pass |
+| R-90 | Employee dashboard | R-56, R-62 | ✅ | Payroll network/screen/print mask passed |
+| R-91 | Money and revenue dashboard | R-63, R-64, R-65 | ✅ | Selected-range finance and accepted current balance snapshot verified |
+| R-92 | Stock and purchasing dashboard | R-74, R-79 | ✅ | Built and packet checks pass |
 
 ### R-85: Attendance dashboard
 
@@ -88,8 +88,8 @@ Every item here can be viewed for a chosen date range and opened as a report (th
 
 **Done when:**
 
-- [ ] The three indicators show for any date range.
-- [ ] Numbers match the attendance records.
+- [x] The three indicators show for any date range.
+- [x] Numbers match the attendance records.
 
 **Still open:** nothing.
 
@@ -109,9 +109,9 @@ Every item here can be viewed for a chosen date range and opened as a report (th
 
 **Done when:**
 
-- [ ] The four counts and the retention rate show for any date range.
+- [x] The four counts and the retention rate show for any date range.
 
-**Still open:** how "retention rate" is worked out is not defined. The old landing page used approved applications divided by all decided ones, which is not retention (`backend/app/Http/Controllers/API/PublicStatsController.php`, lines 41 to 45). It should be decided during implementation planning.
+**Resolved, 7 November 2026:** retention is opening active/frozen event-state memberships minus distinct opening-cohort expirations/cancellations, divided by opening cohort. Renewal rate is renewal actions divided by renewals plus expirations. No activation-history guess from current status.
 
 **Old system:** members per plan (`DashboardController.php`).
 
@@ -129,9 +129,9 @@ Every item here can be viewed for a chosen date range and opened as a report (th
 
 **Done when:**
 
-- [ ] Promotions and competition results show per period and per class or coach.
+- [x] Promotions and competition results show per period and per coach context.
 
-**Still open:** "training effectiveness" is not defined in the spec. It should be decided during implementation planning.
+**Resolved, 7 November 2026:** effectiveness is distinct attendees with a progress entry divided by distinct attendees. User accepted "coach based on attendance": most-attended coach context, visibly inferred, not a causal claim; unassigned entries retained.
 
 **Old system:** none.
 
@@ -149,7 +149,7 @@ Every item here can be viewed for a chosen date range and opened as a report (th
 
 **Done when:**
 
-- [ ] All three indicators show for any date range.
+- [x] All three indicators show for any date range.
 
 **Still open:** nothing.
 
@@ -169,7 +169,7 @@ Every item here can be viewed for a chosen date range and opened as a report (th
 
 **Done when:**
 
-- [ ] Leads, conversion rate, and open and resolved concerns show for any date range.
+- [x] Leads, conversion rate, and open and resolved concerns show for any date range.
 
 **Still open:** nothing.
 
@@ -189,8 +189,8 @@ Every item here can be viewed for a chosen date range and opened as a report (th
 
 **Done when:**
 
-- [ ] All three indicators show for any date range.
-- [ ] Individual pay is visible only to people with payroll permission.
+- [x] All three indicators show for any date range.
+- [x] Individual pay is visible only with exactly `payroll.runs.view` (delegated browser gate PASS, 7 November 2026).
 
 **Still open:** nothing.
 
@@ -210,7 +210,9 @@ Every item here can be viewed for a chosen date range and opened as a report (th
 
 **Done when:**
 
-- [ ] All three indicators show for any date range, matching the finance records.
+- [x] Revenue and income against expenses use selected dates and match finance records. Outstanding balances match current receivables, labelled exactly "Outstanding balances as of today; not a historical balance" on screen and in print.
+
+**Accepted limitation, 7 November 2026:** user chose "Accept current snapshot (Recommended)". Snapshot uses server-today `as_of`, `basis=current_snapshot`, `historical_available=false`; changing selected dates does not reconstruct historical debt. No historical charge ledger or schema change is required.
 
 **Still open:** nothing.
 
@@ -230,7 +232,7 @@ Every item here can be viewed for a chosen date range and opened as a report (th
 
 **Done when:**
 
-- [ ] All three indicators show.
+- [x] All three indicators show. Stock is current and low means at or below minimum; purchasing uses selected creation/receipt dates and current stored status.
 
 **Still open:** nothing.
 
@@ -244,10 +246,10 @@ Every item here can be viewed for a chosen date range and opened as a report (th
 
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
-| R-93 | Trend analysis | R-85, R-86, R-91 | ⭕ | Attendance, membership and revenue trends show over months |
-| R-94 | Money forecast | R-91 | ⭕ | A forecast of income and expenses for coming months is shown with its method |
-| R-95 | Problem spotting | R-85, R-88 | ⭕ | The system points out problems such as falling class attendance or empty time slots |
-| R-96 | Income and sustainability measures | R-67, R-68, R-86, R-88 | ⭕ | The owner sees the five sustainability measures in one view |
+| R-93 | Trend analysis | R-85, R-86, R-91 | ✅ | Twelve-month window and actual source history verified |
+| R-94 | Money forecast | R-91 | ✅ | Forecast math, history and method verified |
+| R-95 | Problem spotting | R-85, R-88 | ✅ | Stored boundary tests and populated low-use browser evidence pass |
+| R-96 | Income and sustainability measures | R-67, R-68, R-86, R-88 | ✅ | Five measures reconcile and long report checked |
 
 ### R-93: Trend analysis
 
@@ -263,7 +265,7 @@ Every item here can be viewed for a chosen date range and opened as a report (th
 
 **Done when:**
 
-- [ ] Each of the three trends shows over at least the last 12 months, or as far back as records go.
+- [x] Each of the three trends shows over at least the last 12 months, with actual first-source dates and zero gaps, not invented history.
 
 **Still open:** nothing.
 
@@ -279,14 +281,14 @@ Every item here can be viewed for a chosen date range and opened as a report (th
 
 **Depends on:** R-91.
 
-**Blockers:** Q-15 (forecasting method).
+**Blockers:** none.
 
 **Done when:**
 
-- [ ] A forecast for the next few months is shown, with the method named on screen.
-- [ ] The forecast is worked out by the system from stored records.
+- [x] A three-month forecast is shown, with method and R² confidence (fit), not probability.
+- [x] Forecast is calculated server-side from up to 12 completed observed months; fewer than three uses "average, not enough history"; no history gives no projections. Incoming/outgoing clamp at zero, net may be negative.
 
-**Still open:** Q-15.
+**Still open:** nothing about method; Q-15 answered 7 November 2026.
 
 **Old system:** as above.
 
@@ -304,10 +306,10 @@ Every item here can be viewed for a chosen date range and opened as a report (th
 
 **Done when:**
 
-- [ ] A list of flagged problems shows, each with the numbers behind it.
-- [ ] At least falling class attendance and low-use time slots are detected.
+- [x] A list of flagged problems shows, each with the numbers behind it.
+- [x] Falling class attendance and low-use time slots are detected in stored tests. Fresh isolated browser fixture shows 100 sessions, 100/800 held seats and 12.5% mean fill.
 
-**Still open:** the exact thresholds for "falling" and "low use" are not stated. They should be decided during implementation planning.
+**Resolved thresholds:** latest four completed sessions versus previous four, drop at least 20 points and current below 60%; low-use slot at least three sessions with mean fill below 25%; high no-show at least five marked outcomes and rate at least 30%. Server config supplies thresholds and notes.
 
 **Old system:** simple rule-based tips on the owner's screen (`TrainingDashboard.vue`, around line 2293).
 
@@ -327,14 +329,14 @@ Every item here can be viewed for a chosen date range and opened as a report (th
 
 **Depends on:** R-67, R-68, R-86 and R-88. The cash-flow forecast also uses R-94.
 
-**Blockers:** Q-15 for the forecast part.
+**Blockers:** none.
 
 **Done when:**
 
-- [ ] All five measures show in one view for any period.
-- [ ] Each figure matches the finance, membership and training records.
+- [x] All five measures show in one view for any period.
+- [x] Figures reconcile to standalone finance, membership and training services. Budget is whole calendar month containing selected end; cash forecast uses cash-flow basis and its own completed-month window.
 
-**Still open:** Q-15.
+**Still open:** nothing about method; Q-15 answered 7 November 2026.
 
 **Old system:** none.
 
@@ -342,7 +344,18 @@ Every item here can be viewed for a chosen date range and opened as a report (th
 
 ## Phase blockers
 
-Q-15 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md).
+None. Q-15 is answered. Phase-wide acceptance is complete: the frozen 14-row acceptance table is met, including all twelve capabilities and both phase-level criteria. Browser role, state, payslip and print checks passed; independent validation is recorded in `.orchestration/phase-8-decision-support/07-validation.md`. Packet details: [8G](../../../implementation-plan/roadmap-phase-8/phase-8.md).
+
+## Build record, 7 November 2026
+
+All twelve views implemented read-only, with backend calculations and one active payload/report. No new migration, table, index, dependency, scheduled job or stored snapshot. Exact decision-support permission opens all views; individual pay uses the separate exact payroll permission.
+
+- Final backend full suite: `php artisan test`, exit 0, 595 tests, 27,884 assertions, 275,878 ms. Focused combined gate: 90 tests, 3,017 assertions, exit 0; includes two-gym/corrupt-link and all-GET read-only proofs.
+- Throwaway MySQL `combat_phase8_8g_20261107_01`: fresh migration/seed, permission sync and stock-count check exit 0; all twelve controller paths return 200 under `ONLY_FULL_GROUP_BY`; stored income equals report 96,400.00; Sunday/hour both zero. Database dropped. Development database and `.env` untouched.
+- Owner OpenCode browser: all twelve views, 360/390/768/1440px with no document overflow, date change and empty range; all twelve active reports generated after fixing shared print visibility specificity. Real sole-decision employee renders all twelve views; ordinary employee has no nav, denial state and API 403. Payroll mask cites parent's PASS report.
+- Fresh 8G-only SQLite fixture supplies 100 stored classes/results: attendance/athlete/sustainability PDFs have 9/9/12 nonblank pages, repeated headers and first/middle/last rows. Existing light/dark CSS classes tested, not a new theme toggle.
+- Final OpenCode browser close-out: pure payroll-only and front-desk roles have no decision nav, a denial state and API 403; owner/own payslip print matched 1,000/100/900 and owner-managed payslip matched 22,500/3,606.80/18,893.20; keyboard Print and Retry, invalid, empty, stale and basis-switch states passed; the five-role matrix passed.
+- Independent validation: `.orchestration/phase-8-decision-support/07-validation.md` records Phase 8 complete, 14/14 frozen rows met, with a quick confirmation of 60 tests / 1,027 assertions and no application-diff change.
 
 ## Phase is finished when
 

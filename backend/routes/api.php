@@ -15,6 +15,7 @@ use App\Http\Controllers\Gym\BudgetController;
 use App\Http\Controllers\Gym\CoachCalendarController;
 use App\Http\Controllers\Gym\CustomerController;
 use App\Http\Controllers\Gym\CustomerGroupController;
+use App\Http\Controllers\Gym\DecisionSupportController;
 use App\Http\Controllers\Gym\EmployeeProfileController;
 use App\Http\Controllers\Gym\ExpenseController;
 use App\Http\Controllers\Gym\FinanceReportController;
@@ -164,6 +165,19 @@ Route::middleware('auth:sanctum')->group(function () {
 
             // Everything inside a gym goes through the gym check first (R-09).
             Route::prefix('gyms/{gym}')->middleware('gym')->group(function () {
+                Route::get('decision-support/options', [DecisionSupportController::class, 'options'])->middleware('permission:decision_support.general.view');
+                Route::get('decision-support/attendance', [DecisionSupportController::class, 'attendance'])->middleware('permission:decision_support.general.view');
+                Route::get('decision-support/athletes', [DecisionSupportController::class, 'athletes'])->middleware('permission:decision_support.general.view');
+                Route::get('decision-support/services', [DecisionSupportController::class, 'services'])->middleware('permission:decision_support.general.view');
+                Route::get('decision-support/memberships', [DecisionSupportController::class, 'memberships'])->middleware('permission:decision_support.general.view');
+                Route::get('decision-support/customers', [DecisionSupportController::class, 'customers'])->middleware('permission:decision_support.general.view');
+                Route::get('decision-support/employees', [DecisionSupportController::class, 'employees'])->middleware('permission:decision_support.general.view');
+                Route::get('decision-support/money', [DecisionSupportController::class, 'money'])->middleware('permission:decision_support.general.view');
+                Route::get('decision-support/stock', [DecisionSupportController::class, 'stock'])->middleware('permission:decision_support.general.view');
+                Route::get('decision-support/trends', [DecisionSupportController::class, 'trends'])->middleware('permission:decision_support.general.view');
+                Route::get('decision-support/forecast', [DecisionSupportController::class, 'forecast'])->middleware('permission:decision_support.general.view');
+                Route::get('decision-support/problems', [DecisionSupportController::class, 'problems'])->middleware('permission:decision_support.general.view');
+                Route::get('decision-support/sustainability', [DecisionSupportController::class, 'sustainability'])->middleware('permission:decision_support.general.view');
                 Route::get('announcements/options', [AnnouncementController::class, 'options'])->middleware('permission:announcements.general.manage');
                 Route::get('announcements', [AnnouncementController::class, 'index'])->middleware('permission:announcements.general.view');
                 Route::post('announcements', [AnnouncementController::class, 'store'])->middleware('permission:announcements.general.manage');

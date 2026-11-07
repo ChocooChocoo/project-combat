@@ -25,6 +25,7 @@ import GymAttendance from '@/pages/gym/GymAttendance'
 import CustomerRecord from '@/pages/gym/CustomerRecord'
 import GymCustomers from '@/pages/gym/GymCustomers'
 import GymFinance from '@/pages/gym/GymFinance'
+import GymDecisionSupport from '@/pages/gym/GymDecisionSupport'
 import GymLeave from '@/pages/gym/GymLeave'
 import GymMembers from '@/pages/gym/GymMembers'
 import GymPayments from '@/pages/gym/GymPayments'
@@ -199,6 +200,7 @@ export default function App() {
               <Route path="customers" element={<GymCustomers />} />
               <Route path="customers/:customerId" element={<CustomerRecord />} />
               <Route path="finance" element={<GymFinance />} />
+              <Route path="decision-support" element={<GymDecisionSupport />} />
               <Route path="payments" element={<GymPayments />} />
               <Route path="stock" element={<GymStock />} />
               <Route path="purchasing" element={<GymPurchasing />} />
