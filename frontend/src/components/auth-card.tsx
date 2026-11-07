@@ -1,3 +1,6 @@
+import { ArrowLeft } from 'lucide-react'
+import { Link } from 'react-router'
+import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardPanel, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
@@ -17,13 +20,18 @@ export function AuthCard({ title, description, children, wide = false }: { title
             </ul>
           </div>
         </aside>
-        <Card className={cn('mx-auto w-full min-w-0', wide ? 'max-w-lg' : 'max-w-sm')}>
-          <CardHeader className="gap-3">
-            <CardTitle render={<h1 />} className="text-2xl leading-tight tracking-tight sm:text-3xl">{title}</CardTitle>
-            {description && <CardDescription className="leading-relaxed">{description}</CardDescription>}
-          </CardHeader>
-          <CardPanel className="[&_input:not([type=radio])]:min-h-11">{children}</CardPanel>
-        </Card>
+        <div className={cn('mx-auto flex w-full min-w-0 flex-col gap-3', wide ? 'max-w-lg' : 'max-w-sm')}>
+          <Button variant="ghost" size="sm" className="-ml-2 self-start text-muted-foreground" render={<Link to="/" />}>
+            <ArrowLeft aria-hidden /> Back to home
+          </Button>
+          <Card className="w-full min-w-0">
+            <CardHeader className="gap-3">
+              <CardTitle render={<h1 />} className="text-2xl leading-tight tracking-tight sm:text-3xl">{title}</CardTitle>
+              {description && <CardDescription className="leading-relaxed">{description}</CardDescription>}
+            </CardHeader>
+            <CardPanel className="[&_input:not([type=radio])]:min-h-11">{children}</CardPanel>
+          </Card>
+        </div>
       </div>
     </main>
   )
