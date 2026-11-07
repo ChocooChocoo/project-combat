@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { PageHeader } from '@/components/page-header'
 import { CheckInCodes } from '@/components/schedule/check-in-code'
@@ -6,30 +6,34 @@ import { BookingBadge, BookingEmpty, BookingError, BookingLoading } from '@/comp
 import { TextField } from '@/components/text-field'
 import { Button } from '@/components/ui/button'
 import { api, ApiError } from '@/lib/api'
+import { usePolling } from '@/hooks/use-polling'
+import { useAuth } from '@/lib/auth'
 import { dayLabel, shiftDay, type Timetable as TimetableData } from '@/lib/bookings'
 import { dateKey, sessionFee, sessionTime } from '@/lib/sessions'
 
 /** R-47, R-48: upcoming sessions, grouped by the gym's local date. */
 export default function Timetable() {
   const { gymId } = useParams()
+  const { user } = useAuth()
   const [from, setFrom] = useState(() => dateKey(new Date()))
   const [to, setTo] = useState(() => shiftDay(dateKey(new Date()), 13))
   const [data, setData] = useState<TimetableData | null>(null)
   const [error, setError] = useState('')
   const [version, setVersion] = useState(0)
-  useEffect(() => {
-    let live = true
-    setData(null)
-    setError('')
+  const load = useCallback(async (silent: boolean, isCurrent: () => boolean) => {
+    if (!silent) setError('')
     if (!from || !to) {
-      setError('Choose both dates.')
+      if (!silent) setError('Choose both dates.')
       return
     }
-    api<TimetableData>(`/gyms/${gymId}/timetable?from=${from}&to=${to}`)
-      .then((result) => live && setData(result))
-      .catch((failure) => live && setError(failure instanceof ApiError ? failure.message : 'The timetable could not be loaded.'))
-    return () => { live = false }
-  }, [gymId, from, to, version])
+    try {
+      const result = await api<TimetableData>(`/gyms/${gymId}/timetable?from=${from}&to=${to}`)
+      if (isCurrent()) { setData(result); setError('') }
+    } catch (failure) {
+      if (isCurrent() && !silent) setError(failure instanceof ApiError ? failure.message : 'The timetable could not be loaded.')
+    }
+  }, [gymId, from, to])
+  usePolling(load, 15_000, Boolean(user && gymId), version)
   const days = [...new Set((data?.sessions ?? []).map((session) => session.starts_at.slice(0, 10)))]
   return (
     <div className="flex flex-col gap-6">

@@ -27,7 +27,7 @@ class GymReviewTest extends TestCase
         Storage::fake('local');
         $this->admin = User::factory()->create();
         $this->admin->forceFill(['is_platform_admin' => true])->save();
-        $this->applicant = User::factory()->create();
+        $this->applicant = User::factory()->owner()->create();
     }
 
     private function sent(int $tier = 1): Gym

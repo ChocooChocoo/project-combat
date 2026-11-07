@@ -53,7 +53,7 @@ Each level sees only its own screens. Owners, employees and athletes stay inside
 | S-03 | Review an application | The gym profile and every document side by side; the checklist; approve, reject with a reason, or return with items to fix | Back to S-02 | D-16 to D-18, R-16 and R-17 |
 | S-04 | Send a platform notice | Message and audience | Back to S-01 | D-74, R-81 |
 
-S-04 cannot be finished until Q-23 (what platform notices are for) is answered. An administrator member-ID screen like the old one is not listed; it waits on Q-04.
+An administrator member-ID screen like the old one is not listed; it waits on Q-04.
 
 ## Platform user
 
@@ -109,6 +109,8 @@ The open questions that used to gate these screens are now settled except one:
 - S-36's forecast still waits on Q-15, which belongs to Phase 8.
 
 **Built in Phase 6 (6 November 2026):** S-28 Staff attendance and overtime, S-29 Payroll, S-31 Finance (including payables, budgets and reports), S-32 Customers, S-33 Stock and S-34 Purchasing. S-30 Payments desk also gained the income view, and S-38 My work gained the released Payslips tab. Q-13, Q-14, Q-21 and the old-system questions are answered or dropped. Browser verification of these screens was completed on 6 November 2026 at desktop and phone width with owner, HR, Finance, Front Desk, Operations Manager, Coach, employee and member roles; the residual edge checks are listed in Packet 6H.
+
+**Built in Phase 7 (7 November 2026):** S-04 Send a platform notice, S-15 Notifications and S-35 Announcements. The administrator can send notices to owners of approved gyms or all verified users; every signed-in person has a paginated, live inbox; and permitted gym staff can send announcements and events to all members, one class occurrence or a customer group.
 
 ## Employee, coaches included
 

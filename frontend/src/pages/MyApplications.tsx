@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 import { StatusBadge } from '@/components/application-summary'
 import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
+import { Card, CardHeader, CardPanel, CardTitle } from '@/components/ui/card'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -65,7 +66,40 @@ export default function MyApplications() {
           </EmptyContent>
         </Empty>
       ) : (
-        <div className="overflow-x-auto">
+        <>
+        <ul className="flex flex-col gap-3 md:hidden">
+          {rows.map((row) => (
+            <li key={row.id} className="min-w-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="min-w-0 wrap-anywhere">
+                    <Link
+                      className="flex min-h-11 items-center underline-offset-4 hover:underline"
+                      to={editable(row.status) ? `/applications/${row.id}/edit` : `/applications/${row.id}`}
+                    >
+                      {row.name}
+                    </Link>
+                  </CardTitle>
+                  <StatusBadge status={row.status} />
+                </CardHeader>
+                <CardPanel className="flex flex-col gap-3 text-sm">
+                  <p className="text-muted-foreground">{NEXT[row.status]}</p>
+                  <dl className="grid grid-cols-2 gap-3">
+                    <div>
+                      <dt className="text-muted-foreground">Tier</dt>
+                      <dd>{row.tier ? `Tier ${row.tier}` : 'Not chosen'}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-muted-foreground">Sent</dt>
+                      <dd>{row.submitted_at ? new Date(row.submitted_at).toLocaleDateString() : 'Not sent'}</dd>
+                    </div>
+                  </dl>
+                </CardPanel>
+              </Card>
+            </li>
+          ))}
+        </ul>
+        <div className="hidden overflow-x-auto md:block">
           <Table variant="card">
             <TableHeader>
               <TableRow>
@@ -100,6 +134,7 @@ export default function MyApplications() {
             </TableBody>
           </Table>
         </div>
+        </>
       )}
     </div>
   )

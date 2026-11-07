@@ -3,10 +3,12 @@
 use App\Http\Controllers\Admin\AdminPermissionController;
 use App\Http\Controllers\Admin\GymReviewController;
 use App\Http\Controllers\Admin\PlatformStatsController;
+use App\Http\Controllers\Admin\PlatformNoticeController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DiscoveryController;
 use App\Http\Controllers\GeoController;
 use App\Http\Controllers\Gym\AthleteRecordController;
+use App\Http\Controllers\Gym\AnnouncementController;
 use App\Http\Controllers\Gym\AttendanceController;
 use App\Http\Controllers\Gym\BookingController;
 use App\Http\Controllers\Gym\BudgetController;
@@ -90,6 +92,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::middleware('verified.email')->group(function () {
             Route::get('notifications', [NotificationController::class, 'index']);
+            Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
             Route::post('notifications/read-all', [NotificationController::class, 'markAllRead']);
             Route::delete('notifications/read', [NotificationController::class, 'clearRead']);
             Route::post('notifications/{id}/read', [NotificationController::class, 'markRead']);
@@ -97,7 +100,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('permissions/catalog', [GymRoleController::class, 'catalog']);
 
             // Owner applications (R-11 to R-15). The policy limits each one to its applicant and the administrator.
-            Route::prefix('gym-applications')->group(function () {
+            Route::prefix('gym-applications')->middleware('account:owner')->group(function () {
                 Route::get('requirements', [GymApplicationController::class, 'requirements']);
                 Route::get('/', [GymApplicationController::class, 'index']);
                 Route::post('/', [GymApplicationController::class, 'store']);
@@ -111,17 +114,20 @@ Route::middleware('auth:sanctum')->group(function () {
 
             // Discovery (R-30, R-97, R-98). Recommendations must come before the gym id route.
             Route::get('gyms', [PublicGymController::class, 'index']);
-            Route::get('gyms/recommendations', [DiscoveryController::class, 'recommendations']);
+            Route::get('gyms/recommendations', [DiscoveryController::class, 'recommendations'])->middleware('account:member');
             Route::get('gyms/{gym}', [PublicGymController::class, 'show'])->whereNumber('gym');
             Route::get('discovery/options', [DiscoveryController::class, 'options']);
             Route::get('geo/search', [GeoController::class, 'search'])->middleware('throttle:geo');
-            Route::get('gym-preferences', [GymPreferenceController::class, 'show']);
-            Route::put('gym-preferences', [GymPreferenceController::class, 'update']);
+            Route::get('gym-preferences', [GymPreferenceController::class, 'show'])->middleware('account:member');
+            Route::put('gym-preferences', [GymPreferenceController::class, 'update'])->middleware('account:member');
 
             // Joining a gym (R-31, R-32) and the person's own memberships and online payment (R-35, S-39).
             // These sit outside the gym check: an applicant does not belong to the gym yet.
+            // The form metadata is readable by any signed-in account: owners use the same health
+            // questions when reviewing applications and member records. Only starting an
+            // application below stays member-only.
             Route::get('membership-form', [MembershipApplicationController::class, 'form']);
-            Route::post('gyms/{gym}/membership-applications', [MembershipApplicationController::class, 'store'])->whereNumber('gym');
+            Route::post('gyms/{gym}/membership-applications', [MembershipApplicationController::class, 'store'])->whereNumber('gym')->middleware('account:member');
             Route::get('my-memberships', [MyMembershipController::class, 'index']);
             Route::get('my-balance', [ReceivableController::class, 'mine']);
             Route::get('my-bookings', [MyBookingController::class, 'index']);
@@ -137,6 +143,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
             // Platform administrator: review applications and platform numbers (R-16 to R-19).
             Route::prefix('admin')->middleware('admin')->group(function () {
+                Route::get('notices', [PlatformNoticeController::class, 'index']);
+                Route::post('notices', [PlatformNoticeController::class, 'store']);
                 Route::get('permissions', [AdminPermissionController::class, 'index']);
                 Route::post('permissions', [AdminPermissionController::class, 'store']);
                 Route::put('permissions/{permission}', [AdminPermissionController::class, 'update']);
@@ -151,6 +159,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
             // Everything inside a gym goes through the gym check first (R-09).
             Route::prefix('gyms/{gym}')->middleware('gym')->group(function () {
+                Route::get('announcements/options', [AnnouncementController::class, 'options'])->middleware('permission:announcements.general.manage');
+                Route::get('announcements', [AnnouncementController::class, 'index'])->middleware('permission:announcements.general.view');
+                Route::post('announcements', [AnnouncementController::class, 'store'])->middleware('permission:announcements.general.manage');
+
                 // Owner-made roles (R-08). Viewing needs HR view; changing needs HR manage.
                 Route::middleware('permission:hr.roles.view')->group(function () {
                     Route::get('roles', [GymRoleController::class, 'index']);

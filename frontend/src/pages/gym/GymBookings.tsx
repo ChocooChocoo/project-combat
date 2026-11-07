@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useParams } from 'react-router'
 import { PageHeader } from '@/components/page-header'
 import { BookingActionDialog, BookingEmpty, BookingError, BookingLoading, StaffBookingList, type BookingAction } from '@/components/schedule/booking-parts'
 import { api, ApiError } from '@/lib/api'
+import { usePolling } from '@/hooks/use-polling'
 import { useAuth } from '@/lib/auth'
 import type { StaffBooking } from '@/lib/bookings'
 import { approvedGym, can } from '@/lib/gym-access'
@@ -17,16 +18,16 @@ export default function GymBookings() {
   const [error, setError] = useState('')
   const [version, setVersion] = useState(0)
   const [target, setTarget] = useState<BookingAction | null>(null)
-  useEffect(() => {
-    if (!canView) return
-    let live = true
-    setBookings(null)
-    setError('')
-    api<{ bookings: StaffBooking[] }>(`/gyms/${gymId}/bookings?status=requested`)
-      .then((result) => live && setBookings(result.bookings))
-      .catch((failure) => live && setError(failure instanceof ApiError ? failure.message : 'Booking requests could not be loaded.'))
-    return () => { live = false }
-  }, [gymId, canView, version])
+  const load = useCallback(async (silent: boolean, isCurrent: () => boolean) => {
+    if (!silent) setError('')
+    try {
+      const result = await api<{ bookings: StaffBooking[] }>(`/gyms/${gymId}/bookings?status=requested`)
+      if (isCurrent()) { setBookings(result.bookings); setError('') }
+    } catch (failure) {
+      if (isCurrent() && !silent) setError(failure instanceof ApiError ? failure.message : 'Booking requests could not be loaded.')
+    }
+  }, [gymId])
+  usePolling(load, 15_000, Boolean(user && canView), version)
   if (!gym) return null
   if (!canView) return <BookingEmpty title="Bookings are not available" description="Your role does not include training access for this gym." />
   return (

@@ -217,6 +217,7 @@ export type WorkspaceSetup = {
   booking_approval: boolean
   late_grace_minutes: number
   cancel_cutoff_hours: number
+  session_reminder_minutes: number
   services: string[]
   facilities: string[]
   options?: WorkspaceOptions

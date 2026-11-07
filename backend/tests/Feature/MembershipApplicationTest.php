@@ -74,8 +74,10 @@ class MembershipApplicationTest extends TestCase
         $this->actingAs($this->applicant)->postJson($this->url('membership-applications'), $this->applicationPayload())
             ->assertJsonValidationErrors(['plan_id']);
 
+        // Gym Owner accounts cannot join a gym at all, so the type check answers before "you own this gym".
         $this->actingAs($this->owner)->postJson($this->url('membership-applications'), $this->applicationPayload())
-            ->assertStatus(422);
+            ->assertForbidden()
+            ->assertJsonPath('message', 'Only Gym Member accounts can do this.');
     }
 
     public function test_the_medical_file_is_private_and_health_answers_need_health_permission(): void

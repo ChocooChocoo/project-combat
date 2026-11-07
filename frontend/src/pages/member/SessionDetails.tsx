@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { PageHeader } from '@/components/page-header'
 import { BookingActionDialog, BookingBadge, BookingError, BookingLoading, SessionFacts, type BookingAction } from '@/components/schedule/booking-parts'
@@ -6,26 +6,30 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { toastManager } from '@/components/ui/toast'
 import { api, ApiError } from '@/lib/api'
+import { usePolling } from '@/hooks/use-polling'
+import { useAuth } from '@/lib/auth'
 import { bookingPaymentLabel, liveBooking, type SessionDetails as Details } from '@/lib/bookings'
 
 /** R-47 to R-50: full details before booking, then the current booking and cancellation cut-off. */
 export default function SessionDetails() {
   const { gymId, sessionId } = useParams()
+  const { user } = useAuth()
   const [session, setSession] = useState<Details | null>(null)
   const [error, setError] = useState('')
   const [actionError, setActionError] = useState('')
   const [version, setVersion] = useState(0)
   const [busy, setBusy] = useState(false)
   const [target, setTarget] = useState<BookingAction | null>(null)
-  useEffect(() => {
-    let live = true
-    setSession(null)
-    setError('')
-    api<{ session: Details }>(`/gyms/${gymId}/timetable/${sessionId}`)
-      .then((result) => live && setSession(result.session))
-      .catch((failure) => live && setError(failure instanceof ApiError ? failure.message : 'The session could not be loaded.'))
-    return () => { live = false }
-  }, [gymId, sessionId, version])
+  const load = useCallback(async (silent: boolean, isCurrent: () => boolean) => {
+    if (!silent) setError('')
+    try {
+      const result = await api<{ session: Details }>(`/gyms/${gymId}/timetable/${sessionId}`)
+      if (isCurrent()) { setSession(result.session); setError('') }
+    } catch (failure) {
+      if (isCurrent() && !silent) setError(failure instanceof ApiError ? failure.message : 'The session could not be loaded.')
+    }
+  }, [gymId, sessionId])
+  usePolling(load, 15_000, Boolean(user && gymId && sessionId), version)
   async function book() {
     setBusy(true)
     setActionError('')

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { PageHeader } from '@/components/page-header'
 import { BookingActionDialog, BookingEmpty, BookingError, BookingLoading, SessionFacts, StaffBookingList, type BookingAction } from '@/components/schedule/booking-parts'
@@ -11,6 +11,7 @@ import { SessionAttendance, SessionNoteDialog } from '@/components/schedule/sess
 import { ProgressNotes } from '@/components/schedule/attendance-list'
 import type { ProgressNote } from '@/lib/attendance'
 import { api, ApiError } from '@/lib/api'
+import { usePolling } from '@/hooks/use-polling'
 import { useAuth } from '@/lib/auth'
 import type { SessionDetails, StaffBooking } from '@/lib/bookings'
 import { approvedGym, can } from '@/lib/gym-access'
@@ -29,19 +30,24 @@ export default function GymSession() {
   const [cancelling, setCancelling] = useState(false)
   const [paying, setPaying] = useState<StaffBooking | null>(null)
   const [noteTarget, setNoteTarget] = useState<{ userId: number | null; name: string } | null>(null)
-  useEffect(() => {
-    if (!canView) return
-    let live = true
-    setData(null)
-    setError('')
-    Promise.all([
-      api<{ session: SessionDetails }>(`/gyms/${gymId}/timetable/${sessionId}`),
-      api<{ bookings: StaffBooking[]; notes: ProgressNote[] }>(`/gyms/${gymId}/sessions/${sessionId}/roster`),
-    ])
-      .then(([details, roster]) => live && setData({ session: details.session, bookings: roster.bookings, notes: roster.notes }))
-      .catch((failure) => live && setError(failure instanceof ApiError ? failure.message : 'The session could not be loaded.'))
-    return () => { live = false }
-  }, [gymId, sessionId, canView, version])
+  const load = useCallback(async (silent: boolean, isCurrent: () => boolean) => {
+    if (!silent) setError('')
+    try {
+      const results = await Promise.allSettled([
+        api<{ session: SessionDetails }>(`/gyms/${gymId}/timetable/${sessionId}`),
+        api<{ bookings: StaffBooking[]; notes: ProgressNote[] }>(`/gyms/${gymId}/sessions/${sessionId}/roster`),
+      ])
+      const [detailsResult, rosterResult] = results
+      if (detailsResult.status === 'rejected') throw detailsResult.reason
+      if (rosterResult.status === 'rejected') throw rosterResult.reason
+      const details = detailsResult.value
+      const roster = rosterResult.value
+      if (isCurrent()) { setData({ session: details.session, bookings: roster.bookings, notes: roster.notes }); setError('') }
+    } catch (failure) {
+      if (isCurrent() && !silent) setError(failure instanceof ApiError ? failure.message : 'The session could not be loaded.')
+    }
+  }, [gymId, sessionId])
+  usePolling(load, 15_000, Boolean(user && canView), version)
   if (!gym) return null
   if (!canView) return <BookingEmpty title="Session roster is private" description="Your role does not include training access for this gym." />
   return (

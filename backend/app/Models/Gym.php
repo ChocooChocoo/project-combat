@@ -19,7 +19,7 @@ use Illuminate\Support\Collection;
     'name', 'tier', 'address_line', 'barangay', 'city', 'province', 'latitude', 'longitude',
     'contact_phone', 'contact_email', 'operating_hours', 'disciplines', 'services', 'facilities',
     'activity_types', 'working_days', 'policies',
-    'booking_approval', 'late_grace_minutes', 'cancel_cutoff_hours',
+    'booking_approval', 'late_grace_minutes', 'cancel_cutoff_hours', 'session_reminder_minutes',
     'payroll_frequency', 'payroll_steps', 'staff_grace_minutes', 'overtime_min_minutes',
 ])]
 #[UsePolicy(GymApplicationPolicy::class)]
@@ -74,6 +74,7 @@ class Gym extends Model
             'booking_approval' => 'boolean',
             'late_grace_minutes' => 'integer',
             'cancel_cutoff_hours' => 'integer',
+            'session_reminder_minutes' => 'integer',
             'payroll_steps' => 'array',
             'staff_grace_minutes' => 'integer',
             'overtime_min_minutes' => 'integer',

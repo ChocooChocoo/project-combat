@@ -25,7 +25,7 @@ trait MembershipSetup
     protected function setUpMembershipGym(array $plan = []): void
     {
         $this->gym = Gym::factory()->approved()->create();
-        $this->owner = User::factory()->create();
+        $this->owner = User::factory()->owner()->create();
         $this->applicant = User::factory()->create(['first_name' => 'Ana', 'last_name' => 'Cruz']);
         $this->gym->addPerson($this->owner, GymPersonType::Owner);
 

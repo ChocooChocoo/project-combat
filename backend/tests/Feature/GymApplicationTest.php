@@ -21,7 +21,7 @@ class GymApplicationTest extends TestCase
     {
         parent::setUp();
         Storage::fake('local');
-        $this->applicant = User::factory()->create();
+        $this->applicant = User::factory()->owner()->create();
     }
 
     private function application(int $tier = 1): Gym
@@ -51,7 +51,7 @@ class GymApplicationTest extends TestCase
 
     public function test_only_a_confirmed_user_can_apply(): void
     {
-        $unconfirmed = User::factory()->unverified()->create();
+        $unconfirmed = User::factory()->owner()->unverified()->create();
         $this->actingAs($unconfirmed)->postJson('/api/gym-applications', ['name' => 'Iron Gym'])->assertForbidden();
 
         $this->actingAs($this->applicant)->postJson('/api/gym-applications', ['name' => 'Iron Gym', 'tier' => 1])
@@ -138,8 +138,8 @@ class GymApplicationTest extends TestCase
         $url = "/api/gym-applications/{$gym->id}/documents/{$id}";
 
         $this->actingAs($this->applicant)->get($url)->assertOk();
-        $this->actingAs(User::factory()->create())->getJson($url)->assertNotFound();
-        $this->actingAs(User::factory()->create())->getJson("/api/gym-applications/{$gym->id}")->assertNotFound();
+        $this->actingAs(User::factory()->owner()->create())->getJson($url)->assertNotFound();
+        $this->actingAs(User::factory()->owner()->create())->getJson("/api/gym-applications/{$gym->id}")->assertNotFound();
 
         $admin = User::factory()->create();
         $admin->forceFill(['is_platform_admin' => true])->save();
@@ -167,7 +167,7 @@ class GymApplicationTest extends TestCase
         $document = $this->upload($gym, 'dti')->json('document');
         $path = $gym->documents()->first()->path;
 
-        $this->actingAs(User::factory()->create())->deleteJson("/api/gym-applications/{$gym->id}/documents/{$document['id']}")->assertNotFound();
+        $this->actingAs(User::factory()->owner()->create())->deleteJson("/api/gym-applications/{$gym->id}/documents/{$document['id']}")->assertNotFound();
         $this->actingAs($this->applicant)->deleteJson("/api/gym-applications/{$gym->id}/documents/{$document['id']}")->assertOk();
         Storage::disk('local')->assertMissing($path);
     }

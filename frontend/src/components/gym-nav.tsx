@@ -1,4 +1,4 @@
-import { Banknote, CalendarDays, ClipboardList, Clock, CreditCard, DoorOpen, Dumbbell, Inbox, Package, Receipt, Settings2, ShoppingCart, UserCheck, Users, UsersRound, Wallet, type LucideIcon } from 'lucide-react'
+import { Banknote, CalendarDays, ClipboardList, Clock, CreditCard, DoorOpen, Dumbbell, Inbox, Megaphone, Package, Receipt, Settings2, ShoppingCart, UserCheck, Users, UsersRound, Wallet, type LucideIcon } from 'lucide-react'
 import type { GymAccess } from '@/lib/auth'
 import { can, type Permission } from '@/lib/gym-access'
 
@@ -22,6 +22,7 @@ const ITEMS: ItemDefinition[] = [
   { segment: 'plans', label: 'Plans', icon: CreditCard, permissions: ['members.plans.view'], group: 'Members' },
   { segment: 'applications', label: 'Applications', icon: Inbox, permissions: ['members.memberships.view'], group: 'Members' },
   { segment: 'members', label: 'Members', icon: UserCheck, permissions: ['members.memberships.view'], group: 'Members' },
+  { segment: 'announcements', label: 'Announcements', icon: Megaphone, permissions: ['announcements.general.view'], group: 'Members' },
   { segment: 'payments', label: 'Payments', icon: Receipt, permissions: ['finance.payments.view'], group: 'Members' },
   { segment: 'finance', label: 'Finance', icon: Wallet, permissions: ['finance.payments.view', 'finance.expenses.view', 'finance.receivables.view', 'finance.payables.view', 'finance.budgets.view', 'finance.reports.view'], group: 'Business' },
   { segment: 'customers', label: 'Customers', icon: UsersRound, permissions: ['customers.records.view'], group: 'Business' },

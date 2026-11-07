@@ -26,7 +26,7 @@ pnpm lint                      # oxlint
 node --test                    # node:test checks in frontend/tests/*.test.mjs (Node 24; not `node --test tests/`)
 ```
 
-Scheduled jobs (membership expiry, no-shows, staff absences, token pruning) are defined in
+Scheduled jobs (membership expiry, session reminders, membership-expiry reminders, follow-up reminders, no-shows, staff absences, token pruning) are defined in
 `backend/routes/console.php`.
 
 Emails go out through Gmail SMTP (settings in `backend/.env`). The email worker must be running for codes to be sent.
@@ -62,6 +62,9 @@ The frontend calls the API at `VITE_API_URL` (`frontend/.env`).
 - **Time and SQL.** App timezone is `Asia/Manila`; frontend formats dates with `gymDate()` in
   `src/lib/membership.ts`. Tests run on SQLite but production is MySQL, so SQL that differs between them goes
   through `App\Support\Sql`.
+- **Notices and live updates.** Notices use database notifications only. The shared notification provider and the
+  session/booking screens poll every 15 seconds while the tab is visible; there are no websockets, SSE or push.
+  Announcements reuse `announcements.general.view|manage`; platform notices are admin-only and carry no gym data.
 - **Frontend.** `src/App.tsx` holds all routes and guards (guest, signed-in, first password, admin, gym member).
   `src/components/ui/` is coss UI (Base UI + Tailwind v4); reuse it before writing new components. `@/` maps to `src/`.
   Each area has `src/lib/<area>.ts` (response types and display helpers, e.g. `payroll.ts`, `inventory.ts`) used by `src/pages/gym/*`.
