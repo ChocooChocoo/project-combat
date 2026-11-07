@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { PageHeader } from '@/components/page-header'
 import { CheckInCodes } from '@/components/schedule/check-in-code'
@@ -6,33 +6,36 @@ import { BookingActionDialog, BookingBadge, BookingEmpty, BookingError, BookingL
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs'
 import { api, ApiError } from '@/lib/api'
+import { usePolling } from '@/hooks/use-polling'
+import { useAuth } from '@/lib/auth'
 import { bookingPaymentLabel, dayLabel, liveBooking, type MyBooking } from '@/lib/bookings'
 import { sessionTime } from '@/lib/sessions'
 import { toastManager } from '@/components/ui/toast'
 
 /** R-48: one personal list across all gyms, including cancelled and rejected bookings. */
 export default function MyBookings() {
+  const { user } = useAuth()
   const [data, setData] = useState<{ upcoming: MyBooking[]; past: MyBooking[] } | null>(null)
   const [error, setError] = useState('')
   const [version, setVersion] = useState(0)
   const [target, setTarget] = useState<BookingAction | null>(null)
   const [search, setSearch] = useSearchParams()
   const [paying, setPaying] = useState<number | null>(null)
-  useEffect(() => {
-    let live = true
-    setData(null)
-    setError('')
-    async function load() {
-      const returned = search.get('checkout')
+  const load = useCallback(async (silent: boolean, isCurrent: () => boolean) => {
+    if (!silent) setError('')
+    try {
+      const returned = silent ? null : search.get('checkout')
       const booking = search.get('booking')
       let confirmed: boolean | null = null
       if (returned === 'done' && booking && /^\d+$/.test(booking)) {
         const result = await api<{ paid: boolean }>(`/my-bookings/${booking}/checkout/confirm`, { method: 'POST' })
+        if (!isCurrent()) return
         confirmed = result.paid
       }
       const result = await api<{ upcoming: MyBooking[]; past: MyBooking[] }>('/my-bookings')
-      if (!live) return
+      if (!isCurrent()) return
       setData(result)
+      setError('')
       if (confirmed !== null) toastManager.add(confirmed
         ? { title: 'Payment confirmed. Your booking has been updated.', type: 'success' }
         : { title: 'PayMongo has not confirmed payment yet. Check again in a minute.', type: 'warning' })
@@ -43,11 +46,11 @@ export default function MyBookings() {
         next.delete('booking')
         setSearch(next, { replace: true })
       }
+    } catch (failure) {
+      if (isCurrent() && !silent) setError(failure instanceof ApiError ? failure.message : 'Your bookings could not be loaded.')
     }
-    load()
-      .catch((failure) => live && setError(failure instanceof ApiError ? failure.message : 'Your bookings could not be loaded.'))
-    return () => { live = false }
-  }, [version, search, setSearch])
+  }, [search, setSearch])
+  usePolling(load, 15_000, Boolean(user), version)
   async function payOnline(bookingId: number) {
     setPaying(bookingId)
     try {

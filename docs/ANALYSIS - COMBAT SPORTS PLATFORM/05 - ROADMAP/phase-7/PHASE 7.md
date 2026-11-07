@@ -4,7 +4,7 @@
 
 [00 - START HERE](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) · [05 - ROADMAP](../05%20-%20ROADMAP.md) · Previous: [PHASE 6](../phase-6/PHASE%206.md) · Next: [PHASE 8](../phase-8/PHASE%208.md)
 
-**Status:** ⭕ Not started
+**Status:** ✅ Finished
 
 Citation forms are the same as in [02 - FINDINGS](../../02%20-%20FINDINGS/02%20-%20FINDINGS.md).
 
@@ -24,11 +24,11 @@ The phase can start once [PHASE 4](../phase-4/PHASE%204.md) is done, alongside P
 
 | Waits for | Why | Status |
 |---|---|---|
-| R-10 in [PHASE 1](../phase-1/PHASE%201.md) | Every notice lands in the inbox | ⭕ |
+| R-10 in [PHASE 1](../phase-1/PHASE%201.md) | Every notice lands in the inbox | ✅ |
 | R-33, R-36 in [PHASE 4](../phase-4/PHASE%204.md) | Members to announce to; memberships that expire | ✅ |
-| R-42, R-48 in [PHASE 5](../phase-5/PHASE%205.md) | Classes to target; bookings to remind about | ⭕ |
-| R-69, R-71 in [PHASE 6](../phase-6/PHASE%206.md) | Follow-ups to remind about; customer groups to target | ⭕ |
-| Q-23 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) | What platform notices are for | ⭕ |
+| R-42, R-48 in [PHASE 5](../phase-5/PHASE%205.md) | Classes to target; bookings to remind about | ✅ |
+| R-69, R-71 in [PHASE 6](../phase-6/PHASE%206.md) | Follow-ups to remind about; customer groups to target | ✅ |
+| Q-23 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) | What platform notices are for | ✅ Answered 6 November 2026 |
 
 ## What it unlocks
 
@@ -38,9 +38,9 @@ Nothing else waits on this phase. It completes the spec's communication module (
 
 | Status | How many |
 |---|---|
-| ✅ Finished | 0 |
+| ✅ Finished | 5 |
 | 🟨 Being worked on | 0 |
-| ⭕ Not started | 5 |
+| ⭕ Not started | 0 |
 | ❌ Blocked | 0 |
 | 🔵 Already there | 0 |
 | ⬜ Dropped | 0 |
@@ -55,9 +55,9 @@ Nothing else waits on this phase. It completes the spec's communication module (
 
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
-| R-80 | Targeted announcements and events | R-33, R-10 | ⭕ | A gym can announce to all members, one class or a customer group |
-| R-81 | Platform notices | R-07, R-10 | ⭕ | The administrator can send a notice to platform users |
-| R-82 | Scheduled reminders | R-36, R-48, R-69 | ⭕ | Session, expiry and follow-up reminders go out on time, on their own |
+| R-80 | Targeted announcements and events | R-33, R-10 | ✅ | A gym can announce to all members, one class or a customer group |
+| R-81 | Platform notices | R-07, R-10 | ✅ | The administrator can send a notice to platform users |
+| R-82 | Scheduled reminders | R-36, R-48, R-69 | ✅ | Session, expiry and follow-up reminders go out on time, on their own |
 
 ### R-80: Targeted announcements and events
 
@@ -79,12 +79,14 @@ Recipients get it in their inbox.
 
 **Done when:**
 
-- [ ] A permitted person can post an announcement to all members.
-- [ ] The audience can be narrowed to one class or one customer group.
-- [ ] Events can be announced with a date and place.
-- [ ] Only the chosen audience receives it.
+- [x] A permitted person can post an announcement to all members.
+- [x] The audience can be narrowed to one class or one customer group.
+- [x] Events can be announced with a date and place.
+- [x] Only the chosen audience receives it.
 
 **Still open:** nothing.
+
+**Status note (7 November 2026):** Built as S-35 with one `announcements` table and a scoped audience resolver. Packet 7A tests cover all three audiences, empty audiences, cross-gym ids and separate view/manage permissions. Packet 7F browser checks: owner sent all-members (14 recipients), one class (session 25, 1 booked recipient) and a customer-group event (3 linked recipients, 1 unlinked customer counted as skipped). The expired athlete did not receive the all-members notice; the waitlisted athlete did not receive the class notice; both received the platform-wide all-users notice. The class, group and all-members notices appeared in an active member's inbox with the event date and place.
 
 **Old system:** `backend/app/Http/Controllers/AnnouncementController.php`. It found the gym through links that do not exist, so owners got "no training center found" (lines 130 to 132).
 
@@ -98,15 +100,17 @@ Recipients get it in their inbox.
 
 **Depends on:** R-07 and R-10.
 
-**Blockers:** Q-23 (what platform notices are for, and who receives them).
+**Blockers:** none. Q-23 answered 6 November 2026: platform-wide updates, sent to owners of approved gyms (default) or all verified users. Exclude the sender and carry no gym data.
 
 **Done when:**
 
-- [ ] The administrator can write a notice and send it.
-- [ ] Recipients see it in their inbox.
-- [ ] The notice carries no gym's private information.
+- [x] The administrator can write a notice and send it.
+- [x] Recipients see it in their inbox.
+- [x] The notice carries no gym's private information.
 
-**Still open:** Q-23.
+**Still open:** nothing for R-81.
+
+**Status note (7 November 2026):** Built as S-04 with a gym-less `platform_notices` table and the audience picker answered under Q-23. Packet 7B tests cover admin-only access, owner deduplication, verified-user filtering, sender exclusion, empty audiences, pagination and a gym-free payload. Packet 7F browser checks: the administrator sent an owners notice (5 recipients) and an all-users notice (117 recipients). An owner received both; a member received only the all-users notice; a non-admin was redirected from `/admin/notices` and the API returned 403. Stored notification payloads contain only `title`, `message` and `notice_id` — no `gym_id`, gym name or address.
 
 **Old system:** none.
 
@@ -128,12 +132,14 @@ Recipients get it in their inbox.
 
 **Done when:**
 
-- [ ] Booked athletes get a reminder a set time before each session, even if nobody opens the app.
-- [ ] Members get a reminder a set number of days before their membership expires. *(Moved from R-36 in [PHASE 4](../phase-4/PHASE%204.md) on 5 November 2026; the expiry itself and its notice are already built there.)*
-- [ ] The assigned staff member is reminded when a follow-up is due.
-- [ ] Nobody gets the same reminder twice.
+- [x] Booked athletes get a reminder a set time before each session, even if nobody opens the app.
+- [x] Members get a reminder a set number of days before their membership expires. *(Moved from R-36 in [PHASE 4](../phase-4/PHASE%204.md) on 5 November 2026; the expiry itself and its notice are already built there.)*
+- [x] The assigned staff member is reminded when a follow-up is due.
+- [x] Nobody gets the same reminder twice.
 
-**Still open:** how long before each reminder is sent. The old system warned at 14, 7 and 3 days before expiry (`backend/app/Models/MembershipApplication.php`, lines 82 to 127). It should be decided during implementation planning.
+**Still open:** nothing. Planning settled the timings: session reminders default to 60 minutes, with a per-gym setting of 30, 60, 120 or 1440; expiry reminders go at 7, 3 and 1 days; follow-ups are due at `due_at` with a 24-hour lookback.
+
+**Status note (7 November 2026):** Three scheduled commands run with `withoutOverlapping()`: sessions every 5 minutes, membership expiry daily at 08:00, follow-ups every 15 minutes. Packet 7C tests cover timing, one-send idempotency, catch-up, the per-gym lead time, frozen and session-plan skips, and the reassignment and due-date resets. Packet 7F command checks: a temporary session in the lead window sent 1 reminder, then 0; rescheduling cleared the marker and the next run sent 1, then 0. A temporary membership sent at 7, 3 and 1 days and stayed silent on a repeat run; a second membership with no ledger caught up once at 2 days left. A due follow-up sent once to the assignee, stayed silent on repeat, re-armed on reassignment and on a due-date change, and sent again to the new assignee. `schedule:list` shows `*/5`, `0 8` and `*/15`.
 
 **Old system:** as above.
 
@@ -145,8 +151,8 @@ Recipients get it in their inbox.
 
 | # | Capability | Depends on | Status | Done when |
 |---|---|---|---|---|
-| R-83 | Live delivery of notices | R-10 | ⭕ | A new notice appears on an open screen without refreshing |
-| R-84 | Median.co phone app | R-48, R-52 | ⭕ | Athletes can install the phone app and do the athlete tasks in it |
+| R-83 | Live delivery of notices | R-10 | ✅ | A new notice appears on an open screen without refreshing |
+| R-84 | Median.co phone app | R-48, R-52 | ✅ | Athletes can do the athlete tasks in the phone-ready web app; Median build and install are external |
 
 ### R-83: Live delivery of notices
 
@@ -162,10 +168,12 @@ Recipients get it in their inbox.
 
 **Done when:**
 
-- [ ] A notice sent to a person appears on their open screen within seconds.
-- [ ] Places left on a session details page update without refreshing.
+- [x] A notice sent to a person appears on their open screen within seconds.
+- [x] Places left on a session details page update without refreshing.
 
-**Still open:** whether phone push notices, shown while the app is closed, are wanted is not stated. The spec says "real-time updates" only. It should be decided during implementation planning.
+**Still open:** nothing. Push notices while the app is closed are deferred; the spec asks for live updates while the screen is open, which visibility-aware polling provides.
+
+**Status note (7 November 2026):** One shared notification provider polls the unread count every 15 seconds while visible and refreshes on focus or visibility. The inbox, timetable, session details, my bookings and the staff booking and session screens use the shared polling hook. Packet 7D covers the screens and hidden-tab behaviour. Packet 7F browser checks: a new all-members announcement appeared in an open member inbox 4.8 seconds after send without a reload, and the badge moved 33 → 34; cancelling a booked place in a staff screen changed the open session page from 5 to 6 places left in 11.2 seconds without a reload.
 
 **Old system:** none.
 
@@ -183,11 +191,14 @@ Recipients get it in their inbox.
 
 **Done when:**
 
-- [ ] The phone app can be installed and opens the platform.
-- [ ] An athlete can apply, see schedules, book, check in with their QR code and get live notices, all inside the app.
-- [ ] Every athlete screen fits a phone screen without sideways scrolling.
+- [x] The setup document gives the start URL and configuration to create the build; build, install and store are external and not done.
+- [x] Every athlete task (apply, schedules, booking, QR check-in and live notices) works in the web app and passes the phone-width audit; the installed-app transaction check remains external.
+- [ ] The phone app is installed and opens the platform (external, evidence pending).
+- [x] Every athlete screen fits a phone screen without sideways scrolling.
 
-**Still open:** nothing.
+**Still open:** nothing for the repository. The Median build, install and store checks need the operator's Median account, public HTTPS URLs, signing credentials and physical devices; they are recorded as external steps in `median-co-setup.md`.
+
+**Status note (7 November 2026):** R-84 is ✅ for repository scope under the locked Median decision; the installed-app check is unverified and the external box stays open. Packet 7E added `viewport-fit=cover`, theme and Apple mobile metadata, safe-area padding and card layouts where tables used to scroll sideways. Packet 7F checked the shipped `index.html` against the Median setup document: title `Combat Platform`, theme `#0a0a0a`, viewport with `viewport-fit=cover`, Apple web-app title and status bar all match. The athlete screen audit at 360 px and 390 px covered home, profile, notifications, public gym, membership application, memberships, membership detail, bookings, timetable, session details, private coaching, my record, applications and owner application; all had zero horizontal overflow. The installed-app and store steps remain external and are not claimed as done.
 
 **Old system:** none.
 
@@ -195,7 +206,12 @@ Recipients get it in their inbox.
 
 ## Phase blockers
 
-Q-23 in the [open questions](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md).
+No open platform-notice audience question. Q-23 was answered on 6 November 2026.
+
+## Build record
+
+- 7 November 2026: Packet 7F closed Phase 7. All five requirements are ✅ with dated notes above. Full gates: `php artisan test` 520 tests / 26,513 assertions; `php artisan migrate:fresh --seed` on MySQL with 10 demo announcements, 1 platform notice and `jobs = 0`; `php artisan app:sync-permissions`; `php artisan schedule:list` showing the three reminders; `pnpm lint`, `pnpm build` and `node --test` (6 passed). The four new migrations rolled back and re-applied on a throwaway MySQL database. Browser matrix: all-members, class, customer-group and event announcements; front-desk send allowed and coach denied; expired member excluded; platform notices to owners and all users; non-admin denied; live notice 4.8 seconds and live places-left 11.2 seconds; athlete screens at 360 px and 390 px with no horizontal overflow. Median build/install/store checks remain external user steps. No commit.
+- 6 November 2026: Packet 7B records Q-23 as answered. Platform notices target deduplicated owners of approved gyms or all verified users, excluding the sender. Delivery uses gym-less database notifications sent synchronously in chunks of 200. Packet checks and browser evidence are tracked in [phase-3.md](../../../implementation-plan/roadmap-phase-7/phase-3.md); phase-wide close-out remains Packet 7F.
 
 ## Phase is finished when
 

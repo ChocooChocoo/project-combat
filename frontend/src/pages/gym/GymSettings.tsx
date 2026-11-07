@@ -13,6 +13,7 @@ import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui
 import { Fieldset, FieldsetLegend } from '@/components/ui/fieldset'
 import { Form } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
@@ -44,6 +45,7 @@ type FormState = {
   booking_approval: boolean
   late_grace_minutes: string
   cancel_cutoff_hours: string
+  session_reminder_minutes: string
 }
 
 function fromSetup(setup: WorkspaceSetup): FormState {
@@ -74,6 +76,7 @@ function fromSetup(setup: WorkspaceSetup): FormState {
     booking_approval: setup.booking_approval,
     late_grace_minutes: String(setup.late_grace_minutes),
     cancel_cutoff_hours: String(setup.cancel_cutoff_hours),
+    session_reminder_minutes: String(setup.session_reminder_minutes),
   }
 }
 
@@ -159,6 +162,7 @@ export default function GymSettings() {
           booking_approval: form.booking_approval,
           late_grace_minutes: Number(form.late_grace_minutes),
           cancel_cutoff_hours: Number(form.cancel_cutoff_hours),
+          session_reminder_minutes: Number(form.session_reminder_minutes),
         },
       })
       setSetup(result.setup)
@@ -452,6 +456,18 @@ export default function GymSettings() {
                 <TextField name="cancel_cutoff_hours" label="Cancellation cut-off (hours)" type="number" required min={0} max={72} step={1}
                   value={form.cancel_cutoff_hours} onChange={(e) => set('cancel_cutoff_hours', e.target.value)}
                   description="Members can cancel until this many hours before a session. After that, only staff can cancel. Default: 2." />
+                <Field name="session_reminder_minutes" className="w-full sm:col-span-2">
+                  <FieldLabel>Session reminder</FieldLabel>
+                  <Select value={form.session_reminder_minutes} onValueChange={(value) => value && set('session_reminder_minutes', value)}
+                    items={[30, 60, 120, 1440].map((minutes) => ({ value: String(minutes), label: `${minutes} minutes` }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectPopup>
+                      {[30, 60, 120, 1440].map((minutes) => <SelectItem key={minutes} value={String(minutes)}>{minutes} minutes</SelectItem>)}
+                    </SelectPopup>
+                  </Select>
+                  <FieldDescription>Booked athletes get an in-app reminder this long before the session starts.</FieldDescription>
+                  <FieldError />
+                </Field>
               </CardPanel>
             </Card>
 

@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { PageHeader } from '@/components/page-header'
 import { SessionEditor } from '@/components/schedule/session-editor'
@@ -11,6 +11,7 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { api, ApiError } from '@/lib/api'
+import { usePolling } from '@/hooks/use-polling'
 import { useAuth } from '@/lib/auth'
 import { approvedGym, can } from '@/lib/gym-access'
 import { dateKey, flagReasonLabel, sessionFee, sessionTime, SESSION_STATUS_LABELS, type SessionOptions, type TrainingSession } from '@/lib/sessions'
@@ -48,25 +49,30 @@ export default function GymSchedule() {
   const [cancelling, setCancelling] = useState<TrainingSession | null>(null)
   const [reassigning, setReassigning] = useState<TrainingSession | null>(null)
 
-  useEffect(() => {
-    if (!gymId || !canView) return
-    let live = true
-    setSessions(null)
-    setError('')
-    Promise.all([
-      api<{ sessions: TrainingSession[] }>(`/gyms/${gymId}/sessions?from=${week}&to=${shift(week, 6)}`),
-      api<{ options: SessionOptions }>(`/gyms/${gymId}/sessions/options`),
-      api<{ sessions: TrainingSession[] }>(`/gyms/${gymId}/sessions?flagged=1`),
-    ]).then(([list, choices, attention]) => {
-      if (!live) return
+  const load = useCallback(async (silent: boolean, isCurrent: () => boolean) => {
+    if (!silent) setError('')
+    try {
+      const [listResult, choicesResult, attentionResult] = await Promise.allSettled([
+        api<{ sessions: TrainingSession[] }>(`/gyms/${gymId}/sessions?from=${week}&to=${shift(week, 6)}`),
+        api<{ options: SessionOptions }>(`/gyms/${gymId}/sessions/options`),
+        api<{ sessions: TrainingSession[] }>(`/gyms/${gymId}/sessions?flagged=1`),
+      ])
+      if (listResult.status === 'rejected') throw listResult.reason
+      if (choicesResult.status === 'rejected') throw choicesResult.reason
+      if (attentionResult.status === 'rejected') throw attentionResult.reason
+      const list = listResult.value
+      const choices = choicesResult.value
+      const attention = attentionResult.value
+      if (!isCurrent()) return
       setSessions(list.sessions)
       setOptions(choices.options)
       setFlagged(attention.sessions)
-    }).catch((failure) => {
-      if (live) setError(failure instanceof ApiError ? failure.message : 'The schedule could not be loaded.')
-    })
-    return () => { live = false }
-  }, [gymId, canView, week, version])
+      setError('')
+    } catch (failure) {
+      if (isCurrent() && !silent) setError(failure instanceof ApiError ? failure.message : 'The schedule could not be loaded.')
+    }
+  }, [gymId, week])
+  usePolling(load, 30_000, Boolean(user && gymId && canView), version)
 
   if (!gym) return null
   if (!canView) {

@@ -482,7 +482,7 @@ export default function CustomerRecord() {
           />
         </div>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex min-w-0 flex-col gap-6">
           <DetailsCard customer={customer} />
           <MembershipCard
             gymId={gymId}
@@ -637,7 +637,7 @@ function DetailsCard({ customer }: { customer: Customer }) {
         <CardDescription>Contact, source and the person who owns the follow-up.</CardDescription>
       </CardHeader>
       <CardPanel>
-        <dl className="grid gap-4 text-sm">
+        <dl className="grid min-w-0 gap-4 text-sm">
           <div>
             <dt className="text-muted-foreground text-xs">Email</dt>
             <dd className="break-words">{customer.email ?? <span className="text-muted-foreground">Not given</span>}</dd>
@@ -668,7 +668,7 @@ function DetailsCard({ customer }: { customer: Customer }) {
           </div>
           <div>
             <dt className="text-muted-foreground text-xs">Inquiry</dt>
-            <dd className="whitespace-pre-line break-words">
+            <dd className="whitespace-pre-line wrap-anywhere">
               {customer.inquiry ?? <span className="text-muted-foreground">Nothing recorded yet.</span>}
             </dd>
           </div>

@@ -199,12 +199,30 @@ class SessionTest extends TestCase
     public function test_booking_settings_round_trip_and_limits(): void
     {
         $this->actingAs($this->owner)->getJson($this->url('setup'))->assertOk()
-            ->assertJsonPath('setup.booking_approval', false)->assertJsonPath('setup.late_grace_minutes', 10)->assertJsonPath('setup.cancel_cutoff_hours', 2);
-        $settings = ['booking_approval' => true, 'late_grace_minutes' => 20, 'cancel_cutoff_hours' => 12];
+            ->assertJsonPath('setup.booking_approval', false)->assertJsonPath('setup.late_grace_minutes', 10)->assertJsonPath('setup.cancel_cutoff_hours', 2)
+            ->assertJsonPath('setup.session_reminder_minutes', 60);
+        $settings = ['booking_approval' => true, 'late_grace_minutes' => 20, 'cancel_cutoff_hours' => 12, 'session_reminder_minutes' => 120];
         $this->putJson($this->url('setup'), $settings)->assertOk()->assertJsonPath('setup.booking_approval', true);
-        $this->getJson($this->url('setup'))->assertOk()->assertJsonPath('setup.late_grace_minutes', 20)->assertJsonPath('setup.cancel_cutoff_hours', 12);
+        $this->getJson($this->url('setup'))->assertOk()->assertJsonPath('setup.late_grace_minutes', 20)->assertJsonPath('setup.cancel_cutoff_hours', 12)
+            ->assertJsonPath('setup.session_reminder_minutes', 120);
         $this->putJson($this->url('setup'), ['late_grace_minutes' => 121, 'cancel_cutoff_hours' => 73])->assertUnprocessable()
             ->assertJsonValidationErrors(['late_grace_minutes', 'cancel_cutoff_hours']);
+    }
+
+    public function test_session_reminder_setting_accepts_only_supported_choices_and_is_per_gym(): void
+    {
+        $other = Gym::factory()->create();
+        foreach ([30, 60, 120, 1440] as $minutes) {
+            $this->actingAs($this->owner)->putJson($this->url('setup'), ['session_reminder_minutes' => $minutes])
+                ->assertOk()->assertJsonPath('setup.session_reminder_minutes', $minutes);
+            $this->getJson($this->url('setup'))->assertOk()->assertJsonPath('setup.session_reminder_minutes', $minutes);
+        }
+        foreach ([0, 45, 1441, null, 'invalid', 30.5] as $minutes) {
+            $this->putJson($this->url('setup'), ['session_reminder_minutes' => $minutes])
+                ->assertUnprocessable()->assertJsonValidationErrors('session_reminder_minutes');
+        }
+        $this->assertSame(60, $other->fresh()->session_reminder_minutes);
+        $this->assertSame(1440, $this->gym->fresh()->session_reminder_minutes);
     }
 
     public function test_empty_repeat_is_rejected_without_saving(): void

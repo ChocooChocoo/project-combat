@@ -243,6 +243,14 @@
     }
 }
 
+@utility safe-area-top {
+  padding-top: calc(var(--safe-area-top-padding, 0px) + env(safe-area-inset-top, 0px));
+}
+
+@utility safe-area-bottom {
+  padding-bottom: calc(var(--safe-area-bottom-padding, 0px) + env(safe-area-inset-bottom, 0px));
+}
+
 /* Payslip printing: only the sheet on screen reaches paper. */
 @page {
   margin: 14mm;

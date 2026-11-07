@@ -9,6 +9,9 @@ use App\Models\SessionBooking;
 use App\Models\User;
 use App\Support\MembershipLedger;
 use App\Support\PermissionCatalog;
+use App\Support\Reminders\FollowUpReminders;
+use App\Support\Reminders\MembershipExpiryReminders;
+use App\Support\Reminders\SessionReminders;
 use App\Support\StaffAbsenceMarker;
 use App\Support\StockLedger;
 use App\Support\SystemRoles;
@@ -71,6 +74,21 @@ Artisan::command('app:expire-memberships', function (MembershipLedger $ledger) {
 })->purpose('Expire memberships past their end date and end finished freezes');
 
 Schedule::command('app:expire-memberships')->dailyAt('00:05');
+
+Artisan::command('app:send-session-reminders', function (SessionReminders $reminders) {
+    $this->info($reminders->send().' session reminders sent.');
+})->purpose('Remind booked athletes before their sessions');
+Schedule::command('app:send-session-reminders')->everyFiveMinutes()->withoutOverlapping();
+
+Artisan::command('app:send-membership-reminders', function (MembershipExpiryReminders $reminders) {
+    $this->info($reminders->send().' membership reminders sent.');
+})->purpose('Remind active members before membership expiry');
+Schedule::command('app:send-membership-reminders')->dailyAt('08:00')->withoutOverlapping();
+
+Artisan::command('app:send-follow-up-reminders', function (FollowUpReminders $reminders) {
+    $this->info($reminders->send().' follow-up reminders sent.');
+})->purpose('Remind assignees about due customer follow-ups');
+Schedule::command('app:send-follow-up-reminders')->everyFifteenMinutes()->withoutOverlapping();
 
 // R-54: all gyms, including when no request has selected a CurrentGym.
 Artisan::command('app:mark-no-shows', function () {

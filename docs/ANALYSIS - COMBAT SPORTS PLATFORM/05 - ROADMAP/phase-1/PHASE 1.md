@@ -56,6 +56,8 @@ Nothing. This is the starting point.
 
 **In plain words:** There is one sign-up page. A person gives their personal details and sign-in details and becomes a "platform user". Becoming an owner or a member happens later, by applying.
 
+**Update (6 November 2026):** Account type, `member` or `owner`, is now chosen at sign-up and cannot change. Owner accounts apply to run a gym and browse the member side only (no joins, no preferences or best matches); member accounts cannot apply to own a gym. Staff links are unaffected; existing accounts were inferred from owning a gym or having an application (`owner`), otherwise `member`.
+
 **Why it is needed:** The spec makes owner and member roles things you apply for after signing up (the spec, pages 7 and 10). The old system had two separate sign-up pages, and the owner one created a gym straight away (C-02).
 
 **Where the need came from:** D-01, the spec, page 9, section 1.1. Also page 7.
@@ -205,6 +207,8 @@ Nothing. This is the starting point.
 ### R-07: Five roles
 
 **In plain words:** The system knows five roles: platform administrator, platform user, gym owner, gym employee (coaches included) and athlete/member. A person may hold more than one; for example, a member of one gym may own another. The platform administrator role can only be given by the platform itself, never by an owner.
+
+**Update (6 November 2026):** Account type, `member` or `owner`, is fixed at sign-up, so owning and joining no longer mix. Owners apply to run a gym and browse the member side only (no joins, no preferences or best matches); members cannot apply to own a gym. Staff links and the platform administrator are unaffected; existing accounts were inferred from owning a gym or having an application (`owner`), otherwise `member`.
 
 **Why it is needed:** The spec, pages 7 and 9. The old system had 13 fixed roles plus per-gym roles, stored three ways that disagreed (C-08). An owner could make someone an administrator (`backend/app/Http/Controllers/API/RolePermissionController.php`, lines 165 to 182).
 

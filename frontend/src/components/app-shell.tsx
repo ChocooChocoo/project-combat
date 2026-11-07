@@ -1,5 +1,4 @@
 import { Building2, CalendarDays, Check, ChevronsUpDown, ClipboardCheck, FilePlus2, FileText, House, IdCard, LogOut, Medal, UserRound } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { myWorkNav, workspaceNavGroups } from '@/components/gym-nav'
 import { NotificationsMenu } from '@/components/notifications-menu'
@@ -21,7 +20,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar'
-import { api } from '@/lib/api'
+import { useNotifications } from '@/lib/notifications'
 import { useAuth, type GymAccess } from '@/lib/auth'
 import { approvedGym, canOpenWorkspace } from '@/lib/gym-access'
 
@@ -143,11 +142,7 @@ function AccountMenu() {
 export function AppShell() {
   const { user } = useAuth()
   const { pathname } = useLocation()
-  const [unread, setUnread] = useState(0)
-
-  useEffect(() => {
-    api<{ unread_count: number }>('/notifications').then((r) => setUnread(r.unread_count)).catch(() => undefined)
-  }, [])
+  const { unread } = useNotifications()
 
   const approvedGyms = user?.gyms.filter((gym) => gym.status === 'approved') ?? []
   const currentGym = approvedGym(user, Number(pathname.match(/^\/gyms\/(\d+)(?:\/|$)/)?.[1]))
@@ -166,12 +161,15 @@ export function AppShell() {
     { to: '/applications', label: 'My applications', icon: FileText },
     { to: '/apply', label: 'New application', icon: FilePlus2 },
   ]
-  const admin: Item[] = [{ to: '/admin', label: 'Gym applications', icon: ClipboardCheck }]
+  const admin: Item[] = [
+    { to: '/admin', label: 'Gym applications', icon: ClipboardCheck, end: true },
+    { to: '/admin/notices', label: 'Platform notices', icon: FileText },
+  ]
 
   return (
     <SidebarProvider>
       <Sidebar collapsible="icon">
-        <SidebarHeader>
+        <SidebarHeader className="safe-area-top [--safe-area-top-padding:0.5rem]">
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton size="lg" tooltip="Combat Platform" render={<Link to="/" />}>
@@ -192,9 +190,10 @@ export function AppShell() {
           {workspaceGroups.map((group) => (
             <NavGroup key={group.label} label={group.label} items={group.items} />
           ))}
-          {user?.is_platform_admin ? <NavGroup label="Platform" items={admin} /> : <NavGroup label="Run a gym" items={owner} />}
+          {user?.is_platform_admin && <NavGroup label="Platform" items={admin} />}
+          {user?.account_type === 'owner' && <NavGroup label="Run a gym" items={owner} />}
         </SidebarContent>
-        <SidebarFooter>
+        <SidebarFooter className="safe-area-bottom [--safe-area-bottom-padding:0.5rem]">
           <SidebarMenu>
             <SidebarMenuItem>
               <AccountMenu />
@@ -203,16 +202,16 @@ export function AppShell() {
         </SidebarFooter>
       </Sidebar>
 
-      <SidebarInset>
-        <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-background px-3 md:px-4">
-          <SidebarTrigger aria-label="Toggle navigation" />
+      <SidebarInset className="min-w-0">
+        <header className="safe-area-top sticky top-0 z-20 flex h-[calc(3.5rem+env(safe-area-inset-top,0px))] shrink-0 items-center gap-2 border-b bg-background px-3 md:px-4">
+          <SidebarTrigger className="size-11 md:size-7" aria-label="Toggle navigation" />
           <span className="font-semibold text-sm md:hidden">Combat Platform</span>
-          <div className="ms-auto flex items-center gap-1">
-            <NotificationsMenu unread={unread} onUnreadChange={setUnread} />
+          <div className="ms-auto flex items-center gap-1" title={unread ? `${unread} unread notifications` : 'Notifications'}>
+            <NotificationsMenu />
           </div>
         </header>
-        <div className="mx-auto w-full max-w-6xl px-4 pt-6 pb-16 md:px-8">
-          <Outlet context={{ setUnread }} />
+        <div className="safe-area-bottom mx-auto w-full min-w-0 max-w-6xl wrap-anywhere px-4 pt-6 [--safe-area-bottom-padding:4rem] md:px-8">
+          <Outlet />
         </div>
       </SidebarInset>
     </SidebarProvider>

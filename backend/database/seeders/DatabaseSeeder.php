@@ -3,25 +3,31 @@
 namespace Database\Seeders;
 
 use App\Enums\GymPersonType;
+use App\Enums\AnnouncementAudience as AudienceType;
 use App\Enums\GymStatus;
 use App\Enums\LeaveRequestStatus;
 use App\Enums\MembershipStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PlanBilling;
 use App\Models\AthleteProfile;
+use App\Models\Announcement;
 use App\Models\Budget;
 use App\Models\Gym;
 use App\Models\GymRole;
 use App\Models\GymService;
 use App\Models\Membership;
 use App\Models\MembershipPlan;
+use App\Models\PlatformNotice;
 use App\Models\SessionBooking;
 use App\Models\TrainingSession;
 use App\Models\User;
 use App\Notifications\GymApplicationDecided;
+use App\Notifications\AnnouncementPublished;
 use App\Notifications\LeaveRequestDecided;
 use App\Notifications\LeaveRequestSubmitted;
+use App\Notifications\PlatformNoticeSent;
 use App\Support\AttendanceLedger;
+use App\Support\Announcements\AnnouncementAudience;
 use App\Support\BookingLedger;
 use App\Support\CurrentGym;
 use App\Support\MembershipLedger;
@@ -38,6 +44,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -121,6 +128,23 @@ class DatabaseSeeder extends Seeder
         $this->seedMembers($people);
         $this->seedApprovedGyms($people, $admin, $year);
         $this->seedApplications($people, $admin);
+        $this->seedPlatformNotice($admin);
+    }
+
+    private function seedPlatformNotice(User $admin): void
+    {
+        DB::transaction(function () use ($admin) {
+            $recipients = app(\App\Support\PlatformNotices\PlatformNoticeAudience::class)
+                ->resolve(\App\Enums\PlatformNoticeAudience::Owners, $admin);
+            $notice = PlatformNotice::create([
+                'title' => 'Welcome to the platform',
+                'body' => 'Platform updates will appear in your inbox. Please keep your account contact details current.',
+                'audience' => 'owners', 'created_by' => $admin->id, 'recipients_count' => $recipients->count(),
+            ]);
+            foreach ($recipients->chunk(200) as $users) {
+                Notification::sendNow($users, new PlatformNoticeSent($notice));
+            }
+        });
     }
 
     /** Removes every record this platform created, and the files that belong to it. */
@@ -129,6 +153,8 @@ class DatabaseSeeder extends Seeder
         Schema::disableForeignKeyConstraints();
 
         $tables = [
+            'platform_notices',
+            'announcements',
             'notifications',
             'one_time_codes',
             'personal_access_tokens',
@@ -170,6 +196,7 @@ class DatabaseSeeder extends Seeder
             'athlete_entries',
             'athlete_profiles',
             'membership_events',
+            'membership_reminders',
             'payments',
             'budgets',
             'expenses',
@@ -217,17 +244,17 @@ class DatabaseSeeder extends Seeder
 
         $people['admin'] = $this->user('Marisol', 'Santiago', 'admin@combatplatform.ph', '0917 555 0100', true);
 
-        $people['ramon'] = $this->user('Ramon', 'Villanueva', 'ramon.villanueva@ironwillboxing.ph', '0917 823 4156');
-        $people['andrea'] = $this->user('Andrea', 'Lim', 'andrea.lim@kalawcombat.ph', '0917 987 6543');
-        $people['carlo'] = $this->user('Carlo', 'Mendoza', 'carlo.mendoza@bakunawama.ph', '0932 987 6541');
-        $people['maria'] = $this->user('Maria', 'Bautista', 'maria.bautista@cordillerafightcamp.ph', '0917 888 9900');
-        $people['paolo'] = $this->user('Paolo', 'Reyes', 'paolo.reyes@davaograppling.ph', '0920 888 7766');
+        $people['ramon'] = $this->user('Ramon', 'Villanueva', 'ramon.villanueva@ironwillboxing.ph', '0917 823 4156', ownerAccount: true);
+        $people['andrea'] = $this->user('Andrea', 'Lim', 'andrea.lim@kalawcombat.ph', '0917 987 6543', ownerAccount: true);
+        $people['carlo'] = $this->user('Carlo', 'Mendoza', 'carlo.mendoza@bakunawama.ph', '0932 987 6541', ownerAccount: true);
+        $people['maria'] = $this->user('Maria', 'Bautista', 'maria.bautista@cordillerafightcamp.ph', '0917 888 9900', ownerAccount: true);
+        $people['paolo'] = $this->user('Paolo', 'Reyes', 'paolo.reyes@davaograppling.ph', '0920 888 7766', ownerAccount: true);
 
-        $people['jomar_aquino'] = $this->user('Jomar', 'Aquino', 'jomar.aquino@southsidemuaythai.ph', '0910 345 6789');
-        $people['grace'] = $this->user('Grace', 'Fuentes', 'grace.fuentes@visayasfightlab.ph', '0917 123 9876');
-        $people['nestor'] = $this->user('Nestor', 'Cabral', 'nestor.cabral@tagumboxing.ph', '0927 345 6781');
-        $people['rebecca'] = $this->user('Rebecca', 'Marasigan', 'rebecca.marasigan@mindorocombat.ph', '0915 467 8901');
-        $people['luis'] = $this->user('Luis', 'Herrera', 'luis.herrera@gmail.com', '0916 555 1234');
+        $people['jomar_aquino'] = $this->user('Jomar', 'Aquino', 'jomar.aquino@southsidemuaythai.ph', '0910 345 6789', ownerAccount: true);
+        $people['grace'] = $this->user('Grace', 'Fuentes', 'grace.fuentes@visayasfightlab.ph', '0917 123 9876', ownerAccount: true);
+        $people['nestor'] = $this->user('Nestor', 'Cabral', 'nestor.cabral@tagumboxing.ph', '0927 345 6781', ownerAccount: true);
+        $people['rebecca'] = $this->user('Rebecca', 'Marasigan', 'rebecca.marasigan@mindorocombat.ph', '0915 467 8901', ownerAccount: true);
+        $people['luis'] = $this->user('Luis', 'Herrera', 'luis.herrera@gmail.com', '0916 555 1234', ownerAccount: true);
 
         $people['sofia'] = $this->user('Sofia', 'Ramirez', 'sofia.ramirez@gmail.com', '0917 555 0201');
         $people['gabriel_tan'] = $this->user('Gabriel', 'Tan', 'gabriel.tan@gmail.com', '0917 555 0202');
@@ -250,6 +277,7 @@ class DatabaseSeeder extends Seeder
         string $email,
         string $phone,
         bool $platformAdmin = false,
+        bool $ownerAccount = false,
     ): User {
         $user = User::create([
             'first_name' => $firstName,
@@ -258,6 +286,7 @@ class DatabaseSeeder extends Seeder
             'phone' => $phone,
             'password' => self::PASSWORD,
             'created_at' => now()->subYear(),
+            'account_type' => $ownerAccount ? 'owner' : 'member',
         ]);
 
         $user->forceFill([
@@ -407,10 +436,38 @@ class DatabaseSeeder extends Seeder
             $this->seedExpenses($gym, $owner);
             $this->seedBudgets($gym, $owner);
             $this->seedCustomers($gym, $owner, array_values($employees));
+            $this->seedAnnouncements($gym, $owner);
             $this->seedProcurement($gym, $owner, array_values($employees));
             $this->seedPayroll($gym, $owner, array_values($employees));
 
             $owner->notify(new GymApplicationDecided($gym));
+        }
+    }
+
+    private function seedAnnouncements(Gym $gym, User $owner): void
+    {
+        $group = $gym->customerGroups()->orderBy('id')->firstOrFail();
+        foreach ([
+            ['title' => 'Welcome to training', 'body' => 'Please bring water and wraps to each session.',
+                'kind' => 'announcement', 'audience_type' => AudienceType::AllMembers->value],
+            ['title' => 'Beginners training meetup', 'body' => 'Meet the coaches and practise the basics together.',
+                'kind' => 'event', 'audience_type' => AudienceType::CustomerGroup->value,
+                'customer_group_id' => $group->id, 'event_starts_at' => now()->addWeek()->setTime(10, 0),
+                'event_place' => $gym->rooms()->orderBy('id')->firstOrFail()->name],
+        ] as $data) {
+            DB::transaction(function () use ($gym, $owner, $data) {
+                Gym::whereKey($gym->id)->lockForUpdate()->firstOrFail();
+                $audience = app(AnnouncementAudience::class)->resolve(
+                    $gym, AudienceType::from($data['audience_type']), null, $data['customer_group_id'] ?? null,
+                );
+                $announcement = Announcement::create([
+                    ...$data, 'created_by' => $owner->id,
+                    'recipients_count' => $audience['users']->count(), 'skipped_count' => $audience['skipped'],
+                ]);
+                foreach ($audience['users']->chunk(200) as $users) {
+                    Notification::sendNow($users, new AnnouncementPublished($announcement));
+                }
+            });
         }
     }
 

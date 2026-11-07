@@ -138,6 +138,8 @@ function preferencesForm(preferences: GymPreferences | null | undefined): Prefer
 /** S-09, R-30, R-97 and R-98: find a gym by filters, distance and best match. */
 export default function Home() {
   const { user } = useAuth()
+  const isOwner = user?.account_type === 'owner'
+  const isMember = user?.account_type === 'member'
 
   const [options, setOptions] = useState<DiscoveryOptions | null>(null)
   const [optionsError, setOptionsError] = useState('')
@@ -211,6 +213,8 @@ export default function Home() {
   }, [applied, searchVersion])
 
   useEffect(() => {
+    if (!isMember) return
+
     let live = true
     setPreferencesLoading(true)
     setPreferencesLoadError('')
@@ -229,7 +233,7 @@ export default function Home() {
     return () => {
       live = false
     }
-  }, [preferencesVersion])
+  }, [isMember, preferencesVersion])
 
   const mapGyms = useMemo<GymMapGym[]>(
     () =>
@@ -367,6 +371,7 @@ export default function Home() {
   }
 
   async function findMatches() {
+    if (!isMember) return
     setMatchesLoading(true)
     setMatchesError('')
     try {
@@ -384,8 +389,15 @@ export default function Home() {
     <div className="flex flex-col gap-10">
       <PageHeader
         title={`Welcome, ${user?.first_name ?? ''}`}
-        description={user?.is_platform_admin ? 'Gyms live on the platform today.' : 'Find a gym, or put your own on the platform.'}
+        description={
+          user?.is_platform_admin
+            ? 'Gyms live on the platform today.'
+            : isOwner
+              ? 'Run your gym, or start an application.'
+              : 'Find a gym and see your best matches.'
+        }
         actions={
+          isOwner &&
           !user?.is_platform_admin && (
             <Button render={<Link to="/apply" />}>
               <FilePlus2 aria-hidden /> Apply to run a gym
@@ -393,6 +405,21 @@ export default function Home() {
           )
         }
       />
+
+      {isOwner && user?.gyms.length === 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle render={<h2 />}>No gym yet</CardTitle>
+            <CardDescription>Apply to run your own gym, then follow the review from your applications.</CardDescription>
+          </CardHeader>
+          <CardPanel className="flex flex-wrap items-center gap-2 pt-0">
+            <Button render={<Link to="/apply" />}>Start an application</Button>
+            <Button variant="outline" render={<Link to="/applications" />}>
+              My applications
+            </Button>
+          </CardPanel>
+        </Card>
+      )}
 
       {user && user.gyms.length > 0 && (
         <section className="flex flex-col gap-3" aria-labelledby="your-gyms">
@@ -763,7 +790,8 @@ export default function Home() {
         </section>
       </div>
 
-      <section className="flex flex-col gap-4" aria-labelledby="best-matches">
+      {isMember && (
+        <section className="flex flex-col gap-4" aria-labelledby="best-matches">
         <div className="flex flex-wrap items-baseline gap-2">
           <h2 id="best-matches" className="font-semibold text-xl tracking-tight">Best matches</h2>
           <span className="text-muted-foreground text-sm">Gyms ranked by your sport, price range and distance.</span>
@@ -965,7 +993,8 @@ export default function Home() {
             )}
           </CardPanel>
         </Card>
-      </section>
+        </section>
+      )}
     </div>
   )
 }

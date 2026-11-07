@@ -31,7 +31,18 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('Password123'),
             'remember_token' => Str::random(10),
+            'account_type' => 'member',
         ];
+    }
+
+    /**
+     * Indicate that the account is a Gym Owner account.
+     */
+    public function owner(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'account_type' => 'owner',
+        ]);
     }
 
     /**

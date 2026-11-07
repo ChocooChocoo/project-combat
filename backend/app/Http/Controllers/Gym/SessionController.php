@@ -144,6 +144,9 @@ class SessionController extends Controller
                 $data['flag_reason'] = null;
             }
             $model->update([...$data, 'starts_at' => $start, 'ends_at' => $end]);
+            if ($timeChanged) {
+                $model->bookings()->update(['reminder_sent_at' => null]);
+            }
             $model->refresh();
             if ($moved) {
                 $changes = [];

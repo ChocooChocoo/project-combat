@@ -33,6 +33,7 @@ class AccountTest extends TestCase
             'email' => 'ana@example.com',
             'password' => 'Secret123',
             'password_confirmation' => 'Secret123',
+            'account_type' => 'member',
             ...$extra,
         ]);
     }

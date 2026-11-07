@@ -1,7 +1,7 @@
 import { ArrowLeft, Check, ChevronDown, Clock, Dumbbell, Mail, MapPin, Phone, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { NotificationsMenu, type NoticeList } from '@/components/notifications-menu'
+import { NotificationsMenu } from '@/components/notifications-menu'
 import { PageHeader } from '@/components/page-header'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -105,20 +105,14 @@ function planLength(plan: PublicPlan): string {
 }
 
 function BrandBar({ signedIn }: { signedIn: boolean }) {
-  const [unread, setUnread] = useState(0)
-
-  useEffect(() => {
-    if (signedIn) api<NoticeList>('/notifications').then((r) => setUnread(r.unread_count)).catch(() => undefined)
-  }, [signedIn])
-
   return (
-    <header className="flex flex-wrap items-center gap-3">
+    <header className="safe-area-top flex flex-wrap items-center gap-3">
       <Link className="flex items-center gap-2 font-semibold" to="/">
         <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm">CP</span>
         Combat Platform
       </Link>
       <div className="ms-auto flex items-center gap-2">
-        {signedIn && <NotificationsMenu unread={unread} onUnreadChange={setUnread} />}
+        {signedIn && <NotificationsMenu />}
         <Button size="sm" variant="outline" render={<Link to={signedIn ? '/' : '/sign-in'} />}>
           {signedIn ? 'Home' : 'Sign in'}
         </Button>
@@ -188,11 +182,11 @@ export default function GymPublic() {
 
   const access = approvedGym(user, id)
   const manage = access ? canOpenWorkspace(access) : false
-  const canApply = !mine && !access?.roles.includes('owner')
+  const canApply = !mine && !access?.roles.includes('owner') && (!user || user.account_type === 'member')
 
   if (authLoading) {
     return (
-      <main className="mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-8 px-4 py-8 md:px-8">
+      <main className="mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-8 wrap-anywhere px-4 py-8 md:px-8">
         <BrandBar signedIn={false} />
         <div className="flex flex-col gap-6" aria-busy="true">
           <Skeleton className="h-24" />
@@ -204,7 +198,7 @@ export default function GymPublic() {
 
   if (!user) {
     return (
-      <main className="mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-8 px-4 py-8 md:px-8">
+      <main className="mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-8 wrap-anywhere px-4 py-8 md:px-8">
         <BrandBar signedIn={false} />
         <Card className="mx-auto w-full max-w-lg">
           <CardHeader>
@@ -226,7 +220,7 @@ export default function GymPublic() {
 
   if (error?.status === 404 || !Number.isInteger(id) || id <= 0) {
     return (
-      <main className="mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-8 px-4 py-8 md:px-8">
+      <main className="mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-8 wrap-anywhere px-4 py-8 md:px-8">
         <BrandBar signedIn />
         <PageHeader title="Gym not found" description="This gym is not on the platform, or it is not approved yet." />
         <Empty className="rounded-xl border">
@@ -242,7 +236,7 @@ export default function GymPublic() {
 
   if (error) {
     return (
-      <main className="mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-8 px-4 py-8 md:px-8">
+      <main className="mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-8 wrap-anywhere px-4 py-8 md:px-8">
         <BrandBar signedIn />
         <PageHeader title="Gym profile" description="This gym could not be loaded." />
         <Alert variant="error">
@@ -265,7 +259,7 @@ export default function GymPublic() {
 
   if (loading || !gym) {
     return (
-      <main className="mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-8 px-4 py-8 md:px-8">
+      <main className="mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-8 wrap-anywhere px-4 py-8 md:px-8">
         <BrandBar signedIn />
         <div className="flex flex-col gap-6" aria-busy="true">
           <Skeleton className="h-28" />
@@ -292,7 +286,7 @@ export default function GymPublic() {
   }
 
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-8 px-4 py-8 md:px-8">
+    <main className="mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-8 wrap-anywhere px-4 py-8 md:px-8">
       <BrandBar signedIn />
 
       <PageHeader
@@ -572,6 +566,10 @@ export default function GymPublic() {
           </span>
         </div>
 
+        {user.account_type === 'owner' && (
+          <p className="text-muted-foreground text-sm">Gym Owner accounts can view gyms but not join them.</p>
+        )}
+
         {plans.length === 0 ? (
           <Empty className="rounded-xl border">
             <EmptyHeader>
@@ -748,7 +746,11 @@ function CoachCard({ coach }: { coach: PublicCoach }) {
           )}
           <div className="flex min-w-0 flex-col gap-1">
             <h3 className="font-semibold">{coach.name}</h3>
-            {coach.rank && <Badge variant="outline" className="w-fit">{coach.rank}</Badge>}
+            {coach.rank && (
+              <Badge variant="outline" className="h-auto min-h-5.5 w-fit max-w-full whitespace-normal wrap-anywhere py-0.5">
+                {coach.rank}
+              </Badge>
+            )}
             {coach.specialisation && <p className="text-muted-foreground text-sm">{coach.specialisation}</p>}
           </div>
         </div>

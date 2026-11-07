@@ -8,9 +8,22 @@ use Tests\TestCase;
 
 class RouteAccessTest extends TestCase
 {
+    public function test_platform_notices_use_admin_middleware_not_gym_permissions(): void
+    {
+        foreach (['GET', 'POST'] as $method) {
+            $route = Route::getRoutes()->match(\Illuminate\Http\Request::create('/api/admin/notices', $method));
+            $this->assertContains('admin', $route->gatherMiddleware());
+            $this->assertSame([], array_values(array_filter($route->gatherMiddleware(),
+                fn ($middleware) => is_string($middleware) && str_starts_with($middleware, 'permission:'))));
+        }
+    }
+
     public function test_every_route_has_the_exact_resource_permission(): void
     {
         $expected = [
+            'GET announcements' => 'announcements.general.view',
+            'GET announcements/options' => 'announcements.general.manage',
+            'POST announcements' => 'announcements.general.manage',
             'GET roles' => 'hr.roles.view', 'GET staff/{user}/roles' => 'hr.roles.view',
             'POST roles' => 'hr.roles.manage', 'PUT roles/{role}' => 'hr.roles.manage',
             'DELETE roles/{role}' => 'hr.roles.manage', 'PUT staff/{user}/roles' => 'hr.roles.manage',

@@ -4,10 +4,12 @@ import { workspaceHome } from '@/components/gym-nav'
 import { GymWorkspaceLayout } from '@/components/gym-workspace-layout'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/lib/auth'
+import { NotificationsProvider } from '@/lib/notifications'
 import { approvedGym, homePath } from '@/lib/gym-access'
 import AcceptInvite from '@/pages/AcceptInvite'
 import AdminHome from '@/pages/admin/AdminHome'
 import AdminPermissions from '@/pages/admin/AdminPermissions'
+import AdminNotices from '@/pages/admin/AdminNotices'
 import ReviewApplication from '@/pages/admin/ReviewApplication'
 import ApplicationDetail from '@/pages/ApplicationDetail'
 import FirstPassword from '@/pages/FirstPassword'
@@ -16,6 +18,7 @@ import GymApply from '@/pages/GymApply'
 import GymPublic from '@/pages/GymPublic'
 import EmployeeRecord from '@/pages/gym/EmployeeRecord'
 import GymApplications from '@/pages/gym/GymApplications'
+import GymAnnouncements from '@/pages/gym/GymAnnouncements'
 import GymBookings from '@/pages/gym/GymBookings'
 import GymCheckIn from '@/pages/gym/GymCheckIn'
 import GymAttendance from '@/pages/gym/GymAttendance'
@@ -94,6 +97,12 @@ function AdminOnly() {
   return user?.is_platform_admin ? <Outlet /> : <Navigate to="/" replace />
 }
 
+/** Screens for one account type only. The backend refuses the other type too (403). */
+function AccountOnly({ type }: { type: 'owner' | 'member' }) {
+  const { user } = useAuth()
+  return user?.account_type === type ? <Outlet /> : <Navigate to="/" replace />
+}
+
 /** The workspace belongs to one approved gym the person actually belongs to. */
 function GymMember() {
   const { user } = useAuth()
@@ -111,6 +120,7 @@ function WorkspaceHome() {
 
 export default function App() {
   return (
+    <NotificationsProvider>
     <Routes>
       <Route element={<Guard need="guest" />}>
         <Route path="/sign-in" element={<SignIn />} />
@@ -128,11 +138,15 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/notifications" element={<Notifications />} />
-          <Route path="/apply" element={<GymApply />} />
-          <Route path="/applications" element={<MyApplications />} />
-          <Route path="/applications/:id" element={<ApplicationDetail />} />
-          <Route path="/applications/:id/edit" element={<GymApply />} />
-          <Route path="/gyms/:gymId/apply" element={<MembershipApply />} />
+          <Route element={<AccountOnly type="owner" />}>
+            <Route path="/apply" element={<GymApply />} />
+            <Route path="/applications" element={<MyApplications />} />
+            <Route path="/applications/:id" element={<ApplicationDetail />} />
+            <Route path="/applications/:id/edit" element={<GymApply />} />
+          </Route>
+          <Route element={<AccountOnly type="member" />}>
+            <Route path="/gyms/:gymId/apply" element={<MembershipApply />} />
+          </Route>
           <Route path="/memberships" element={<MyMembershipList />} />
           <Route path="/bookings" element={<MyBookings />} />
           <Route path="/memberships/:id" element={<MyMembership />} />
@@ -159,6 +173,7 @@ export default function App() {
               <Route path="services" element={<GymServices />} />
               <Route path="plans" element={<GymPlans />} />
               <Route path="applications" element={<GymApplications />} />
+              <Route path="announcements" element={<GymAnnouncements />} />
               <Route path="members" element={<GymMembers />} />
               <Route path="members/:membershipId" element={<MemberRecord />} />
               <Route path="customers" element={<GymCustomers />} />
@@ -174,11 +189,13 @@ export default function App() {
           <Route element={<AdminOnly />}>
             <Route path="/admin" element={<AdminHome />} />
             <Route path="/admin/permissions" element={<AdminPermissions />} />
+            <Route path="/admin/notices" element={<AdminNotices />} />
             <Route path="/admin/applications/:id" element={<ReviewApplication />} />
           </Route>
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </NotificationsProvider>
   )
 }

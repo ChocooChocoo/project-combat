@@ -41,6 +41,21 @@ class NotificationTest extends TestCase
         $this->actingAs($me)->postJson("/api/notifications/{$theirs}/read")->assertNotFound();
     }
 
+    public function test_unread_count_counts_only_own_unread_notices_and_updates_after_marking_read(): void
+    {
+        $me = User::factory()->create();
+        $first = $this->notice($me);
+        $this->notice($me);
+        $this->notice($me, read: true);
+        $this->notice(User::factory()->create());
+
+        $this->actingAs($me)->getJson('/api/notifications/unread-count')
+            ->assertOk()->assertExactJson(['unread_count' => 2]);
+        $this->postJson("/api/notifications/{$first}/read")->assertOk();
+        $this->getJson('/api/notifications/unread-count')
+            ->assertOk()->assertExactJson(['unread_count' => 1]);
+    }
+
     public function test_mark_read_mark_all_and_clear_read(): void
     {
         $me = User::factory()->create();

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AccountType;
 use App\Enums\GymPersonType;
 use App\Support\PermissionCatalog;
 use Database\Factories\UserFactory;
@@ -18,7 +19,7 @@ use Illuminate\Support\Collection;
 use Laravel\Sanctum\HasApiTokens;
 
 // is_platform_admin and password_change_required are deliberately not fillable.
-#[Fillable(['first_name', 'last_name', 'email', 'phone', 'password'])]
+#[Fillable(['first_name', 'last_name', 'email', 'phone', 'password', 'account_type'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -32,7 +33,13 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_platform_admin' => 'boolean',
             'password_change_required' => 'boolean',
+            'account_type' => AccountType::class,
         ];
+    }
+
+    public function isOwnerAccount(): bool
+    {
+        return $this->account_type === AccountType::Owner;
     }
 
     public function gyms(): BelongsToMany

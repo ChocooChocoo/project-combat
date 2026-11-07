@@ -20,7 +20,7 @@ class SessionBooking extends Model
         return [
             'status' => BookingStatus::class, 'fee' => 'decimal:2',
             'waitlisted_at' => 'datetime', 'decided_at' => 'datetime', 'cancelled_at' => 'datetime',
-            'check_in_at' => 'datetime', 'check_out_at' => 'datetime',
+            'check_in_at' => 'datetime', 'check_out_at' => 'datetime', 'reminder_sent_at' => 'datetime',
         ];
     }
 

@@ -119,7 +119,11 @@ class FollowUpController extends Controller
                 }
             }
 
-            $row->fill($changes)->save();
+            $row->fill($changes);
+            if ($row->isDirty(['assigned_to', 'due_at'])) {
+                $row->reminded_at = null;
+            }
+            $row->save();
 
             return $row;
         });
