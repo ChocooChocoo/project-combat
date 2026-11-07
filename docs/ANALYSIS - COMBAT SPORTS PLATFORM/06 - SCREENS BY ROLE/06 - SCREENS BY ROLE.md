@@ -99,14 +99,16 @@ The owner holds every active permission for their own gym. Employees see the sam
 | S-33 | Stock | Items, quantities, places, movements, minimum levels | — | D-62 to D-64, R-72 to R-74 (built in Packet 6B) |
 | S-34 | Purchasing | Restock list, purchase requests and approvals, suppliers, purchase orders, receiving, status | — | D-65 to D-69, R-75 to R-79 |
 | S-35 | Announcements | Write an announcement or event; choose all members, a class or a customer group | — | D-70 and D-71, R-80 |
-| S-36 | Decision support for owners | The eight dashboards, trends, forecast, flagged problems, sustainability view | — | D-75 to D-79, R-85 to R-96 |
+| S-36 | Decision support for owners | Built and checked 7 November 2026: eight dashboards plus trends, forecast, flagged problems and five-measure sustainability; selected dates, payroll mask, role denials and active-view print reports. | — | D-75 to D-79, R-85 to R-96 |
 
-The open questions that used to gate these screens are now settled except one:
+The open questions that used to gate these screens are now settled:
 
 - Q-14 (lateness) is answered, so S-26 and S-28 are built.
 - Q-13 (coach pay) is answered, so S-29 is built.
 - Q-12 and Q-18 (waiting lists and approval policy) are answered, so S-25 is built.
-- S-36's forecast still waits on Q-15, which belongs to Phase 8.
+- Q-15 is answered: S-36 forecasts three months from up to twelve completed history months using least-squares, shows R² fit, and uses a labelled average for short history.
+
+**Built in Phase 8 (7 November 2026):** S-36 is `/gyms/:id/manage/decision-support`. Exact `decision_support.general.view` opens all twelve read-only views without source-module grants. Exactly `payroll.runs.view` allows individual payroll; aggregate payroll remains visible without it. The platform administrator gets no gym access merely by being administrator. Reports reuse the loaded active payload. Current stock and receivables are labelled snapshots; balances state "Outstanding balances as of today; not a historical balance" (user accepted 7 November). Trends/forecast have their own history windows; budgets use the whole end month. "coach based on attendance" is an accepted inferred context, not causation. All twelve views render for owner and real sole-decision employee; plain employee has no nav and gets denial/403. Final browser close-out proves pure payroll-only and front-desk denial, the five-role matrix, keyboard Print/Retry, invalid/empty/stale/basis states and both payslip print regressions. Independent validation records 14/14 frozen acceptance rows met; Phase 8 is complete.
 
 **Built in Phase 6 (6 November 2026):** S-28 Staff attendance and overtime, S-29 Payroll, S-31 Finance (including payables, budgets and reports), S-32 Customers, S-33 Stock and S-34 Purchasing. S-30 Payments desk also gained the income view, and S-38 My work gained the released Payslips tab. Q-13, Q-14, Q-21 and the old-system questions are answered or dropped. Browser verification of these screens was completed on 6 November 2026 at desktop and phone width with owner, HR, Finance, Front Desk, Operations Manager, Coach, employee and member roles; the residual edge checks are listed in Packet 6H.
 

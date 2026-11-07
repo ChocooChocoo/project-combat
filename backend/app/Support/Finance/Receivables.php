@@ -4,6 +4,8 @@ namespace App\Support\Finance;
 
 use App\Models\Gym;
 use App\Models\User;
+use App\Support\Payroll\Money;
+use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +20,15 @@ class Receivables
     public function forGym(Gym $gym): Collection
     {
         return $this->grouped($gym->id, null);
+    }
+
+    public function summaryForGym(Gym $gym): array
+    {
+        $rows = $this->forGym($gym);
+
+        return ['outstanding' => Money::toDecimal($rows->sum(fn ($row) => Money::toCents($row['total']))),
+            'debtor_count' => $rows->count(),
+            'members' => $rows->map(fn ($row) => ['user_id' => $row['user_id'], 'member_name' => $row['member_name'], 'total' => $row['total']])->all()];
     }
 
     /** @return array{balance: string, sources: list<array{kind: string, id: int, label: string, amount: string}>} */
@@ -95,15 +106,17 @@ class Receivables
     private function membershipRows(?int $gymId, ?int $userId): Collection
     {
         $paid = DB::table('payments')
-            ->select('membership_id')
+            ->select('membership_id', 'gym_id')
             ->selectRaw('SUM(amount) as paid')
             ->whereNotNull('membership_id')
-            ->groupBy('membership_id');
+            ->when($gymId, fn ($query) => $query->where('gym_id', $gymId))
+            ->groupBy('membership_id', 'gym_id');
 
         return DB::table('memberships')
             ->join('users', 'users.id', '=', 'memberships.user_id')
-            ->leftJoin('membership_plans', 'membership_plans.id', '=', 'memberships.membership_plan_id')
-            ->leftJoinSub($paid, 'mp', 'mp.membership_id', '=', 'memberships.id')
+            ->leftJoin('membership_plans', fn (JoinClause $join) => $join->on('membership_plans.id', '=', 'memberships.membership_plan_id')
+                ->on('membership_plans.gym_id', '=', 'memberships.gym_id'))
+            ->leftJoinSub($paid, 'mp', fn (JoinClause $join) => $join->on('mp.membership_id', '=', 'memberships.id')->on('mp.gym_id', '=', 'memberships.gym_id'))
             ->when($gymId, fn ($query) => $query->where('memberships.gym_id', $gymId))
             ->when($userId, fn ($query) => $query->where('memberships.user_id', $userId))
             ->whereRaw('memberships.amount_charged - COALESCE(mp.paid, 0) > 0')
@@ -122,15 +135,17 @@ class Receivables
     private function bookingRows(?int $gymId, ?int $userId): Collection
     {
         $paid = DB::table('payments')
-            ->select('session_booking_id')
+            ->select('session_booking_id', 'gym_id')
             ->selectRaw('SUM(amount) as paid')
             ->whereNotNull('session_booking_id')
-            ->groupBy('session_booking_id');
+            ->when($gymId, fn ($query) => $query->where('gym_id', $gymId))
+            ->groupBy('session_booking_id', 'gym_id');
 
         return DB::table('session_bookings')
             ->join('users', 'users.id', '=', 'session_bookings.user_id')
-            ->join('training_sessions', 'training_sessions.id', '=', 'session_bookings.training_session_id')
-            ->leftJoinSub($paid, 'bp', 'bp.session_booking_id', '=', 'session_bookings.id')
+            ->join('training_sessions', fn (JoinClause $join) => $join->on('training_sessions.id', '=', 'session_bookings.training_session_id')
+                ->on('training_sessions.gym_id', '=', 'session_bookings.gym_id'))
+            ->leftJoinSub($paid, 'bp', fn (JoinClause $join) => $join->on('bp.session_booking_id', '=', 'session_bookings.id')->on('bp.gym_id', '=', 'session_bookings.gym_id'))
             ->when($gymId, fn ($query) => $query->where('session_bookings.gym_id', $gymId))
             ->when($userId, fn ($query) => $query->where('session_bookings.user_id', $userId))
             ->whereIn('session_bookings.status', ['requested', 'booked'])

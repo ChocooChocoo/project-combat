@@ -21,6 +21,19 @@ class RouteAccessTest extends TestCase
     public function test_every_route_has_the_exact_resource_permission(): void
     {
         $expected = [
+            'GET decision-support/options' => 'decision_support.general.view',
+            'GET decision-support/attendance' => 'decision_support.general.view',
+            'GET decision-support/athletes' => 'decision_support.general.view',
+            'GET decision-support/services' => 'decision_support.general.view',
+            'GET decision-support/memberships' => 'decision_support.general.view',
+            'GET decision-support/customers' => 'decision_support.general.view',
+            'GET decision-support/employees' => 'decision_support.general.view',
+            'GET decision-support/money' => 'decision_support.general.view',
+            'GET decision-support/stock' => 'decision_support.general.view',
+            'GET decision-support/trends' => 'decision_support.general.view',
+            'GET decision-support/forecast' => 'decision_support.general.view',
+            'GET decision-support/problems' => 'decision_support.general.view',
+            'GET decision-support/sustainability' => 'decision_support.general.view',
             'GET announcements' => 'announcements.general.view',
             'GET announcements/options' => 'announcements.general.manage',
             'POST announcements' => 'announcements.general.manage',

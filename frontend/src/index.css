@@ -268,8 +268,8 @@
     visibility: hidden;
   }
 
-  .print-area,
-  .print-area * {
+  body .print-area,
+  body .print-area * {
     visibility: visible;
   }
 
@@ -293,4 +293,25 @@
   .print-area .print\:hidden {
     display: none !important;
   }
+
+  body:has(.print-report) > :not(.print-report) {
+    display: none !important;
+  }
+
+  .print-area.print-report {
+    display: block !important;
+    position: static;
+    inset: auto;
+    width: 100%;
+    overflow: visible;
+    max-height: none;
+  }
+
+  .print-report thead { display: table-header-group; }
+  .print-report tr { break-inside: avoid; }
+  .print-report th,
+  .print-report td { white-space: normal; overflow-wrap: anywhere; }
+  .print-report section { break-inside: auto; }
+  .print-report [data-slot="table-container"],
+  .print-report .overflow-x-auto { overflow: visible !important; }
 }

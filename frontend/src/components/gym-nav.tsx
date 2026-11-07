@@ -30,6 +30,7 @@ const ITEMS: ItemDefinition[] = [
   { segment: 'purchasing', label: 'Purchasing', icon: ShoppingCart, permissions: ['procurement.requests.view', 'procurement.orders.view', 'procurement.suppliers.view', 'inventory.items.view'], group: 'Business' },
   { segment: 'settings', label: 'Setup', icon: Settings2, permissions: ['gym_setup.settings.view'], group: 'Setup' },
   { segment: 'rooms', label: 'Rooms', icon: DoorOpen, permissions: ['gym_setup.rooms.view'], group: 'Setup' },
+  { segment: 'decision-support', label: 'Decision support', icon: ClipboardList, permissions: ['decision_support.general.view'], group: 'Business' },
 ]
 
 const GROUP_ORDER: GroupName[] = ['People', 'Training', 'Members', 'Business', 'Setup']

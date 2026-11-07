@@ -18,6 +18,8 @@ php artisan migrate            # apply database changes
 php artisan app:make-admin you@example.com   # the only way to make a platform admin
 php artisan app:sync-permissions             # sync config/permissions.php catalog into the DB
 php artisan app:seed-system-roles            # add starter roles (config/access.php) to gyms
+php artisan app:check-stock-counts           # report stock items whose quantity differs from movements
+php artisan app:mark-staff-absences --from=2026-11-01 --to=2026-11-06   # backfill absences (default: yesterday)
 
 # Frontend (from frontend/)
 pnpm dev                       # app at http://localhost:5173
@@ -40,6 +42,10 @@ The frontend calls the API at `VITE_API_URL` (`frontend/.env`).
 - **Auth.** Sanctum bearer tokens, stored in `localStorage` by `frontend/src/lib/api.ts`. Route groups in
   `backend/routes/api.php` stack middleware in order: `auth:sanctum` → `password.changed` → `verified.email`.
   Platform admin screens use `admin` middleware; `is_platform_admin` is set only by `app:make-admin`.
+- **Account types.** Each user has a fixed `account_type` (`AccountType`: `member` or `owner`), chosen at
+  sign-up and never changed. Routes check it with `account:owner` / `account:member` (`EnsureAccountType`):
+  only owners apply for gyms; only members join gyms, set preferences or get best matches. The frontend mirrors
+  this with `AccountOnly` in `App.tsx`. Staff and platform admins are not affected by account type.
 - **Gym separation (multi-tenancy).** Every route under `gyms/{gym}` runs `gym` middleware (`EnsureGymAccess`),
   which checks membership and sets the request's gym in `App\Support\CurrentGym`. Models using the
   `BelongsToGym` trait are scoped to that gym by a global scope, fill `gym_id` on create, and return nothing
@@ -55,7 +61,8 @@ The frontend calls the API at `VITE_API_URL` (`frontend/.env`).
   the real check.
 - **Backend layout.** Controllers stay thin. Business rules and multi-step writes live in `app/Support`
   (`*Ledger`, `Payroll/`, `Finance/`, `Procurement/`), usually inside `DB::transaction` with
-  `lockForUpdate`. JSON shapes come from `Presents*` traits in `Http/Controllers/**/Concerns`, not API Resources.
+  `lockForUpdate`. JSON shapes come from `Presents*` traits in `Http/Controllers/**/Concerns`, not API Resources (only exception: `UserResource`
+  for the signed-in user).
   Stock quantity changes only through `StockLedger` movements. `PayrollLock::assertOpen` blocks edits to
   dates inside an in-review or released payroll run (409). Payroll math uses integer centavos
   (`Payroll\Money`); statutory rates live in the `statutory_rates` table, not config.
@@ -65,6 +72,11 @@ The frontend calls the API at `VITE_API_URL` (`frontend/.env`).
 - **Notices and live updates.** Notices use database notifications only. The shared notification provider and the
   session/booking screens poll every 15 seconds while the tab is visible; there are no websockets, SSE or push.
   Announcements reuse `announcements.general.view|manage`; platform notices are admin-only and carry no gym data.
+- **Decision support.** Read-only aggregates live in `app/Support/DecisionSupport`; all thirteen GET routes use
+  exactly `decision_support.general.view`, without source-module gates. Only `payroll.runs.view` unmasks individual
+  payroll server-side. Backend supplies business totals/rates/forecasts; frontend formats values and chart geometry only.
+  Active reports use a direct-body `.print-area.print-report` portal with static print flow. Keep print visibility
+  selectors at least as specific as `body:has(.print-area) *`; DOM structure alone does not prove printable text.
 - **Frontend.** `src/App.tsx` holds all routes and guards (guest, signed-in, first password, admin, gym member).
   `src/components/ui/` is coss UI (Base UI + Tailwind v4); reuse it before writing new components. `@/` maps to `src/`.
   Each area has `src/lib/<area>.ts` (response types and display helpers, e.g. `payroll.ts`, `inventory.ts`) used by `src/pages/gym/*`.
