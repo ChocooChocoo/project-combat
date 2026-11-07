@@ -43,7 +43,16 @@ export default function SignIn() {
 
   return (
     <AuthCard title="Sign in" description="Access your gyms, sessions and account.">
-      <Form className="flex flex-col gap-4" errors={errors} onSubmit={submit}>
+      <Form
+        className="flex flex-col gap-4"
+        errors={errors}
+        onChange={() => {
+          // The server error sits on email, so editing only the password must clear it too.
+          // Base UI blocks the next submit while any field is still marked invalid.
+          if (Object.keys(errors).length > 0) setErrors({})
+        }}
+        onSubmit={submit}
+      >
         {message && <Alert variant="warning"><AlertDescription>{message}</AlertDescription></Alert>}
         <TextField name="email" label="Email" type="email" autoComplete="email" required />
         <Field name="password" className="w-full">
