@@ -67,6 +67,7 @@ function NavGroup({ label, items }: { label?: string; items: Item[] }) {
 /** Picks the gym the workspace screens should show. The URL is the only source of truth. */
 function GymSwitcher({ gyms, current }: { gyms: GymAccess[]; current?: GymAccess }) {
   const navigate = useNavigate()
+  const onlyGym = gyms.length === 1 ? gyms[0] : undefined
 
   return (
     <SidebarMenuItem>
@@ -78,9 +79,9 @@ function GymSwitcher({ gyms, current }: { gyms: GymAccess[]; current?: GymAccess
             <Building2 className="size-4" aria-hidden />
           </span>
           <span className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-medium">{current?.name ?? 'Choose a gym'}</span>
+            <span className="truncate font-medium">{current?.name ?? onlyGym?.name ?? 'Choose a gym'}</span>
             <span className="truncate text-muted-foreground text-xs">
-              {current ? 'Gym workspace' : `${gyms.length} approved`}
+              {current || onlyGym ? 'Gym workspace' : `${gyms.length} approved`}
             </span>
           </span>
           <ChevronsUpDown className="ms-auto size-4 opacity-60" />
@@ -148,7 +149,8 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
   const currentGym = approvedGym(user, Number(pathname.match(/^\/gyms\/(\d+)(?:\/|$)/)?.[1]))
 
   const general: Item[] = [{ to: '/', label: 'Home', icon: House, end: true }]
-  if (user?.account_type === 'member' || user?.has_member_records) {
+  const isMemberDashboard = !user?.is_platform_admin && (user?.account_type === 'member' || user?.has_member_records)
+  if (isMemberDashboard) {
     general.push({ to: '/memberships', label: 'My memberships', icon: IdCard })
     general.push({ to: '/bookings', label: 'My bookings', icon: CalendarDays })
   }
@@ -168,6 +170,12 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
 
   return (
     <SidebarProvider>
+      <a
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:rounded-lg focus:bg-background focus:px-4 focus:py-2 focus:font-medium focus:text-sm focus:ring-2 focus:ring-ring"
+        href="#main-content"
+      >
+        Skip to content
+      </a>
       <Sidebar collapsible="icon">
         <SidebarHeader className="safe-area-top [--safe-area-top-padding:0.5rem]">
           <SidebarMenu>
@@ -202,7 +210,7 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
         </SidebarFooter>
       </Sidebar>
 
-      <SidebarInset className="min-w-0">
+      <SidebarInset className="min-w-0" id="main-content" tabIndex={-1}>
         <header className="safe-area-top sticky top-0 z-20 flex h-[calc(3.5rem+env(safe-area-inset-top,0px))] shrink-0 items-center gap-2 border-b bg-background px-3 md:px-4">
           <SidebarTrigger className="size-11 md:size-7" aria-label="Toggle navigation" />
           <span className="font-semibold text-sm md:hidden">Combat Platform</span>

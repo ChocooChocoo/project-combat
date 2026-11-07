@@ -1,4 +1,4 @@
-import { FilePlus2, LocateFixed, MapPin, Search, X } from 'lucide-react'
+import { FilePlus2, LocateFixed, MapPin, Search, SlidersHorizontal, Sun, Sunrise, Sunset, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { GymMap, distanceLabel, type GymMapGym } from '@/components/gym-map'
@@ -9,15 +9,18 @@ import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardDescription, CardHeader, CardPanel, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { CheckboxGroup } from '@/components/ui/checkbox-group'
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 import { Form } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
+import { Popover, PopoverDescription, PopoverPopup, PopoverTitle, PopoverTrigger } from '@/components/ui/popover'
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toastManager } from '@/components/ui/toast'
 import { api, ApiError } from '@/lib/api'
-import { useAuth } from '@/lib/auth'
+import { type GymAccess, useAuth } from '@/lib/auth'
+import { cn } from '@/lib/utils'
 import {
   type DiscoveryOptions,
   type GeoResult,
@@ -75,6 +78,12 @@ const SORTS = [
   { value: 'name', label: 'Name' },
   { value: 'distance', label: 'Distance' },
 ]
+
+const TIME_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  morning: Sunrise,
+  afternoon: Sun,
+  evening: Sunset,
+}
 
 function searchQuery(applied: AppliedSearch): string {
   const params = new URLSearchParams()
@@ -135,6 +144,89 @@ function preferencesForm(preferences: GymPreferences | null | undefined): Prefer
   }
 }
 
+/** The owner's return path. One divided list, approved gyms first, no decorative status badges. */
+function YourGymsSection({ gyms, workspaceGymId }: { gyms: GymAccess[]; workspaceGymId?: number }) {
+  const sorted = [...gyms].sort(
+    (left, right) => Number(right.status === 'approved') - Number(left.status === 'approved'),
+  )
+
+  return (
+    <section className="flex flex-col gap-4" aria-labelledby="your-gyms">
+      <div className="flex flex-wrap items-baseline gap-2">
+        <h2 className="font-semibold text-xl tracking-tight" id="your-gyms">
+          Your gyms
+        </h2>
+        {sorted.length > 0 && (
+          <span className="text-muted-foreground text-sm tabular-nums">
+            {sorted.length} {sorted.length === 1 ? 'gym' : 'gyms'}
+          </span>
+        )}
+      </div>
+
+      {sorted.length === 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle render={<h3 />}>No gym yet</CardTitle>
+            <CardDescription>Apply to run your own gym, then follow the review from your applications.</CardDescription>
+          </CardHeader>
+          <CardPanel className="pt-0">
+            <Button size="sm" variant="outline" render={<Link to="/applications" />}>
+              My applications
+            </Button>
+          </CardPanel>
+        </Card>
+      ) : (
+        <Card>
+          <ul className="divide-y">
+            {sorted.map((gym) => {
+              const approved = gym.status === 'approved'
+              return (
+                <li
+                  className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:gap-4 sm:px-6"
+                  key={gym.id}
+                >
+                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1.5">
+                    {approved ? (
+                      <Link className="font-medium underline-offset-4 hover:underline" to={`/gyms/${gym.id}`}>
+                        {gym.name}
+                      </Link>
+                    ) : (
+                      <span className="font-medium">{gym.name}</span>
+                    )}
+                    {!approved && (
+                      <Badge className="capitalize" variant={gym.status === 'rejected' ? 'error' : 'warning'}>
+                        {gym.status.replaceAll('_', ' ')}
+                      </Badge>
+                    )}
+                    {gym.roles.map((role) => (
+                      <Badge className="capitalize" key={role} variant="outline">
+                        {role}
+                      </Badge>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    {approved && canOpenWorkspace(gym) && gym.id !== workspaceGymId && (
+                      <Button size="sm" variant="outline" render={<Link to={`/gyms/${gym.id}/manage`} />}>
+                        Open workspace
+                      </Button>
+                    )}
+                    {approved && gym.roles.includes('member') && (
+                      <Button size="sm" variant="ghost" render={<Link to={`/gyms/${gym.id}/my-record`} />}>
+                        My record
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        </Card>
+      )}
+    </section>
+  )
+}
+
 /** S-09, R-30, R-97 and R-98: find a gym by filters, distance and best match. */
 export default function Home() {
   const { user } = useAuth()
@@ -146,6 +238,7 @@ export default function Home() {
   const [optionsVersion, setOptionsVersion] = useState(0)
 
   const [filters, setFilters] = useState<SearchFilters>(EMPTY_FILTERS)
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const [applied, setApplied] = useState<AppliedSearch>({ filters: EMPTY_FILTERS, point: null })
   const [searchVersion, setSearchVersion] = useState(0)
   const [results, setResults] = useState<SearchResult | null>(null)
@@ -155,8 +248,10 @@ export default function Home() {
   const [point, setPoint] = useState<Point | null>(null)
   const [locating, setLocating] = useState(false)
   const [locationError, setLocationError] = useState('')
+  const [locationNotice, setLocationNotice] = useState('')
 
   const [address, setAddress] = useState('')
+  const [addressOpen, setAddressOpen] = useState(false)
   const [geoResults, setGeoResults] = useState<GeoResult[] | null>(null)
   const [geoLoading, setGeoLoading] = useState(false)
   const [geoError, setGeoError] = useState('')
@@ -201,7 +296,9 @@ export default function Home() {
         setResults({ gyms, total: gyms.length })
       })
       .catch((error) => {
-        if (live) setSearchError(error instanceof ApiError ? error.message : 'Gyms could not be loaded.')
+        if (!live) return
+        setResults(null)
+        setSearchError(error instanceof ApiError ? error.message : 'Gyms could not be loaded.')
       })
       .finally(() => {
         if (live) setSearching(false)
@@ -262,11 +359,28 @@ export default function Home() {
     setPoint(next)
     setFilters(nextFilters)
     setApplied({ filters: nextFilters, point: next })
+    setFiltersOpen(false)
+    setLocationNotice(`Location set to ${next.label}.`)
   }
 
   function search(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    // The address form lives in a portal but still bubbles through this form in React.
+    if (event.target !== event.currentTarget) return
     setApplied({ filters: { ...filters }, point })
+    setFiltersOpen(false)
+  }
+
+  function clearFilters() {
+    const nextFilters = { ...filters, discipline: '', service: '', tier: '', day: '' }
+    setFilters(nextFilters)
+    setApplied({ filters: nextFilters, point })
+  }
+
+  function changeSort(value: string | null) {
+    const sort = value === 'distance' ? 'distance' : 'name'
+    setFilters((current) => ({ ...current, sort }))
+    setApplied((current) => ({ ...current, filters: { ...current.filters, sort } }))
   }
 
   function useMyLocation() {
@@ -318,10 +432,13 @@ export default function Home() {
     setPoint(null)
     setFilters(nextFilters)
     setApplied({ filters: nextFilters, point: null })
+    setLocationNotice('Location cleared.')
   }
 
   async function findAddress(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    // The popover is portalled but still a React descendant of the search form.
+    event.stopPropagation()
     const query = address.trim()
     if (!query) return
 
@@ -342,6 +459,7 @@ export default function Home() {
     setGeoResults(null)
     setAddress(result.label)
     applyPoint({ lat: result.lat, lng: result.lng, label: result.label })
+    setAddressOpen(false)
   }
 
   async function savePreferences(event: React.FormEvent<HTMLFormElement>) {
@@ -385,410 +503,525 @@ export default function Home() {
     }
   }
 
+  const approvedGyms = user?.gyms.filter((gym) => gym.status === 'approved') ?? []
+  const workspaceGym = user?.is_platform_admin ? undefined : approvedGyms.find(canOpenWorkspace)
+  const showGymsFirst = isOwner && !user?.is_platform_admin
+  const activeFilterCount = [filters.discipline, filters.service.trim(), filters.tier, filters.day].filter(Boolean).length
+  const showMap = !searchError && !(results && results.gyms.length === 0 && !point)
+
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-8">
       <PageHeader
         title={`Welcome, ${user?.first_name ?? ''}`}
         description={
           user?.is_platform_admin
             ? 'Gyms live on the platform today.'
-            : isOwner
-              ? 'Run your gym, or start an application.'
-              : 'Find a gym and see your best matches.'
+            : workspaceGym
+              ? 'Return to your gym, or find one on the platform.'
+              : isOwner && user?.gyms.length
+                ? 'Follow your application, or find a gym on the platform.'
+                : isOwner
+                  ? 'Apply to run your own gym, then follow the review from your applications.'
+                  : 'Find a gym and see your best matches.'
         }
         actions={
-          isOwner &&
-          !user?.is_platform_admin && (
-            <Button render={<Link to="/apply" />}>
-              <FilePlus2 aria-hidden /> Apply to run a gym
+          user?.is_platform_admin ? undefined : workspaceGym ? (
+            <Button className="max-sm:min-h-11" render={<Link to={`/gyms/${workspaceGym.id}/manage`} />}>
+              Open workspace
             </Button>
-          )
+          ) : isOwner && user?.gyms.length ? (
+            <Button className="max-sm:min-h-11" variant="outline" render={<Link to="/applications" />}>
+              My applications
+            </Button>
+          ) : isOwner ? (
+            <Button className="max-sm:min-h-11" render={<Link to="/apply" />}>
+              <FilePlus2 aria-hidden /> Start an application
+            </Button>
+          ) : undefined
         }
       />
 
-      {isOwner && user?.gyms.length === 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle render={<h2 />}>No gym yet</CardTitle>
-            <CardDescription>Apply to run your own gym, then follow the review from your applications.</CardDescription>
-          </CardHeader>
-          <CardPanel className="flex flex-wrap items-center gap-2 pt-0">
-            <Button render={<Link to="/apply" />}>Start an application</Button>
-            <Button variant="outline" render={<Link to="/applications" />}>
-              My applications
-            </Button>
-          </CardPanel>
-        </Card>
-      )}
-
-      {user && user.gyms.length > 0 && (
-        <section className="flex flex-col gap-3" aria-labelledby="your-gyms">
-          <h2 id="your-gyms" className="font-semibold text-xl tracking-tight">Your gyms</h2>
-          <ul className="flex flex-col divide-y rounded-xl border">
-            {user.gyms.map((gym) => {
-              const approved = gym.status === 'approved'
-              return (
-                <li key={gym.id} className="flex flex-wrap items-center gap-2 px-4 py-3">
-                  <span className="mr-auto font-medium">
-                    {approved ? (
-                      <Link className="underline-offset-4 hover:underline" to={`/gyms/${gym.id}`}>
-                        {gym.name}
-                      </Link>
-                    ) : (
-                      gym.name
-                    )}
-                  </span>
-                  {gym.roles.map((role) => (
-                    <Badge key={role} variant="outline" className="capitalize">{role}</Badge>
-                  ))}
-                  {approved && canOpenWorkspace(gym) && (
-                    <Button size="sm" variant="outline" render={<Link to={`/gyms/${gym.id}/manage`} />}>
-                      Open workspace
-                    </Button>
-                  )}
-                  {approved && gym.roles.includes('member') && (
-                    <Button size="sm" variant="outline" render={<Link to={`/gyms/${gym.id}/my-record`} />}>
-                      My record
-                    </Button>
-                  )}
-                </li>
-              )
-            })}
-          </ul>
-        </section>
-      )}
+      {showGymsFirst && <YourGymsSection gyms={user?.gyms ?? []} workspaceGymId={workspaceGym?.id} />}
 
       <section className="flex flex-col gap-4" aria-labelledby="find-gym">
-        <div className="flex flex-wrap items-baseline gap-2">
+        <div className="flex flex-col gap-1.5">
           <h2 id="find-gym" className="font-semibold text-xl tracking-tight">Find a gym</h2>
-          <span className="text-muted-foreground text-sm">Search by place, sport, service, tier or opening day.</span>
+          <span id="find-gym-description" className="text-muted-foreground text-sm">
+            Search by place, sport, service, tier or opening day.
+          </span>
         </div>
 
-        <Card>
-          <CardPanel className="flex flex-col gap-5">
-            <Form className="flex flex-col gap-4" onSubmit={search}>
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <Field name="q" className="w-full sm:col-span-2 xl:col-span-2">
+        <Card className="overflow-hidden">
+          <CardPanel className="flex flex-col p-0">
+            {optionsError && (
+              <div className="border-b p-4 sm:p-6">
+                <Alert variant="warning">
+                  <AlertTitle>Filter lists could not be loaded</AlertTitle>
+                  <AlertDescription>
+                    <p>You can still search by text. The sport, tier and day lists need another try.</p>
+                    <Button size="sm" variant="outline" onClick={() => setOptionsVersion((version) => version + 1)}>
+                      Try again
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              </div>
+            )}
+
+            <Form className="flex flex-col" aria-describedby="find-gym-description" onSubmit={search}>
+              <div className="p-4 sm:p-6">
+                <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+                <Field name="q" className="w-full min-w-0">
                   <FieldLabel>Search</FieldLabel>
-                  <Input
-                    type="search"
-                    maxLength={120}
-                    value={filters.q}
-                    onChange={(event) => setFilters({ ...filters, q: event.target.value })}
-                    placeholder="Gym name or service"
-                  />
+                  <InputGroup>
+                    <InputGroupAddon>
+                      <Search aria-hidden />
+                    </InputGroupAddon>
+                    <InputGroupInput
+                      maxLength={120}
+                      name="q"
+                      onChange={(event) => setFilters({ ...filters, q: event.target.value })}
+                      placeholder="Gym name or service"
+                      type="search"
+                      value={filters.q}
+                    />
+                  </InputGroup>
                   <FieldError />
                 </Field>
-                <Field name="location" className="w-full">
+                <Field name="location" className="w-full min-w-0">
                   <FieldLabel>City or province</FieldLabel>
                   <Input
+                    className="max-sm:h-11"
                     maxLength={120}
-                    value={filters.location}
                     onChange={(event) => setFilters({ ...filters, location: event.target.value })}
                     placeholder="City, or city, province"
+                    value={filters.location}
                   />
-                  <FieldDescription>Add a comma to give the city and province together.</FieldDescription>
                   <FieldError />
                 </Field>
-                <Field name="discipline" className="w-full">
+                </div>
+              </div>
+
+              <div className="border-t bg-muted/40 p-4 sm:p-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-baseline gap-2">
+                    <h3 className="font-medium text-sm">Refine results</h3>
+                    {activeFilterCount > 0 && (
+                      <span className="text-muted-foreground text-xs tabular-nums">
+                        {activeFilterCount} active
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {activeFilterCount > 0 && (
+                      <Button onClick={clearFilters} size="xs" type="button" variant="ghost">
+                        Clear
+                      </Button>
+                    )}
+                    <Button
+                      aria-controls="find-gym-filters"
+                      aria-expanded={filtersOpen}
+                      className="max-sm:min-h-11 lg:hidden"
+                      onClick={() => setFiltersOpen((open) => !open)}
+                      type="button"
+                      variant="outline"
+                    >
+                      <SlidersHorizontal aria-hidden />{' '}
+                      {filtersOpen
+                        ? 'Hide filters'
+                        : `Show filters${activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}`}
+                    </Button>
+                  </div>
+                </div>
+
+                <div
+                  className={cn('mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4', !filtersOpen && 'max-lg:hidden')}
+                  id="find-gym-filters"
+                >
+                <Field name="discipline" className="w-full min-w-0">
                   <FieldLabel>Combat sport</FieldLabel>
                   <Select
-                    value={filters.discipline || 'any'}
-                    onValueChange={(value) =>
-                      setFilters({ ...filters, discipline: String(value ?? '') === 'any' ? '' : String(value ?? '') })
-                    }
                     items={[
                       { value: 'any', label: 'Any sport' },
                       ...Object.entries(options?.disciplines ?? {}).map(([value, label]) => ({ value, label })),
                     ]}
+                    onValueChange={(value) =>
+                      setFilters({ ...filters, discipline: String(value ?? '') === 'any' ? '' : String(value ?? '') })
+                    }
+                    value={filters.discipline || 'any'}
                   >
-                    <SelectTrigger disabled={!options}>
+                    <SelectTrigger className="max-sm:min-h-11" disabled={!options}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectPopup>
-                      <SelectItem value="any">Any sport</SelectItem>
+                      <SelectItem className="max-sm:min-h-11" value="any">
+                        Any sport
+                      </SelectItem>
                       {Object.entries(options?.disciplines ?? {}).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
+                        <SelectItem className="max-sm:min-h-11" key={value} value={value}>
                           {label}
                         </SelectItem>
                       ))}
                     </SelectPopup>
                   </Select>
                 </Field>
-                <Field name="service" className="w-full">
+                <Field name="service" className="w-full min-w-0">
                   <FieldLabel>Service</FieldLabel>
                   <Input
+                    className="max-sm:h-11"
                     maxLength={100}
-                    value={filters.service}
                     onChange={(event) => setFilters({ ...filters, service: event.target.value })}
                     placeholder="For example, sparring"
+                    value={filters.service}
                   />
                   <FieldError />
                 </Field>
-                <Field name="tier" className="w-full">
+                <Field name="tier" className="w-full min-w-0">
                   <FieldLabel>Tier</FieldLabel>
                   <Select
+                    items={[
+                      { value: 'any', label: 'Any tier' },
+                      ...tiers.map((tier) => ({ value: tier.value, label: tier.label })),
+                    ]}
+                    onValueChange={(value) =>
+                      setFilters({ ...filters, tier: String(value ?? '') === 'any' ? '' : String(value ?? '') })
+                    }
                     value={filters.tier || 'any'}
-                    onValueChange={(value) => setFilters({ ...filters, tier: String(value ?? '') === 'any' ? '' : String(value ?? '') })}
-                    items={[{ value: 'any', label: 'Any tier' }, ...tiers.map((tier) => ({ value: tier.value, label: tier.label }))]}
                   >
-                    <SelectTrigger disabled={!options}>
+                    <SelectTrigger className="max-sm:min-h-11" disabled={!options}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectPopup>
-                      <SelectItem value="any">Any tier</SelectItem>
+                      <SelectItem className="max-sm:min-h-11" value="any">
+                        Any tier
+                      </SelectItem>
                       {tiers.map((tier) => (
-                        <SelectItem key={tier.value} value={tier.value}>
+                        <SelectItem className="max-sm:min-h-11" key={tier.value} value={tier.value}>
                           {tier.label}
                         </SelectItem>
                       ))}
                     </SelectPopup>
                   </Select>
                 </Field>
-                <Field name="day" className="w-full">
+                <Field name="day" className="w-full min-w-0">
                   <FieldLabel>Open on</FieldLabel>
                   <Select
-                    value={filters.day || 'any'}
-                    onValueChange={(value) => setFilters({ ...filters, day: String(value ?? '') === 'any' ? '' : String(value ?? '') })}
                     items={[
                       { value: 'any', label: 'Any day' },
                       ...DAYS.map((day) => ({ value: day.key, label: options?.weekdays?.[day.key] ?? day.label })),
                     ]}
+                    onValueChange={(value) =>
+                      setFilters({ ...filters, day: String(value ?? '') === 'any' ? '' : String(value ?? '') })
+                    }
+                    value={filters.day || 'any'}
                   >
-                    <SelectTrigger disabled={!options}>
+                    <SelectTrigger className="max-sm:min-h-11" disabled={!options}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectPopup>
-                      <SelectItem value="any">Any day</SelectItem>
+                      <SelectItem className="max-sm:min-h-11" value="any">
+                        Any day
+                      </SelectItem>
                       {DAYS.map((day) => (
-                        <SelectItem key={day.key} value={day.key}>
+                        <SelectItem className="max-sm:min-h-11" key={day.key} value={day.key}>
                           {options?.weekdays?.[day.key] ?? day.label}
                         </SelectItem>
                       ))}
                     </SelectPopup>
                   </Select>
                 </Field>
-                <Field name="sort" className="w-full">
-                  <FieldLabel>Sort by</FieldLabel>
-                  <Select
-                    value={filters.sort}
-                    onValueChange={(value) => {
-                      const sort = String(value ?? 'name') === 'distance' ? 'distance' : 'name'
-                      setFilters({ ...filters, sort })
-                    }}
-                    items={SORTS}
-                  >
-                    <SelectTrigger>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 border-t p-4 sm:flex-row sm:flex-wrap sm:items-center sm:p-6">
+                <Button className="max-sm:min-h-11" type="submit">
+                  <Search aria-hidden /> Search gyms
+                </Button>
+                <Button
+                  className="max-sm:min-h-11"
+                  loading={locating}
+                  onClick={useMyLocation}
+                  type="button"
+                  variant="outline"
+                >
+                  <LocateFixed aria-hidden /> Use my location
+                </Button>
+
+                <Popover onOpenChange={setAddressOpen} open={addressOpen}>
+                  <PopoverTrigger render={<Button className="max-sm:min-h-11" type="button" variant="outline" />}>
+                    <MapPin aria-hidden /> Find an address
+                  </PopoverTrigger>
+                  <PopoverPopup align="start" className="w-[min(22rem,calc(100vw-2rem))]" side="bottom">
+                    <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-1">
+                        <PopoverTitle className="text-base">Find an address</PopoverTitle>
+                        <PopoverDescription>
+                          Pick a result to put it on the map and sort gyms by distance.
+                        </PopoverDescription>
+                      </div>
+
+                      <Form className="flex flex-col gap-2" onSubmit={findAddress}>
+                        <Field name="address" className="w-full min-w-0">
+                          <FieldLabel className="sr-only">Address</FieldLabel>
+                          <Input
+                            className="max-sm:h-11"
+                            maxLength={120}
+                            minLength={2}
+                            onChange={(event) => setAddress(event.target.value)}
+                            placeholder="Street, barangay, city"
+                            required
+                            value={address}
+                          />
+                          <FieldError />
+                        </Field>
+                        <Button className="max-sm:min-h-11 w-full" loading={geoLoading} type="submit" variant="outline">
+                          Find place
+                        </Button>
+                      </Form>
+
+                      {geoError && (
+                        <Alert variant="error">
+                          <AlertTitle>Address search failed</AlertTitle>
+                          <AlertDescription>{geoError}</AlertDescription>
+                        </Alert>
+                      )}
+
+                      {geoResults && (
+                        <div className="overflow-hidden rounded-lg border">
+                          {geoResults.length === 0 ? (
+                            <p className="px-3 py-2 text-muted-foreground text-sm">
+                              No places found. Try a wider address.
+                            </p>
+                          ) : (
+                            <ul className="divide-y">
+                              {geoResults.map((result) => (
+                                <li key={`${result.lat}-${result.lng}-${result.label}`}>
+                                  <button
+                                    className="flex min-h-11 w-full flex-col items-start gap-0.5 px-3 py-2 text-left hover:bg-accent/50 focus-visible:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                                    onClick={() => pickAddress(result)}
+                                    type="button"
+                                  >
+                                    <span className="font-medium text-sm">{result.label}</span>
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
+                      <p className="sr-only" role="status" aria-live="polite">
+                        {geoResults
+                          ? `${geoResults.length} ${geoResults.length === 1 ? 'place' : 'places'} found.`
+                          : ''}
+                      </p>
+                    </div>
+                  </PopoverPopup>
+                </Popover>
+
+                {point && (
+                  <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground text-sm">
+                    <MapPin aria-hidden className="size-4 shrink-0" />
+                    <span className="line-clamp-1 max-w-64 min-w-0 font-medium text-foreground">{point.label}</span>
+                    <Button aria-label="Clear saved location" onClick={clearLocation} size="xs" type="button" variant="ghost">
+                      <X aria-hidden /> Clear
+                    </Button>
+                  </span>
+                )}
+
+              </div>
+
+              <p className="sr-only" role="status" aria-live="polite">
+                {locationNotice}
+              </p>
+
+              {locationError && (
+                <div className="px-4 pb-4 sm:px-6 sm:pb-6">
+                  <Alert variant="warning">
+                    <AlertTitle>Location not available</AlertTitle>
+                    <AlertDescription>{locationError}</AlertDescription>
+                  </Alert>
+                </div>
+              )}
+            </Form>
+
+          </CardPanel>
+        </Card>
+
+        <div
+          className={cn(
+            'grid min-w-0 items-start gap-4 xl:gap-6',
+            showMap && 'xl:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)]',
+          )}
+        >
+          <section className="flex min-w-0 flex-col gap-3" aria-labelledby="gym-results">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-semibold text-base" id="gym-results">
+                Results
+              </h3>
+              <div className="flex flex-wrap items-center gap-3">
+                <p aria-live="polite" className="text-muted-foreground text-sm tabular-nums" role="status">
+                  {searching ? 'Searching…' : results ? `${results.total} ${results.total === 1 ? 'gym' : 'gyms'}` : ''}
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground text-xs" id="results-sort-label">
+                    Sort
+                  </span>
+                  <Select items={SORTS} onValueChange={changeSort} value={filters.sort}>
+                    <SelectTrigger
+                      aria-labelledby="results-sort-label"
+                      className="w-32 max-sm:min-h-11"
+                    >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectPopup>
                       {SORTS.map((sort) => (
-                        <SelectItem key={sort.value} value={sort.value}>
+                        <SelectItem
+                          className="max-sm:min-h-11"
+                          disabled={sort.value === 'distance' && !point}
+                          key={sort.value}
+                          value={sort.value}
+                        >
                           {sort.label}
                         </SelectItem>
                       ))}
                     </SelectPopup>
                   </Select>
-                </Field>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <Button type="submit">
-                  <Search aria-hidden /> Search gyms
-                </Button>
-                <Button type="button" variant="outline" loading={locating} onClick={useMyLocation}>
-                  <LocateFixed aria-hidden /> Use my location
-                </Button>
-                {point ? (
-                  <span className="flex flex-wrap items-center gap-2 text-muted-foreground text-sm">
-                    <MapPin className="size-4" aria-hidden />
-                    <span>{point.label}</span>
-                    <span className="font-mono tabular-nums">
-                      {point.lat.toFixed(4)}, {point.lng.toFixed(4)}
-                    </span>
-                    <Button type="button" size="xs" variant="ghost" onClick={clearLocation}>
-                      <X aria-hidden /> Clear
-                    </Button>
-                  </span>
-                ) : (
-                  <span className="text-muted-foreground text-sm">Location not set. Distance sort needs a location.</span>
-                )}
-              </div>
-              {locationError && (
-                <Alert variant="warning">
-                  <AlertTitle>Location not available</AlertTitle>
-                  <AlertDescription>{locationError}</AlertDescription>
-                </Alert>
-              )}
-            </Form>
-
-            <Form className="flex flex-col gap-2 border-t pt-5" onSubmit={findAddress}>
-              <Field name="address" className="w-full">
-                <FieldLabel>Or find an address</FieldLabel>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Input
-                    required
-                    minLength={2}
-                    maxLength={120}
-                    value={address}
-                    onChange={(event) => setAddress(event.target.value)}
-                    placeholder="Street, barangay, city or landmark"
-                  />
-                  <Button type="submit" variant="outline" loading={geoLoading} className="sm:w-auto">
-                    Find place
-                  </Button>
                 </div>
-                <FieldDescription>Pick a result to put it on the map and sort gyms by distance from it.</FieldDescription>
-                <FieldError />
-              </Field>
-              {geoError && (
-                <Alert variant="error">
-                  <AlertTitle>Address search failed</AlertTitle>
-                  <AlertDescription>{geoError}</AlertDescription>
-                </Alert>
-              )}
-              {geoResults && (
-                <div className="rounded-lg border">
-                  {geoResults.length === 0 ? (
-                    <p className="px-3 py-2 text-muted-foreground text-sm">No places found. Try a wider address.</p>
-                  ) : (
-                    <ul className="divide-y">
-                      {geoResults.map((result) => (
-                        <li key={`${result.lat}-${result.lng}-${result.label}`}>
-                          <button
-                            type="button"
-                            className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left hover:bg-accent/50 focus-visible:bg-accent/50 focus-visible:outline-none"
-                            onClick={() => pickAddress(result)}
-                          >
-                            <span className="font-medium text-sm">{result.label}</span>
-                            <span className="text-muted-foreground text-xs tabular-nums">
-                              {result.lat.toFixed(4)}, {result.lng.toFixed(4)}
-                            </span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
-            </Form>
+              </div>
+            </div>
 
-            {optionsError && (
-              <Alert variant="warning">
-                <AlertTitle>Filter lists could not be loaded</AlertTitle>
+            {searchError && (
+              <Alert variant="error">
+                <AlertTitle>Gyms could not be loaded</AlertTitle>
                 <AlertDescription>
-                  <p>You can still search by text. The sport, tier and day lists need another try.</p>
-                  <Button size="sm" variant="outline" onClick={() => setOptionsVersion((version) => version + 1)}>
+                  <p>{searchError}</p>
+                  <Button size="sm" variant="outline" onClick={() => setSearchVersion((version) => version + 1)}>
                     Try again
                   </Button>
                 </AlertDescription>
               </Alert>
             )}
-          </CardPanel>
-        </Card>
-      </section>
 
-      <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,26rem)]">
-        <section className="flex min-w-0 flex-col gap-3" aria-labelledby="gym-results">
-          <div className="flex flex-wrap items-baseline gap-2" aria-live="polite">
-            <h3 id="gym-results" className="font-semibold">Results</h3>
             {searching ? (
-              <Skeleton className="h-4 w-16" aria-label="Searching" />
-            ) : (
-              results && (
-                <span className="text-muted-foreground text-sm tabular-nums">
-                  {results.total} {results.total === 1 ? 'gym' : 'gyms'}
-                </span>
-              )
-            )}
-          </div>
-
-          {searchError && (
-            <Alert variant="error">
-              <AlertTitle>Gyms could not be loaded</AlertTitle>
-              <AlertDescription>
-                <p>{searchError}</p>
-                <Button size="sm" variant="outline" onClick={() => setSearchVersion((version) => version + 1)}>
-                  Try again
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {searching ? (
-            <div className="grid gap-3" aria-busy="true">
-              <Skeleton className="h-36" />
-              <Skeleton className="h-36" />
-              <Skeleton className="h-36" />
-            </div>
-          ) : results && results.gyms.length === 0 ? (
-            <Empty className="rounded-xl border">
-              <EmptyHeader>
-                <EmptyTitle>No gyms match those filters</EmptyTitle>
-                <EmptyDescription>Try a wider place, another sport, or clear a filter and search again.</EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          ) : (
-            <ul className="grid min-w-0 gap-3">
-              {(results?.gyms ?? []).map((gym) => {
-                const services = serviceNames(gym)
-                return (
-                  <li key={gym.id} className="min-w-0">
-                    <Card
-                      render={<Link to={`/gyms/${gym.id}`} />}
-                      className="gap-3 p-4 transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <div className="flex flex-wrap items-start gap-2">
-                        <span className="mr-auto font-semibold">{gym.name}</span>
-                        {gym.distance_km != null && <Badge variant="outline">{distanceLabel(gym.distance_km)}</Badge>}
-                        <Badge variant={gym.tier === 2 ? 'success' : 'info'}>{gym.badge || `Tier ${gym.tier}`}</Badge>
+              <div aria-hidden="true" className="grid gap-3">
+                {[0, 1, 2].map((key) => (
+                  <div className="rounded-2xl border bg-card p-4" key={key}>
+                    <div className="flex flex-col gap-2.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <Skeleton className="h-5 w-40 max-w-[60%]" />
+                        <Skeleton className="h-5 w-16 rounded-full" />
                       </div>
-                      <span className="flex items-center gap-1.5 text-muted-foreground text-sm">
-                        <MapPin className="size-4" aria-hidden />
-                        {[gym.city, gym.province].filter(Boolean).join(', ') || 'Location not listed'}
-                      </span>
-                      {(gym.disciplines ?? []).length > 0 && (
-                        <span className="flex flex-wrap gap-1.5">
-                          {(gym.disciplines ?? []).map((discipline) => (
-                            <Badge key={discipline} variant="outline">
-                              {disciplineLabel(discipline)}
+                      <Skeleton className="h-4 w-56 max-w-[70%]" />
+                      <Skeleton className="h-5 w-36" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : results && results.gyms.length === 0 ? (
+              <Empty className="rounded-2xl border bg-card px-4 py-10">
+                <EmptyHeader>
+                  <EmptyTitle className="text-lg">No gyms match those filters</EmptyTitle>
+                  <EmptyDescription>
+                    Try a wider place, another sport, or clear a filter and search again.
+                  </EmptyDescription>
+                </EmptyHeader>
+                {activeFilterCount > 0 && (
+                  <EmptyContent>
+                    <Button onClick={clearFilters} size="sm" variant="outline">
+                      Clear filters ({activeFilterCount})
+                    </Button>
+                  </EmptyContent>
+                )}
+              </Empty>
+            ) : (
+              <ul className="grid min-w-0 gap-3">
+                {(results?.gyms ?? []).map((gym) => {
+                  const services = serviceNames(gym)
+                  return (
+                    <li className="min-w-0" key={gym.id}>
+                      <Card
+                        className="gap-3 p-4 transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:bg-accent/40"
+                        render={<Link to={`/gyms/${gym.id}`} />}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="min-w-0 font-semibold">{gym.name}</span>
+                          <span className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+                            {gym.distance_km != null && <Badge variant="outline">{distanceLabel(gym.distance_km)}</Badge>}
+                            <Badge className="max-w-full whitespace-normal" variant={gym.tier === 2 ? 'success' : 'info'}>
+                              {gym.badge || `Tier ${gym.tier}`}
                             </Badge>
-                          ))}
+                          </span>
+                        </div>
+                        <span className="flex items-center gap-1.5 text-muted-foreground text-sm">
+                          <MapPin aria-hidden className="size-4 shrink-0" />
+                          {[gym.city, gym.province].filter(Boolean).join(', ') || 'Location not listed'}
                         </span>
-                      )}
-                      {services.length > 0 && (
-                        <p className="text-muted-foreground text-sm">Services: {services.join(', ')}</p>
-                      )}
-                      {gym.min_price != null && gym.min_price !== '' && (
-                        <p className="text-sm">
-                          From <span className="font-medium tabular-nums">{money(gym.min_price)}</span>
-                        </p>
-                      )}
-                    </Card>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-        </section>
+                        {(gym.disciplines ?? []).length > 0 && (
+                          <span className="flex flex-wrap gap-1.5">
+                            {(gym.disciplines ?? []).map((discipline) => (
+                              <Badge className="max-w-full whitespace-normal" key={discipline} variant="outline">
+                                {disciplineLabel(discipline)}
+                              </Badge>
+                            ))}
+                          </span>
+                        )}
+                        {services.length > 0 && (
+                          <p className="line-clamp-2 text-muted-foreground text-sm">Services: {services.join(', ')}</p>
+                        )}
+                        {gym.min_price != null && gym.min_price !== '' && (
+                          <p className="text-sm">
+                            From <span className="font-medium tabular-nums">{money(gym.min_price)}</span>
+                          </p>
+                        )}
+                      </Card>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </section>
 
-        <section className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-20 lg:self-start" aria-labelledby="gym-map">
-          <div className="flex flex-wrap items-baseline gap-2">
-            <h3 id="gym-map" className="font-semibold">Map</h3>
-            <span className="text-muted-foreground text-sm tabular-nums">{mapGyms.length} with a pin</span>
-          </div>
-          {mapGyms.length === 0 && !point ? (
-            <Empty className="min-h-72 rounded-xl border bg-card">
-              <EmptyHeader>
-                <EmptyTitle>No map pins yet</EmptyTitle>
-                <EmptyDescription>No result has a map location. Pick an address to see where you are searching from.</EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          ) : (
-            <GymMap gyms={mapGyms} person={point ? { lat: point.lat, lng: point.lng, label: point.label } : null} />
+          {showMap && (
+            <section
+              className="flex min-w-0 flex-col gap-3 xl:sticky xl:top-20 xl:self-start"
+              aria-labelledby="gym-map"
+            >
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h3 className="font-semibold text-base" id="gym-map">
+                  Map
+                </h3>
+                <span className="text-muted-foreground text-sm tabular-nums">{mapGyms.length} mapped</span>
+              </div>
+              {searching && !results ? (
+                <Skeleton
+                  aria-hidden="true"
+                  className="h-72 rounded-2xl sm:h-96 xl:h-[clamp(20rem,calc(100dvh-8rem),34rem)]"
+                />
+              ) : mapGyms.length === 0 && !point ? (
+                <Empty className="min-h-56 rounded-2xl border bg-card px-4 py-8">
+                  <EmptyHeader>
+                    <EmptyTitle className="text-lg">No map pins yet</EmptyTitle>
+                    <EmptyDescription>
+                      None of these results has a map location. Find an address to set your search point.
+                    </EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              ) : (
+                <Card
+                  aria-busy={searching}
+                  className={cn('overflow-hidden transition-opacity', searching && 'pointer-events-none opacity-60')}
+                >
+                  <GymMap
+                    className="h-72 rounded-none border-0 sm:h-96 xl:h-[clamp(20rem,calc(100dvh-8rem),34rem)]"
+                    gyms={mapGyms}
+                    person={point ? { lat: point.lat, lng: point.lng, label: point.label } : null}
+                  />
+                </Card>
+              )}
+            </section>
           )}
-        </section>
-      </div>
+        </div>
+      </section>
 
       {isMember && (
         <section className="flex flex-col gap-4" aria-labelledby="best-matches">
@@ -796,13 +1029,26 @@ export default function Home() {
           <h2 id="best-matches" className="font-semibold text-xl tracking-tight">Best matches</h2>
           <span className="text-muted-foreground text-sm">Gyms ranked by your sport, price range and distance.</span>
         </div>
+        <p className="sr-only" role="status" aria-live="polite">
+          {matchesLoading
+            ? 'Loading best matches.'
+            : recommendations
+              ? `${recommendations.length} best ${recommendations.length === 1 ? 'match' : 'matches'}.`
+              : ''}
+        </p>
 
         <Card>
           <CardHeader className="max-sm:grid-cols-1!">
             <CardTitle render={<h3 />}>What you want</CardTitle>
             <CardDescription>Saved to your account. Preferred times count once gyms publish session times.</CardDescription>
             <CardAction className="max-sm:col-start-1 max-sm:row-span-1 max-sm:row-start-3 max-sm:mt-2 max-sm:justify-self-stretch">
-              <Button className="max-sm:w-full" size="sm" variant="outline" loading={matchesLoading} onClick={findMatches}>
+              <Button
+                className="max-sm:min-h-11 max-sm:w-full"
+                loading={matchesLoading}
+                onClick={findMatches}
+                size="sm"
+                variant="outline"
+              >
                 Find best matches
               </Button>
             </CardAction>
@@ -821,14 +1067,14 @@ export default function Home() {
             )}
 
             {preferencesLoading ? (
-              <div className="grid gap-3 sm:grid-cols-3" aria-busy="true">
+              <div aria-hidden="true" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <Skeleton className="h-16" />
                 <Skeleton className="h-16" />
                 <Skeleton className="h-16" />
               </div>
-            ) : (
+            ) : preferencesLoadError ? null : (
               <Form className="flex flex-col gap-4" onSubmit={savePreferences}>
-                <div className="grid gap-4 sm:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   <Field name="discipline" className="w-full">
                     <FieldLabel>Combat sport</FieldLabel>
                     <Select
@@ -844,13 +1090,15 @@ export default function Home() {
                         ...Object.entries(options?.disciplines ?? {}).map(([value, label]) => ({ value, label })),
                       ]}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="max-sm:min-h-11">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectPopup>
-                        <SelectItem value="any">Any sport</SelectItem>
+                        <SelectItem className="max-sm:min-h-11" value="any">
+                          Any sport
+                        </SelectItem>
                         {Object.entries(options?.disciplines ?? {}).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
+                          <SelectItem className="max-sm:min-h-11" key={value} value={value}>
                             {label}
                           </SelectItem>
                         ))}
@@ -858,15 +1106,16 @@ export default function Home() {
                     </Select>
                   </Field>
                   <Field name="min_price" className="w-full">
-                    <FieldLabel>Lowest price</FieldLabel>
+                    <FieldLabel>Lowest price (₱)</FieldLabel>
                     <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
+                      className="max-sm:h-11"
                       inputMode="decimal"
-                      value={preferenceForm.min_price}
+                      min="0"
                       onChange={(event) => setPreferenceForm({ ...preferenceForm, min_price: event.target.value })}
                       placeholder="No minimum"
+                      step="0.01"
+                      type="number"
+                      value={preferenceForm.min_price}
                     />
                     <FieldError />
                   </Field>
@@ -879,15 +1128,16 @@ export default function Home() {
                         : null
                     }
                   >
-                    <FieldLabel>Highest price</FieldLabel>
+                    <FieldLabel>Highest price (₱)</FieldLabel>
                     <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
+                      className="max-sm:h-11"
                       inputMode="decimal"
-                      value={preferenceForm.max_price}
+                      min="0"
                       onChange={(event) => setPreferenceForm({ ...preferenceForm, max_price: event.target.value })}
                       placeholder="No maximum"
+                      step="0.01"
+                      type="number"
+                      value={preferenceForm.max_price}
                     />
                     <FieldError />
                   </Field>
@@ -900,14 +1150,40 @@ export default function Home() {
                     onValueChange={(value) =>
                       setPreferenceForm({ ...preferenceForm, preferred_times: value as PreferredTime[] })
                     }
-                    className="flex flex-wrap gap-x-6 gap-y-3"
+                    className="grid w-full gap-2 sm:grid-cols-3"
                   >
-                    {timeOptions.map((time) => (
-                      <label key={time.value} className="flex items-center gap-2 text-sm">
-                        <Checkbox value={time.value} />
-                        {time.label}
-                      </label>
-                    ))}
+                    {timeOptions.map((time) => {
+                      const selected = preferenceForm.preferred_times.includes(time.value as PreferredTime)
+                      const Icon = TIME_ICONS[time.value] ?? Sun
+                      return (
+                        <label
+                          className={cn(
+                            'group flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border p-3 transition-colors focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background',
+                            selected
+                              ? 'border-primary bg-primary/8'
+                              : 'border-border bg-background hover:bg-accent/40',
+                          )}
+                          key={time.value}
+                        >
+                          <span
+                            className={cn(
+                              'flex size-9 shrink-0 items-center justify-center rounded-lg border transition-colors',
+                              selected
+                                ? 'border-primary bg-primary text-primary-foreground'
+                                : 'border-border bg-muted/40 text-muted-foreground',
+                            )}
+                          >
+                            <Icon aria-hidden className="size-4" />
+                          </span>
+                          <span className="min-w-0 flex-1 font-medium text-sm">{time.label}</span>
+                          <Checkbox
+                            aria-label={time.label}
+                            className="size-5 focus-visible:ring-0 focus-visible:ring-offset-0"
+                            value={time.value}
+                          />
+                        </label>
+                      )
+                    })}
                   </CheckboxGroup>
                   <FieldDescription>Leave all unchecked when any time works.</FieldDescription>
                 </Field>
@@ -919,8 +1195,8 @@ export default function Home() {
                   </Alert>
                 )}
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button type="submit" loading={savingPreferences}>
+                <div className="flex flex-col items-start gap-2">
+                  <Button className="max-sm:min-h-11" loading={savingPreferences} type="submit">
                     Save preferences
                   </Button>
                   <span className="text-muted-foreground text-sm">Saving also refreshes your best matches.</span>
@@ -941,7 +1217,7 @@ export default function Home() {
             )}
 
             {matchesLoading && (
-              <div className="grid gap-3 sm:grid-cols-2" aria-busy="true">
+              <div aria-hidden="true" className="grid gap-3 lg:grid-cols-2">
                 <Skeleton className="h-32" />
                 <Skeleton className="h-32" />
               </div>
@@ -957,7 +1233,7 @@ export default function Home() {
             )}
 
             {!matchesLoading && recommendations && recommendations.length > 0 && (
-              <ul className="grid min-w-0 gap-3 sm:grid-cols-2">
+              <ul className="grid min-w-0 gap-3 lg:grid-cols-2">
                 {recommendations.map((recommendation) => {
                   const gym = recommendation.gym
                   const away = recommendation.distance_km ?? gym.distance_km
@@ -965,10 +1241,10 @@ export default function Home() {
                     <li key={gym.id} className="min-w-0">
                       <Card
                         render={<Link to={`/gyms/${gym.id}`} />}
-                        className="h-full gap-3 p-4 transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="h-full gap-3 p-4 transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:bg-accent/40"
                       >
-                        <div className="flex flex-wrap items-start gap-2">
-                          <span className="mr-auto font-semibold">{gym.name}</span>
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="min-w-0 font-semibold">{gym.name}</span>
                           <Badge variant="success">{Math.round(recommendation.score)}% match</Badge>
                         </div>
                         <span className="flex items-center gap-1.5 text-muted-foreground text-sm">
@@ -979,7 +1255,7 @@ export default function Home() {
                         {recommendation.reasons.length > 0 && (
                           <span className="flex flex-wrap gap-1.5">
                             {recommendation.reasons.map((reason) => (
-                              <Badge key={reason} variant="outline">
+                              <Badge className="max-w-full whitespace-normal" key={reason} variant="outline">
                                 {reason}
                               </Badge>
                             ))}
@@ -994,6 +1270,10 @@ export default function Home() {
           </CardPanel>
         </Card>
         </section>
+      )}
+
+      {!showGymsFirst && user && user.gyms.length > 0 && (
+        <YourGymsSection gyms={user.gyms} workspaceGymId={workspaceGym?.id} />
       )}
     </div>
   )
