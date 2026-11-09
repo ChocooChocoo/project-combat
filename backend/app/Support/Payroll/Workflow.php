@@ -66,6 +66,7 @@ class Workflow
                     'minute_rate' => $this->moneyOrNull($line['minute_rate']),
                     'scheduled_days' => $line['scheduled_days'],
                     'days_worked' => $line['days_worked'],
+                    'days_late' => $line['days_late'],
                     'days_absent' => $line['days_absent'],
                     'paid_leave_days' => $line['paid_leave_days'],
                     'unpaid_leave_days' => $line['unpaid_leave_days'],

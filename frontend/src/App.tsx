@@ -10,6 +10,7 @@ import AcceptInvite from '@/pages/AcceptInvite'
 import AdminHome from '@/pages/admin/AdminHome'
 import AdminPermissions from '@/pages/admin/AdminPermissions'
 import AdminNotices from '@/pages/admin/AdminNotices'
+import AdminPlans from '@/pages/admin/AdminPlans'
 import ReviewApplication from '@/pages/admin/ReviewApplication'
 import ApplicationDetail from '@/pages/ApplicationDetail'
 import FirstPassword from '@/pages/FirstPassword'
@@ -41,6 +42,7 @@ import GymSettings from '@/pages/gym/GymSettings'
 import GymStaff from '@/pages/gym/GymStaff'
 import GymStaffAttendance from '@/pages/gym/GymStaffAttendance'
 import GymStock from '@/pages/gym/GymStock'
+import GymSubscription from '@/pages/gym/GymSubscription'
 import MemberRecord from '@/pages/gym/MemberRecord'
 import MyWork from '@/pages/gym/MyWork'
 import PurchaseOrder from '@/pages/gym/PurchaseOrder'
@@ -206,12 +208,14 @@ export default function App() {
               <Route path="purchasing" element={<GymPurchasing />} />
               <Route path="purchasing/orders/:orderId" element={<PurchaseOrder />} />
               <Route path="my-work" element={<MyWork />} />
+              <Route path="subscription" element={<GymSubscription />} />
             </Route>
           </Route>
           <Route element={<AdminOnly />}>
             <Route path="/admin" element={<AdminHome />} />
             <Route path="/admin/permissions" element={<AdminPermissions />} />
             <Route path="/admin/notices" element={<AdminNotices />} />
+            <Route path="/admin/plans" element={<AdminPlans />} />
             <Route path="/admin/applications/:id" element={<ReviewApplication />} />
           </Route>
         </Route>

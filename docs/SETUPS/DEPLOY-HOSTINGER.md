@@ -289,6 +289,27 @@ php artisan migrate --force && php artisan config:cache && php artisan route:cac
 
 Frontend (on your PC): `pnpm build`, then the two `scp` lines from Step 9.
 
+### Going live with gym subscriptions (P05)
+
+Do these once, the first time you deploy the subscription plans, staff grace minimum and payroll attendance counts.
+
+1. **Back up the live database first** (hPanel → Databases → phpMyAdmin → Export).
+2. **Run the update above.** The new migrations add the plans (Starter, Pro, Elite), the 30-day trial setting
+   and payroll's late-day count. They also give every gym that is already approved a 30-day trial from today,
+   and raise any staff grace setting below 10 minutes to 10.
+3. **Check the `schedule:run` cron from Step 8 is running.** It sends owners the "trial ends soon" notice at
+   08:10 each day. Nothing else needs a new cron; plan limits are worked out on every request.
+4. **Point PayMongo at the live webhook.** PayMongo dashboard → Developers → Webhooks → add
+   `https://combatpro.site/api/webhooks/paymongo` for the event `checkout_session.payment.paid`, and put its
+   signing secret in `PAYMONGO_WEBHOOK_SECRET` in the live `.env` (then `php artisan config:cache`). Without it,
+   payments still count when the owner returns from PayMongo, but not if they close the tab first.
+5. **Use live PayMongo keys** (`pk_live_…` / `sk_live_…`) in the live `.env` only when you want real money
+   taken. Test keys only accept test payments.
+6. **Set the real prices and modules.** Sign in as platform admin → Subscription plans. Pro (PHP 1,499) and
+   Elite (PHP 2,999) start as placeholders. The trial length is on the same screen.
+7. **Test once:** approve a test gym, check its owner sees "Free trial", then pay for a plan with a PayMongo
+   test payment before switching to live keys.
+
 ## Optional: log in without a password
 
 On your PC:

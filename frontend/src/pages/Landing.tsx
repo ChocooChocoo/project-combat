@@ -122,7 +122,7 @@ export default function Landing() {
   const stats = payload?.stats ?? null
 
   return (
-    <div className="min-h-svh bg-[#0A0A0B] text-[#F2EFE7]">
+    <div className="dark min-h-svh bg-[#0A0A0B] text-[#F2EFE7] [color-scheme:dark]">
       <a
         href="#main"
         className="sr-only z-50 focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:bg-[#F2EFE7] focus:px-4 focus:py-3 focus:font-semibold focus:text-sm focus:text-[#0A0A0B]"

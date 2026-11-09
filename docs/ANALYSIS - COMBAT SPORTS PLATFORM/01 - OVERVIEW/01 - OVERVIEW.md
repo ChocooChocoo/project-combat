@@ -16,7 +16,7 @@ The spec names five kinds of user (the spec, page 7).
 
 | Who they are | What they come here to do |
 |---|---|
-| Platform administrator | Checks gym applications and their documents. Approves, rejects or returns them. Watches platform-wide numbers. Never sees a gym's private records (the spec, page 19). |
+| Platform administrator | Checks gym applications and their documents. Approves, rejects or returns them. Watches platform-wide numbers. Never sees a gym's private records (the spec, page 19). Planned: sets up subscription plans for gyms, what each includes, and the free-trial length (your client's request, 9 November 2026). |
 | Platform user | Anyone who has signed up. Browses gyms and their services, looks after their own account, and applies to join a gym or to become a gym owner. |
 | Gym owner | A checked platform user who runs one registered gym: staff, services, schedules, members, money and reports. |
 | Gym employee, coaches included | Someone the owner has added to the gym. Sees only the parts of the system the owner has allowed. |
@@ -40,6 +40,7 @@ There are three pieces of material, and they are at different stages.
 
 - **The spec is the target.** It was revised in November 2026 after panel feedback (the spec, pages 1 and 6).
 - **The old system is about half-built.** It handles sign-up, gym checking, membership applications and payment, sessions, and a detailed Philippine staff payroll. Several spec modules have no code at all: waiting lists, QR check-in, coach availability, rank and competitions, customer follow-up, stock and purchasing, expenses and budgets, and real forecasting. It also has serious safety faults. For example, an owner can make one of their staff a platform administrator. Details are in [02 - FINDINGS](../02%20-%20FINDINGS/02%20-%20FINDINGS.md).
+- **The rebuild is far along.** Phases 1 to 8 are built (98 items). Phases 9 and 10, added 9 November 2026, tighten staff grace and payroll attendance and add paid subscription plans with a free trial for gyms; they are not started. See [05 - ROADMAP](../05%20-%20ROADMAP/05%20-%20ROADMAP.md).
 - **The plan is a rebuild from scratch.** The old system is used only as a reference for what was tried. When the spec and the old system disagree, the spec wins (said in conversation, 3 November 2026).
 
 ## What it does not do

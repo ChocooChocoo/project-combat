@@ -40,10 +40,12 @@ export function PayslipSheet({ gymName, payslip }: { gymName: string; payslip: P
   const facts = [
     { key: 'scheduled', label: 'Scheduled days', value: String(payslip.scheduled_days) },
     { key: 'worked', label: 'Days worked', value: String(payslip.days_worked) },
+    { key: 'present', label: 'Present days', value: String(payslip.days_present) },
+    { key: 'late_days', label: 'Late days', value: String(payslip.days_late) },
     { key: 'absent', label: 'Absent days', value: String(payslip.days_absent) },
     { key: 'paid_leave', label: 'Paid leave', value: String(payslip.paid_leave_days) },
     { key: 'unpaid_leave', label: 'Unpaid leave', value: String(payslip.unpaid_leave_days) },
-    { key: 'late', label: 'Late', value: minutesLabel(payslip.late_minutes) },
+    { key: 'late', label: 'Late minutes', value: minutesLabel(payslip.late_minutes) },
     { key: 'undertime', label: 'Undertime', value: minutesLabel(payslip.undertime_minutes) },
     { key: 'overtime', label: 'Approved overtime', value: minutesLabel(payslip.overtime_minutes) },
     { key: 'sessions', label: 'Sessions', value: String(payslip.sessions_count) },

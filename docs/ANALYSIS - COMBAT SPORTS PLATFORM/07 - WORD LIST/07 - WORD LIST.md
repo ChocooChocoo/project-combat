@@ -26,6 +26,9 @@ These are words that could not be avoided, because they are real names of real t
 | SEC | Securities and Exchange Commission; registers companies and partnerships | [02 - FINDINGS](../02%20-%20FINDINGS/02%20-%20FINDINGS.md), [PHASE 2](../05%20-%20ROADMAP/phase-2/PHASE%202.md) |
 | Spatie Permission | The ready-made part the old system uses to store roles and permissions | [02 - FINDINGS](../02%20-%20FINDINGS/02%20-%20FINDINGS.md), [03 - SYSTEM ARCHITECTURE](../03%20-%20SYSTEM%20ARCHITECTURE/03%20-%20SYSTEM%20ARCHITECTURE.md) |
 | Tailwind | Ready-made styling rules the old screens use for their look | [02 - FINDINGS](../02%20-%20FINDINGS/02%20-%20FINDINGS.md) |
+| Subscription plan | What a gym pays the platform for (planned names: Starter, Pro, Elite). Each plan lists the modules a gym on it may use. Not the same as a membership plan, which a member pays a gym for. | [PHASE 10](../05%20-%20ROADMAP/phase-10/PHASE%2010.md) |
+| Free trial | A set number of days (30 to start) when a new gym uses the platform without paying | [PHASE 10](../05%20-%20ROADMAP/phase-10/PHASE%2010.md) |
+| Grace period | The minutes after a scheduled start before someone counts as late; for staff it can never be less than 10 | [PHASE 9](../05%20-%20ROADMAP/phase-9/PHASE%209.md) |
 | Tier | The spec's word for a checking level: Tier 1 is papers only; Tier 2 adds proof the gym and owner are real | [02 - FINDINGS](../02%20-%20FINDINGS/02%20-%20FINDINGS.md), [PHASE 2](../05%20-%20ROADMAP/phase-2/PHASE%202.md) |
 | TRAIN tax | The Philippine income tax brackets, named after the law that set them; deducted from pay | [02 - FINDINGS](../02%20-%20FINDINGS/02%20-%20FINDINGS.md), [PHASE 6](../05%20-%20ROADMAP/phase-6/PHASE%206.md) |
 | VAWC leave | Philippine paid leave for victims of violence against women and their children | [PHASE 3](../05%20-%20ROADMAP/phase-3/PHASE%203.md) |

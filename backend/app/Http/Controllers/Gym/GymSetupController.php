@@ -143,7 +143,7 @@ class GymSetupController extends Controller
             'payroll_frequency' => ['sometimes', 'required', Rule::in(array_keys(config('payroll.frequencies')))],
             'payroll_steps' => ['sometimes', 'array', 'max:3'],
             'payroll_steps.*' => ['distinct', Rule::in(array_keys(config('payroll.steps')))],
-            'staff_grace_minutes' => ['sometimes', 'required', 'integer', 'between:0,120'],
+            'staff_grace_minutes' => ['sometimes', 'required', 'integer', 'between:10,120'],
             'overtime_min_minutes' => ['sometimes', 'required', 'integer', 'between:0,240'],
         ];
     }

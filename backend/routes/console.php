@@ -12,6 +12,7 @@ use App\Support\PermissionCatalog;
 use App\Support\Reminders\FollowUpReminders;
 use App\Support\Reminders\MembershipExpiryReminders;
 use App\Support\Reminders\SessionReminders;
+use App\Support\Reminders\SubscriptionReminders;
 use App\Support\StaffAbsenceMarker;
 use App\Support\StockLedger;
 use App\Support\SystemRoles;
@@ -84,6 +85,12 @@ Artisan::command('app:send-membership-reminders', function (MembershipExpiryRemi
     $this->info($reminders->send().' membership reminders sent.');
 })->purpose('Remind active members before membership expiry');
 Schedule::command('app:send-membership-reminders')->dailyAt('08:00')->withoutOverlapping();
+
+// R-107: owners hear before the free trial or the paid month ends.
+Artisan::command('app:send-subscription-reminders', function (SubscriptionReminders $reminders) {
+    $this->info($reminders->send().' subscription reminders sent.');
+})->purpose('Remind gym owners before their trial or paid month ends');
+Schedule::command('app:send-subscription-reminders')->dailyAt('08:10')->withoutOverlapping();
 
 Artisan::command('app:send-follow-up-reminders', function (FollowUpReminders $reminders) {
     $this->info($reminders->send().' follow-up reminders sent.');

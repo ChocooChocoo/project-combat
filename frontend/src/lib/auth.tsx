@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { api, token } from '@/lib/api'
+import type { GymSubscriptionSummary } from '@/lib/subscriptions'
 
 export type GymAccess = {
   id: number
@@ -8,6 +9,7 @@ export type GymAccess = {
   roles: string[]
   role_names?: string[]
   permissions: string[]
+  subscription?: GymSubscriptionSummary
 }
 
 export type User = {

@@ -28,10 +28,12 @@ pnpm lint                      # oxlint
 node --test                    # node:test checks in frontend/tests/*.test.mjs (Node 24; not `node --test tests/`)
 ```
 
-Scheduled jobs (membership expiry, session reminders, membership-expiry reminders, follow-up reminders, no-shows, staff absences, token pruning) are defined in
+Scheduled jobs (membership expiry, session reminders, membership-expiry reminders, subscription reminders, follow-up reminders, no-shows, staff absences, token pruning) are defined in
 `backend/routes/console.php`.
 
 Emails go out through Gmail SMTP (settings in `backend/.env`). The email worker must be running for codes to be sent.
+Online payments use PayMongo (`App\Support\PayMongo`, keys `PAYMONGO_*` in `backend/.env`). PayMongo confirms payments
+at `POST /api/webhooks/paymongo` (no sign-in; the signature is checked in `PayMongoWebhookController`).
 The frontend calls the API at `VITE_API_URL` (`frontend/.env`).
 
 ## Architecture
@@ -59,6 +61,12 @@ The frontend calls the API at `VITE_API_URL` (`frontend/.env`).
   covers. Some routes skip the middleware and check inside the controller (own staff record, own leave).
   The frontend mirrors this in `frontend/src/lib/gym-access.ts` (`can()`) only to hide UI; the backend is
   the real check.
+- **Gym subscriptions (R-102 to R-107).** Each gym is on a platform plan worked out on every check by
+  `App\Support\Subscription`: trial (all modules, starts once on approval) → paid plan → free plan. Modules the plan
+  leaves out are removed from `User::permissionsIn`, so `permission:` routes return 403 with a "not in your gym's
+  plan" message (`grantedPermissionsIn` is the role grant before plan limits). Gym setup is never locked. A gym with no
+  `trial_ends_at` is not limited (old rows, test fixtures). Admins manage plans and trial length
+  (`SubscriptionPlanController`, `PlatformSetting`); owners pay through `gyms/{gym}/subscription/checkout`.
 - **Backend layout.** Controllers stay thin. Business rules and multi-step writes live in `app/Support`
   (`*Ledger`, `Payroll/`, `Finance/`, `Procurement/`), usually inside `DB::transaction` with
   `lockForUpdate`. JSON shapes come from `Presents*` traits in `Http/Controllers/**/Concerns`, not API Resources (only exception: `UserResource`
@@ -80,6 +88,7 @@ The frontend calls the API at `VITE_API_URL` (`frontend/.env`).
 - **Frontend.** `src/App.tsx` holds all routes and guards (guest, signed-in, first password, admin, gym member).
   `src/components/ui/` is coss UI (Base UI + Tailwind v4); reuse it before writing new components. `@/` maps to `src/`.
   Each area has `src/lib/<area>.ts` (response types and display helpers, e.g. `payroll.ts`, `inventory.ts`) used by `src/pages/gym/*`.
+  Light/dark theme lives in `src/lib/theme.ts` (`dark` class on `<html>`, saved in `localStorage`, dark by default).
 
 ## Rules
 

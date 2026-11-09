@@ -703,14 +703,14 @@ function SettingsForm({
             label="Grace period (minutes)"
             type="number"
             inputMode="numeric"
-            min={0}
-            max={1440}
+            min={10}
+            max={240}
             step={1}
             value={grace}
             onChange={(event) => setGrace(event.target.value)}
             disabled={!canEdit}
             required
-            description="Late minutes beyond this are deducted at the minute rate."
+            description="At least 10 minutes. Staff clocking in after this are late; late minutes count from the scheduled start and are deducted at the minute rate."
           />
           <TextField
             name="overtime_min_minutes"

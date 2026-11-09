@@ -6,7 +6,7 @@ These are pictures of how the system works. Each one has a plain-language readin
 
 - **Diagrams 1 to 6** show the **old system** as it works today.
 - **Diagrams 7 to 9** show how things should move **according to the spec**.
-- **Diagrams 10 and 11** show **the plan**.
+- **Diagrams 10 to 12** show **the plan**.
 
 Citation forms are the same as in [02 - FINDINGS](../02%20-%20FINDINGS/02%20-%20FINDINGS.md).
 
@@ -370,6 +370,8 @@ flowchart LR
     p6["Phase 6 - The business side runs"]
     p7["Phase 7 - Everyone stays informed"]
     p8["Phase 8 - Owners decide with data"]
+    p9["Phase 9 - Staff time and access rules tightened"]
+    p10["Phase 10 - Gyms subscribe to the platform"]
 
     p1 --> p2
     p2 --> p3
@@ -378,15 +380,19 @@ flowchart LR
     p5 --> p6
     p4 --> p7
     p6 --> p8
+    p6 --> p9
+    p9 --> p10
 ```
 
 **Reading this:** An arrow means the phase it points at cannot start until the phase behind it is done.
 
 - **Phases 1 to 6 run in a line.** Each needs the one before it. Gyms need accounts. Workspaces need approved gyms. Members need a gym's plans. Bookings need members and coaches. Payroll and income need attendance and bookings.
 - **Phase 7 can start once Phase 4 is done,** alongside Phases 5 and 6. Its individual items still wait for the specific parts they announce or remind about.
-- **Phase 8 comes last,** because it reports on everything.
+- **Phase 8 reports on everything** in the first six phases.
+- **Phase 9 needs only Phase 6,** because it adjusts staff attendance and payroll. It was added after Phase 8 was finished.
+- **Phase 10 follows Phase 9,** because it reuses Phase 9's sidebar rule to hide locked modules. It also needs approved gyms (Phase 2) and PayMongo (Phase 4), both done long before.
 
-This matches *The phases* in [05 - ROADMAP](../05%20-%20ROADMAP/05%20-%20ROADMAP.md), and the notes in `05 - ROADMAP/phase-1/PHASE 1.md` to `phase-8/PHASE 8.md`.
+This matches *The phases* in [05 - ROADMAP](../05%20-%20ROADMAP/05%20-%20ROADMAP.md), and the notes in `05 - ROADMAP/phase-1/PHASE 1.md` to `phase-10/PHASE 10.md`.
 
 ## 11. The proposed arrangement
 
@@ -437,3 +443,23 @@ flowchart LR
 6. **Payments.** Online payments go through PayMongo.
 
 This matches *The arrangement being proposed* in [03 - SYSTEM ARCHITECTURE](../03%20-%20SYSTEM%20ARCHITECTURE/03%20-%20SYSTEM%20ARCHITECTURE.md).
+
+## 12. The life story of a gym subscription, planned
+
+```mermaid
+stateDiagram-v2
+    [*] --> Trial : new gym registered
+    Trial --> Paid : owner pays through PayMongo
+    Trial --> Starter : trial ends with no payment
+    Starter --> Paid : owner pays through PayMongo
+    Paid --> Paid : owner pays for the next period
+    Paid --> Starter : paid period ends with no payment
+```
+
+**Reading this:**
+
+1. **Trial.** A new gym starts on a free trial. The administrator sets its length; it starts at 30 days (said in conversation, 9 November 2026). It opens every module and starts at approval (Q-25, Q-26).
+2. **Paid.** The owner picks a paid plan, such as Pro or Elite, and pays through PayMongo. The plan starts only when the payment is confirmed (R-105).
+3. **Starter.** A gym whose trial or paid period ends without payment moves to the free plan, Starter. It keeps only the modules Starter includes; its records are kept, and the rest unlock when it pays (R-106). There are no extra days after a paid month (Q-27).
+
+This matches [PHASE 10](../05%20-%20ROADMAP/phase-10/PHASE%2010.md) and the subscription row in *The arrangement being proposed* in [03 - SYSTEM ARCHITECTURE](../03%20-%20SYSTEM%20ARCHITECTURE/03%20-%20SYSTEM%20ARCHITECTURE.md).

@@ -671,11 +671,13 @@ function LineBreakdown({ line }: { line: PayrollLine }) {
           <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 rounded-lg border bg-card p-3 text-sm sm:grid-cols-3">
             <Fact label="Scheduled days" value={String(line.scheduled_days)} />
             <Fact label="Days worked" value={String(line.days_worked)} />
+            <Fact label="Present days" value={String(line.days_present)} />
+            <Fact label="Late days" value={String(line.days_late)} />
             <Fact label="Absent days" value={String(line.days_absent)} />
             <Fact label="Paid leave" value={String(line.paid_leave_days)} />
             <Fact label="Unpaid leave" value={String(line.unpaid_leave_days)} />
             <Fact label="Holidays" value={String(line.holiday_days)} />
-            <Fact label="Late" value={minutesLabel(line.late_minutes)} />
+            <Fact label="Late minutes" value={minutesLabel(line.late_minutes)} />
             <Fact label="Undertime" value={minutesLabel(line.undertime_minutes)} />
             <Fact label="Approved overtime" value={minutesLabel(line.overtime_minutes)} />
             <Fact label="Sessions" value={String(line.sessions_count)} />

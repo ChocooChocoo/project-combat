@@ -81,13 +81,14 @@ These are choices that shape everything else. Each is cited, and none of them is
 | Live update channel, proposed | Pushes new notifications and booking changes to open screens straight away | The spec, pages 3 and 18, asks for live updates (C-20) |
 | Payment connector, proposed | Records cash, card and e-wallet payments at the desk. Takes online payments for every fee through PayMongo (GCash, Maya, card), with every incoming payment message checked as genuine. | The spec, page 16. PayMongo is core at your client's request (asked by your client, relayed in conversation, 3 November 2026). Fixes the fake "paid" bookings (C-09). |
 | Email service, proposed | Codes, resets and notices | Same job as before; secrets kept out of shared folders |
+| Subscription plans and gym subscriptions, proposed | The administrator's plans, each with a price, inclusions and a list of modules switched on or off; each gym's trial end date, current plan and paid-until date; and a check, beside the permission check, that refuses a module the gym's plan does not include | Your client's request, `docs/prompts/P05.md` (relayed in conversation, 9 November 2026). Built in [PHASE 10](../05%20-%20ROADMAP/phase-10/PHASE%2010.md). Payments reuse the PayMongo connector. |
 | Decision support, proposed | Two parts, both worked out by the backend from stored records. For athletes: nearest gyms and best matches. For owners: reports, trends and forecasts. | The spec, page 19, and your client's definition (asked by your client, relayed in conversation, 3 November 2026). The old version was screen-side only. |
 
 ### How work would pass between them
 
 1. **Arriving.** A person opens the app, in a browser or inside the phone shell.
 2. **Signing in.** They sign in and get a pass that expires.
-3. **Every request.** It goes through the front door. The pass is checked first. Then the person's role and permission for that module are checked. Then the gym rule limits what they can reach.
+3. **Every request.** It goes through the front door. The pass is checked first. Then the person's role and permission for that module are checked. Once Phase 10 is built, the gym's plan is also checked: a module the plan does not include is refused even for the owner. Then the gym rule limits what they can reach.
 4. **The work.** The job does its work and writes to the store.
 5. **Follow-on effects.** If the job affects other people (a booking approved, a schedule changed), it hands a notice to the background line. The line delivers the notice to the in-app list, sends an email where needed, and pushes it live to anyone with the app open.
 6. **Timed notices.** The scheduled runner wakes on its own timetable and creates reminders the same way.

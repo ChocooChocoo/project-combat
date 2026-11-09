@@ -108,6 +108,8 @@ export type PayrollLine = {
   minute_rate: string
   scheduled_days: number
   days_worked: number
+  days_present: number
+  days_late: number
   days_absent: number
   paid_leave_days: number
   unpaid_leave_days: number
@@ -199,6 +201,8 @@ export type Payslip = {
   employment_type: EmploymentType
   scheduled_days: number
   days_worked: number
+  days_present: number
+  days_late: number
   days_absent: number
   paid_leave_days: number
   unpaid_leave_days: number
@@ -401,6 +405,8 @@ export function readLine(value: unknown): PayrollLine {
     minute_rate: moneyText(row.minute_rate),
     scheduled_days: numberValue(row.scheduled_days),
     days_worked: numberValue(row.days_worked),
+    days_present: numberValue(row.days_present),
+    days_late: numberValue(row.days_late),
     days_absent: numberValue(row.days_absent),
     paid_leave_days: numberValue(row.paid_leave_days),
     unpaid_leave_days: numberValue(row.unpaid_leave_days),
@@ -498,6 +504,8 @@ export function readPayslip(value: unknown, run?: PayrollRun | null): Payslip {
     employment_type: (source.employment_type ?? line?.employment_type) === 'contractor' ? 'contractor' : 'employee',
     scheduled_days: numberValue(source.scheduled_days ?? line?.scheduled_days),
     days_worked: numberValue(source.days_worked ?? line?.days_worked),
+    days_present: numberValue(source.days_present ?? line?.days_present),
+    days_late: numberValue(source.days_late ?? line?.days_late),
     days_absent: numberValue(source.days_absent ?? line?.days_absent),
     paid_leave_days: numberValue(source.paid_leave_days ?? line?.paid_leave_days),
     unpaid_leave_days: numberValue(source.unpaid_leave_days ?? line?.unpaid_leave_days),
@@ -543,6 +551,8 @@ export function payslipFromLine(line: PayrollLine, run: PayrollRun, gymName?: st
     employment_type: line.employment_type,
     scheduled_days: line.scheduled_days,
     days_worked: line.days_worked,
+    days_present: line.days_present,
+    days_late: line.days_late,
     days_absent: line.days_absent,
     paid_leave_days: line.paid_leave_days,
     unpaid_leave_days: line.unpaid_leave_days,

@@ -26,7 +26,7 @@ class PayrollSettingsController extends Controller
             'frequency' => ['sometimes', 'required', Rule::in(array_keys(config('payroll.frequencies')))],
             'approval_steps' => ['sometimes', 'required', 'array', 'min:1', 'max:3'],
             'approval_steps.*' => ['required', Rule::in(array_keys(config('payroll.steps')))],
-            'staff_grace_minutes' => ['sometimes', 'required', 'integer', 'between:0,240'],
+            'staff_grace_minutes' => ['sometimes', 'required', 'integer', 'between:10,240'],
             'overtime_min_minutes' => ['sometimes', 'required', 'integer', 'between:0,1440'],
         ]);
 

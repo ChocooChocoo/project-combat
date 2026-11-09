@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminPermissionController;
 use App\Http\Controllers\Admin\GymReviewController;
 use App\Http\Controllers\Admin\PlatformStatsController;
+use App\Http\Controllers\Admin\SubscriptionPlanController;
 use App\Http\Controllers\Admin\PlatformNoticeController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DiscoveryController;
@@ -34,6 +35,7 @@ use App\Http\Controllers\Gym\PayableController;
 use App\Http\Controllers\Gym\PaymentController;
 use App\Http\Controllers\Gym\PayrollRunController;
 use App\Http\Controllers\Gym\PayrollSettingsController;
+use App\Http\Controllers\Gym\SubscriptionController;
 use App\Http\Controllers\Gym\PayslipController;
 use App\Http\Controllers\Gym\PerformanceNoteController;
 use App\Http\Controllers\Gym\PlanController;
@@ -161,10 +163,20 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('applications/{gym}', [GymReviewController::class, 'show']);
                 Route::put('applications/{gym}/checklist', [GymReviewController::class, 'checklist']);
                 Route::post('applications/{gym}/decision', [GymReviewController::class, 'decide']);
+                // R-102 to R-104: subscription plans and the trial length.
+                Route::get('subscription-plans', [SubscriptionPlanController::class, 'index']);
+                Route::post('subscription-plans', [SubscriptionPlanController::class, 'store']);
+                Route::put('subscription-plans/{plan}', [SubscriptionPlanController::class, 'update']);
+                Route::post('subscription-plans/{plan}/toggle-retired', [SubscriptionPlanController::class, 'toggleRetired']);
+                Route::put('subscription-settings', [SubscriptionPlanController::class, 'updateSettings']);
             });
 
             // Everything inside a gym goes through the gym check first (R-09).
             Route::prefix('gyms/{gym}')->middleware('gym')->group(function () {
+                // R-105, R-107: the owner's own plan. The owner check is inside the controller.
+                Route::get('subscription', [SubscriptionController::class, 'show']);
+                Route::post('subscription/checkout', [SubscriptionController::class, 'checkout']);
+                Route::post('subscription/confirm', [SubscriptionController::class, 'confirm']);
                 Route::get('decision-support/options', [DecisionSupportController::class, 'options'])->middleware('permission:decision_support.general.view');
                 Route::get('decision-support/attendance', [DecisionSupportController::class, 'attendance'])->middleware('permission:decision_support.general.view');
                 Route::get('decision-support/athletes', [DecisionSupportController::class, 'athletes'])->middleware('permission:decision_support.general.view');
@@ -238,21 +250,21 @@ Route::middleware('auth:sanctum')->group(function () {
                 // Staff (R-22 to R-24). Showing a person is open to that person; the controller checks.
                 Route::get('staff', [StaffController::class, 'index'])->middleware('permission:hr.staff.view');
                 Route::post('staff', [StaffController::class, 'store'])->middleware('permission:hr.staff.manage');
-                Route::get('staff/{user}', [StaffController::class, 'show']);
+                Route::get('staff/{user}', [StaffController::class, 'show'])->middleware('plan:hr');
                 Route::put('staff/{user}', [StaffController::class, 'update'])->middleware('permission:hr.staff.manage');
                 Route::delete('staff/{user}', [StaffController::class, 'destroy'])->middleware('permission:hr.staff.manage');
-                Route::put('staff/{user}/profile', [EmployeeProfileController::class, 'update']);
-                Route::get('staff/{user}/schedule', [ScheduleController::class, 'show']);
+                Route::put('staff/{user}/profile', [EmployeeProfileController::class, 'update'])->middleware('plan:hr');
+                Route::get('staff/{user}/schedule', [ScheduleController::class, 'show'])->middleware('plan:hr');
                 Route::put('staff/{user}/schedule', [ScheduleController::class, 'update'])->middleware('permission:hr.schedules.manage');
 
                 // Leave (R-25, R-26). Own requests are open; HR sees all. The controller checks.
-                Route::get('leave-requests', [LeaveController::class, 'index']);
-                Route::post('leave-requests', [LeaveController::class, 'store']);
-                Route::get('leave-requests/{leave}', [LeaveController::class, 'show'])->whereNumber('leave');
-                Route::get('leave-requests/{leave}/attachment', [LeaveController::class, 'attachment'])->whereNumber('leave');
-                Route::post('leave-requests/{leave}/cancel', [LeaveController::class, 'cancel'])->whereNumber('leave');
+                Route::get('leave-requests', [LeaveController::class, 'index'])->middleware('plan:hr');
+                Route::post('leave-requests', [LeaveController::class, 'store'])->middleware('plan:hr');
+                Route::get('leave-requests/{leave}', [LeaveController::class, 'show'])->whereNumber('leave')->middleware('plan:hr');
+                Route::get('leave-requests/{leave}/attachment', [LeaveController::class, 'attachment'])->whereNumber('leave')->middleware('plan:hr');
+                Route::post('leave-requests/{leave}/cancel', [LeaveController::class, 'cancel'])->whereNumber('leave')->middleware('plan:hr');
                 Route::post('leave-requests/{leave}/decision', [LeaveController::class, 'decide'])->whereNumber('leave')->middleware('permission:hr.leave.manage');
-                Route::get('leave-balances', [LeaveController::class, 'balances']);
+                Route::get('leave-balances', [LeaveController::class, 'balances'])->middleware('plan:hr');
 
                 // Holidays (R-27).
                 Route::get('holidays', [HolidayController::class, 'index']);
@@ -265,12 +277,12 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::post('staff-attendance', [StaffAttendanceController::class, 'store'])->middleware('permission:hr.attendance.manage');
                 Route::put('staff-attendance/{entry}', [StaffAttendanceController::class, 'update'])->whereNumber('entry')->middleware('permission:hr.attendance.manage');
                 Route::get('staff-attendance/{entry}/changes', [StaffAttendanceController::class, 'changes'])->whereNumber('entry')->middleware('permission:hr.attendance.view');
-                Route::get('my-attendance', [MyAttendanceController::class, 'index']);
-                Route::post('my-attendance/clock-in', [MyAttendanceController::class, 'clockIn']);
-                Route::post('my-attendance/clock-out', [MyAttendanceController::class, 'clockOut']);
-                Route::put('my-attendance/{entry}/explanation', [MyAttendanceController::class, 'explain'])->whereNumber('entry');
+                Route::get('my-attendance', [MyAttendanceController::class, 'index'])->middleware('plan:hr');
+                Route::post('my-attendance/clock-in', [MyAttendanceController::class, 'clockIn'])->middleware('plan:hr');
+                Route::post('my-attendance/clock-out', [MyAttendanceController::class, 'clockOut'])->middleware('plan:hr');
+                Route::put('my-attendance/{entry}/explanation', [MyAttendanceController::class, 'explain'])->whereNumber('entry')->middleware('plan:hr');
                 Route::get('overtime-requests', [OvertimeController::class, 'index'])->middleware('permission:hr.attendance.view,hr.overtime.approve');
-                Route::post('my-overtime-requests', [OvertimeController::class, 'store']);
+                Route::post('my-overtime-requests', [OvertimeController::class, 'store'])->middleware('plan:hr');
                 Route::post('overtime-requests/{overtime}/decision', [OvertimeController::class, 'decide'])->whereNumber('overtime')->middleware('permission:hr.overtime.approve');
 
                 // Performance notes (R-58). Never shown to the employee they describe.
@@ -286,12 +298,12 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::post('payroll/runs/{run}/decision', [PayrollRunController::class, 'decide'])->whereNumber('run')->middleware('permission:payroll.runs.approve');
                 Route::delete('payroll/runs/{run}', [PayrollRunController::class, 'destroy'])->whereNumber('run')->middleware('permission:payroll.runs.manage');
                 Route::get('payroll/settings', [PayrollSettingsController::class, 'show'])->middleware('permission:payroll.runs.view');
-                Route::put('payroll/settings', [PayrollSettingsController::class, 'update']);
+                Route::put('payroll/settings', [PayrollSettingsController::class, 'update'])->middleware('plan:payroll');
                 Route::get('payroll/rates', [StatutoryRateController::class, 'index'])->middleware('permission:payroll.runs.view');
                 Route::post('payroll/rates', [StatutoryRateController::class, 'store'])->middleware('permission:payroll.rates.manage');
 
                 // The employee's own work view.
-                Route::get('my-work', [WorkController::class, 'show']);
+                Route::get('my-work', [WorkController::class, 'show'])->middleware('plan:hr');
 
                 // Services (R-28).
                 // Viewing is open to gym setup or membership-plan managers, so add-ons can be chosen.

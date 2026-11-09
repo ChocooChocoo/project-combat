@@ -7,6 +7,7 @@ use App\Enums\GymStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Gym;
 use App\Notifications\GymApplicationDecided;
+use App\Support\Subscription;
 use App\Support\SystemRoles;
 use App\Support\Verification;
 use Illuminate\Http\JsonResponse;
@@ -106,6 +107,7 @@ class GymReviewController extends Controller
                 $gym->approved_tier = $gym->tier;
                 $gym->addPerson($gym->applicant, GymPersonType::Owner);
                 SystemRoles::seed($gym);
+                Subscription::startTrial($gym); // R-104, Q-26: the trial starts at approval.
             }
 
             $gym->save();

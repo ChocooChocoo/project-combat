@@ -99,6 +99,8 @@ The people side of 5A (adding employees, schedules, leave) is in [PHASE 3](../ph
 
 **Resolved:** Q-03 was dropped (no GPS-fenced check-in); Q-02 was kept as a plain explanation field.
 
+**Later change (9 November 2026):** the staff grace period must be at least 10 minutes. That is new item R-99 in [PHASE 9](../phase-9/PHASE%209.md); this item stays ✅.
+
 **Status note (6 November 2026):** Built in Packet 6A and integrated into My Work and the desk screen. `StaffAttendanceTest`, `StaffAbsenceJobTest` and `StaffAttendanceTenancyTest` pass; the nightly command marks absences and the 6H run over 16–31 October 2026 marked 0 twice. Browser pass completed 6 November 2026 (Packet 6H); residual edge checks are listed in Packet 6H.
 
 **Old system:** `backend/app/Http/Controllers/API/EmployeeAttendanceController.php`; the nightly absence job, `backend/app/Console/Commands/MarkAbsentEmployees.php`. That job ignored national holidays and disagreed with payroll on Saturdays (C-22).
@@ -183,6 +185,8 @@ The people side of 5A (adding employees, schedules, leave) is in [PHASE 3](../ph
 - [x] Pay is worked out by the system from stored records, never from figures typed in on the screen.
 
 **Resolved:** Q-13 and Q-21 answered; Q-01 dropped (no leave-to-cash).
+
+**Later change (9 November 2026):** each pay line and payslip must also show days present, late and absent. That is new item R-100 in [PHASE 9](../phase-9/PHASE%209.md); this item stays ✅.
 
 **Status note (6 November 2026):** Built in Packet 6F. `PayrollRunTest` and `Unit\PayrollCalculatorTest` prove a line for every active and just-ended employee, coaches included, from stored records only. Browser pass completed 6 November 2026 (Packet 6H); residual edge checks are listed in Packet 6H.
 

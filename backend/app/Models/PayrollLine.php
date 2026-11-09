@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable([
     'payroll_run_id', 'user_id', 'name', 'job_title', 'pay_basis', 'employment_type',
     'monthly_rate', 'per_session_rate', 'daily_rate', 'minute_rate',
-    'scheduled_days', 'days_worked', 'days_absent', 'paid_leave_days', 'unpaid_leave_days',
+    'scheduled_days', 'days_worked', 'days_late', 'days_absent', 'paid_leave_days', 'unpaid_leave_days',
     'holiday_days', 'late_minutes', 'undertime_minutes', 'overtime_minutes', 'sessions_count',
     'base_pay', 'attendance_deduction', 'holiday_premium', 'overtime_pay', 'session_pay', 'gross_pay',
     'sss_employee', 'philhealth_employee', 'pagibig_employee', 'tax', 'net_pay',
@@ -35,6 +35,7 @@ class PayrollLine extends Model
             'minute_rate' => 'decimal:2',
             'scheduled_days' => 'integer',
             'days_worked' => 'integer',
+            'days_late' => 'integer',
             'days_absent' => 'integer',
             'paid_leave_days' => 'integer',
             'unpaid_leave_days' => 'integer',

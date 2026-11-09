@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'account' => \App\Http\Middleware\EnsureAccountType::class,
             'gym' => \App\Http\Middleware\EnsureGymAccess::class,
             'permission' => \App\Http\Middleware\RequirePermission::class,
+            'plan' => \App\Http\Middleware\RequirePlanModule::class,
             'password.changed' => \App\Http\Middleware\EnsurePasswordChanged::class,
             'verified.email' => \App\Http\Middleware\EnsureEmailVerified::class,
         ]);

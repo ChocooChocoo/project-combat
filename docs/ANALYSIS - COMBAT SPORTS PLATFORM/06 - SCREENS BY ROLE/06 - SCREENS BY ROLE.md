@@ -52,6 +52,7 @@ Each level sees only its own screens. Owners, employees and athletes stay inside
 | S-02 | Gym applications | Lists by status, with search | S-03 | *Drawn from* D-17 and D-18 |
 | S-03 | Review an application | The gym profile and every document side by side; the checklist; approve, reject with a reason, or return with items to fix | Back to S-02 | D-16 to D-18, R-16 and R-17 |
 | S-04 | Send a platform notice | Message and audience | Back to S-01 | D-74, R-81 |
+| S-45 | Subscription plans | Planned. Create, edit and retire plans (name, price, billing period, inclusions); switch each owner-side module on or off per plan; mark the free plan; set the free-trial length (default 30 days) | — | D-89 to D-91, R-102 to R-104 |
 
 An administrator member-ID screen like the old one is not listed; it waits on Q-04.
 
@@ -91,14 +92,15 @@ The owner holds every active permission for their own gym. Employees see the sam
 | S-25 | Booking requests and waiting lists | Bookings waiting for approval; each session's waiting list | — | D-29 and D-36, R-49 and R-50 |
 | S-26 | Session attendance | A session's roster with check-in times; manual entry; progress notes | — | D-26, D-38 and D-39, R-53 to R-55 |
 | S-27 | Leave and holidays | Leave requests to decide; the holiday calendar | — | D-49, R-25 and R-27 |
-| S-28 | Staff attendance and overtime | Daily staff attendance; overtime requests to decide | — | D-49, R-56 and R-57 |
-| S-29 | Payroll | Run a pay period; review each line; approve in turn; release | — | D-50 and D-51, R-59 to R-62 |
+| S-28 | Staff attendance and overtime | Daily staff attendance against each owner-set schedule; overtime requests to decide. Planned: the staff grace setting cannot go below 10 minutes (R-99) | — | D-49, R-56 and R-57 |
+| S-29 | Payroll | Run a pay period; review each line; approve in turn; release. Planned: each line shows days present, late and absent (R-100) | — | D-50 and D-51, R-59 to R-62 |
 | S-30 | Payments desk | Record a cash, card or e-wallet payment at the desk; see online PayMongo payments as they arrive; receipts; outstanding balances | — | D-55, D-56 and D-84, R-34, R-35 and R-65 |
 | S-31 | Finance | Income, expenses, amounts owed to suppliers, budgets against actual, and sustainability reports | — | D-53 to D-58, R-63 to R-68 |
 | S-32 | Customers | Leads and customers, follow-ups, interaction history, concerns, groups | — | D-59 to D-61, R-69 to R-71 |
 | S-33 | Stock | Items, quantities, places, movements, minimum levels | — | D-62 to D-64, R-72 to R-74 (built in Packet 6B) |
 | S-34 | Purchasing | Restock list, purchase requests and approvals, suppliers, purchase orders, receiving, status | — | D-65 to D-69, R-75 to R-79 |
 | S-35 | Announcements | Write an announcement or event; choose all members, a class or a customer group | — | D-70 and D-71, R-80 |
+| S-46 | My subscription | Planned. Current plan and what it includes, trial days left or next renewal date, choose a plan and pay through PayMongo, payment history; a short "locked by your plan" message on any locked module | — | D-91 to D-93, R-105 to R-107 |
 | S-36 | Decision support for owners | Built and checked 7 November 2026: eight dashboards plus trends, forecast, flagged problems and five-measure sustainability; selected dates, payroll mask, role denials and active-view print reports. | — | D-75 to D-79, R-85 to R-96 |
 
 The open questions that used to gate these screens are now settled:
@@ -146,6 +148,7 @@ S-42 cannot be finished until Q-11 (who scans whom) is answered, and S-44's canc
 | S-02 Gym applications | Yes | No | No | No | No |
 | S-03 Review an application | Yes | No | No | No | No |
 | S-04 Send a platform notice | Yes | No | No | No | No |
+| S-45 Subscription plans | Yes | No | No | No | No |
 | S-05 to S-08 Sign up, confirm, sign in, reset | Yes | Yes | Yes | Yes | Yes |
 | S-09 Find a gym | No | Yes | Yes | Yes | Yes |
 | S-10 Gym page | No | Yes | Yes | Yes | Yes |
@@ -175,6 +178,7 @@ S-42 cannot be finished until Q-11 (who scans whom) is answered, and S-44's canc
 | S-34 Purchasing | No | No | Own gym | If permitted, never approving own request | No |
 | S-35 Announcements | No | No | Own gym | If permitted | No |
 | S-36 Decision support | No | No | Own gym | If permitted | No |
+| S-46 My subscription | No | No | Own gym | No | No |
 | S-37 My sessions | No | No | No | Coaches, own only | No |
 | S-38 My work | No | No | No | Own only | No |
 | S-39 My membership | No | No | No | No | Own only |

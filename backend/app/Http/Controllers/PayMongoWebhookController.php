@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Gym;
 use App\Models\Membership;
 use App\Models\SessionBooking;
 use App\Support\BookingLedger;
 use App\Support\MembershipLedger;
 use App\Support\PayMongo;
+use App\Support\Subscription;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use RuntimeException;
@@ -34,7 +36,9 @@ class PayMongoWebhookController extends Controller
 
         $booking = ! $membership && $checkoutId !== ''
             ? SessionBooking::withoutGlobalScope('gym')->where('pending_checkout_id', $checkoutId)->first() : null;
-        if (! $membership && ! $booking) {
+        $gym = ! $membership && ! $booking && $checkoutId !== ''
+            ? Gym::where('pending_subscription_checkout_id', $checkoutId)->first() : null;
+        if (! $membership && ! $booking && ! $gym) {
             return response()->json(['ignored' => true]);
         }
 
@@ -47,6 +51,8 @@ class PayMongoWebhookController extends Controller
         if ($result['paid']) {
             if ($membership) {
                 MyMembershipController::recordCheckout($membership, $checkoutId, $result, $ledger);
+            } elseif ($gym) {
+                Subscription::recordCheckout($gym, $checkoutId, $result); // R-105
             } else {
                 MyBookingController::recordCheckout($booking, $checkoutId, $result, $bookingLedger);
             }

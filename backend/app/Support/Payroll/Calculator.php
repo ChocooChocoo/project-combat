@@ -124,6 +124,7 @@ class Calculator
 
         $scheduledDays = 0;
         $daysWorked = 0;
+        $daysLate = 0;
         $daysAbsent = 0;
         $paidLeaveDays = 0;
         $unpaidLeaveDays = 0;
@@ -196,6 +197,9 @@ class Calculator
 
             if ($worked) {
                 $daysWorked++;
+                if ($attendance === 'late') {
+                    $daysLate++;
+                }
                 $lateMinutes += (int) ($day['late_minutes'] ?? 0);
                 $undertimeMinutes += (int) ($day['undertime_minutes'] ?? 0);
 
@@ -409,6 +413,7 @@ class Calculator
             'minute_rate' => $minuteRate,
             'scheduled_days' => $scheduledDays,
             'days_worked' => $daysWorked,
+            'days_late' => $daysLate,
             'days_absent' => $daysAbsent,
             'paid_leave_days' => $paidLeaveDays,
             'unpaid_leave_days' => $unpaidLeaveDays,

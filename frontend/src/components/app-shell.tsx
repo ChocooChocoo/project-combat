@@ -1,7 +1,8 @@
-import { Building2, CalendarDays, Check, ChevronsUpDown, ClipboardCheck, FilePlus2, FileText, House, IdCard, LogOut, Medal, UserRound } from 'lucide-react'
+import { Building2, CalendarDays, Check, CreditCard, ChevronsUpDown, ClipboardCheck, FilePlus2, FileText, House, IdCard, LogOut, Medal, UserRound } from 'lucide-react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { myWorkNav, workspaceNavGroups } from '@/components/gym-nav'
 import { NotificationsMenu } from '@/components/notifications-menu'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Menu, MenuGroup, MenuGroupLabel, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
@@ -183,7 +184,8 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
     general.push({ to: '/memberships', label: 'My memberships', icon: IdCard })
     general.push({ to: '/bookings', label: 'My bookings', icon: CalendarDays })
   }
-  if (currentGym?.roles.includes('employee')) general.push(myWorkNav(currentGym.id))
+  // R-106: staff self-service is part of HR, so it hides when the gym's plan locks HR.
+  if (currentGym?.roles.includes('employee') && !currentGym.subscription?.locked_modules.includes('hr')) general.push(myWorkNav(currentGym.id))
   if (currentGym?.roles.includes('member')) general.push({ to: `/gyms/${currentGym.id}/my-record`, label: 'My record', icon: Medal })
   if (currentGym?.roles.includes('member')) general.push({ to: `/gyms/${currentGym.id}/sessions`, label: 'Sessions', icon: CalendarDays })
 
@@ -195,6 +197,7 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
   const admin: Item[] = [
     { to: '/admin', label: 'Gym applications', icon: ClipboardCheck, end: true },
     { to: '/admin/notices', label: 'Platform notices', icon: FileText },
+    { to: '/admin/plans', label: 'Subscription plans', icon: CreditCard },
   ]
 
   return (
@@ -243,8 +246,11 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
         <header className="safe-area-top sticky top-0 z-20 flex h-[calc(3.5rem+env(safe-area-inset-top,0px))] shrink-0 items-center gap-2 border-b bg-background px-3 md:px-4">
           <SidebarTrigger className="size-11 md:size-7" aria-label="Toggle navigation" />
           <span className="font-semibold text-sm md:hidden">Combat Platform</span>
-          <div className="ms-auto flex items-center gap-1" title={unread ? `${unread} unread notifications` : 'Notifications'}>
-            <NotificationsMenu />
+          <div className="ms-auto flex items-center gap-1">
+            <ThemeToggle />
+            <span className="contents" title={unread ? `${unread} unread notifications` : 'Notifications'}>
+              <NotificationsMenu />
+            </span>
           </div>
         </header>
         <div className="safe-area-bottom mx-auto w-full min-w-0 max-w-6xl wrap-anywhere px-4 pt-6 [--safe-area-bottom-padding:4rem] md:px-8">

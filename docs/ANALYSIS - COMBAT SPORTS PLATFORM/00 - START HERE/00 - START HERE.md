@@ -5,7 +5,7 @@ Next: [01 - OVERVIEW](../01%20-%20OVERVIEW/01%20-%20OVERVIEW.md)
 **What this is about:** Combat Sports Platform, the "Web-Based Integrated Management Platform for Combat Sports Training Centers in Cavite"
 **Depth:** Deep
 **Written:** 3 November 2026
-**Last updated:** 7 November 2026 (Phase 8 finished; all 98 roadmap items complete)
+**Last updated:** 9 November 2026 (Phases 9 and 10 finished; all 107 roadmap items done)
 
 > **Security warning.** The old code folder contains secrets in plain sight:
 >
@@ -50,6 +50,16 @@ Next: [01 - OVERVIEW](../01%20-%20OVERVIEW/01%20-%20OVERVIEW.md)
 | Q-15: decision-support forecast | Straight-line least-squares on up to 12 completed months, next 3 months, R² confidence (fit) shown; fewer than 3 months uses "average, not enough history". Incoming and outgoing clamp at zero; net may be negative. | 7 November 2026 |
 | R-91 historical outstanding balances | "Accept current snapshot (Recommended)". Revenue and income/expense use selected dates; balance label is "Outstanding balances as of today; not a historical balance". No historical debt reconstruction required. | 7 November 2026 |
 | R-87 coach grouping | "Accept attendance-based coach (Recommended)". Label "coach based on attendance" and visibly explain that context is inferred, not causal. | 7 November 2026 |
+| Your client's later requests (`docs/prompts/P05.md`) | Add staff attendance against owner schedules with at least 10 minutes' grace, attendance on payroll, a role-filtered sidebar, and admin-made subscription plans with a free trial | 9 November 2026 |
+| Staff grace period: fixed or owner-set? | The owner sets it, with 10 minutes as the minimum and the default | 9 November 2026 |
+| How lateness and absence affect pay | Keep the current rules (late minutes deducted at the minute rate, absent days unpaid); only add present, late and absent day counts | 9 November 2026 |
+| The "current issue" with roles and permissions | Nothing extra; record the role-filtered sidebar as already there | 9 November 2026 |
+| What an owner loses when the trial ends unsubscribed | The gym drops to the free plan; only the modules that plan allows stay usable | 9 November 2026 |
+| Is "Free" a permanent plan or the trial? | A permanent free plan (named Starter) that gyms fall back to; the trial is separate | 9 November 2026 |
+| Trial length | The administrator sets it; it starts at 30 days | 9 November 2026 |
+| How owners pay for a plan | Through PayMongo, like other online fees (R-35) | 9 November 2026 |
+| Suggested plan names | Starter, Pro, Elite | 9 November 2026 |
+| Q-25 to Q-28: trial contents and start, lapse, billing | The trial opens every module and starts at approval; an unpaid month drops to Starter at once; plans are monthly only | 9 November 2026 |
 
 The old features judged to "fit inside a spec module" are:
 
@@ -94,14 +104,16 @@ The old system built roughly half of this. It has detailed Philippine payroll an
 
 The most important thing to know: **the rebuild must put sign-in, permissions and gym separation first and get them right.** That is where the old system failed most, and everything else leans on it.
 
+The first eight phases of the rebuild are built. On 9 November 2026 your client asked for more: a minimum 10-minute staff grace, attendance counts on payroll, a role-filtered sidebar (already built), and subscription plans for gyms with a free trial. These are Phases 9 and 10. Both are built and checked in a browser.
+
 ## Everything in this analysis
 
 | File | What it holds |
 |---|---|
 | [01 - OVERVIEW](../01%20-%20OVERVIEW/01%20-%20OVERVIEW.md) | What the platform is, who uses it, what it does, what state it is in |
-| [02 - FINDINGS](../02%20-%20FINDINGS/02%20-%20FINDINGS.md) | Every spec requirement (D-01 to D-81) and your client's additions (D-82 to D-85), what the old code actually does, promised against built, and 25 contradictions (C-01 to C-25) |
+| [02 - FINDINGS](../02%20-%20FINDINGS/02%20-%20FINDINGS.md) | Every spec requirement (D-01 to D-81) and your client's additions (D-82 to D-93), what the old code actually does, promised against built, and 25 contradictions (C-01 to C-25) |
 | [03 - SYSTEM ARCHITECTURE](../03%20-%20SYSTEM%20ARCHITECTURE/03%20-%20SYSTEM%20ARCHITECTURE.md) | How the old system is put together, and the arrangement proposed for the rebuild |
-| [04 - DIAGRAMS](../04%20-%20DIAGRAMS/04%20-%20DIAGRAMS.md) | Eleven pictures: old journeys, the spec's life stories, the phase order, the proposed arrangement |
+| [04 - DIAGRAMS](../04%20-%20DIAGRAMS/04%20-%20DIAGRAMS.md) | Twelve pictures: old journeys, the spec's life stories, the phase order, the proposed arrangement, and a gym subscription's life story |
 | [05 - ROADMAP](../05%20-%20ROADMAP/05%20-%20ROADMAP.md) | The whole rebuild plan at a glance, with a link to each phase |
 | [PHASE 1](../05%20-%20ROADMAP/phase-1/PHASE%201.md) | People can sign up, prove who they are, and be recognised safely |
 | [PHASE 2](../05%20-%20ROADMAP/phase-2/PHASE%202.md) | Gyms can apply, be checked, and go live |
@@ -111,6 +123,8 @@ The most important thing to know: **the rebuild must put sign-in, permissions an
 | [PHASE 6](../05%20-%20ROADMAP/phase-6/PHASE%206.md) | The business side runs in one place, fed by training |
 | [PHASE 7](../05%20-%20ROADMAP/phase-7/PHASE%207.md) | Everyone stays informed, on their phone too |
 | [PHASE 8](../05%20-%20ROADMAP/phase-8/PHASE%208.md) | Owners decide with data |
+| [PHASE 9](../05%20-%20ROADMAP/phase-9/PHASE%209.md) | Staff time and access rules are tightened |
+| [PHASE 10](../05%20-%20ROADMAP/phase-10/PHASE%2010.md) | Gyms subscribe to the platform |
 | [06 - SCREENS BY ROLE](../06%20-%20SCREENS%20BY%20ROLE/06%20-%20SCREENS%20BY%20ROLE.md) | What each kind of user sees, in the old system and proposed for the rebuild |
 | [07 - WORD LIST](../07%20-%20WORD%20LIST/07%20-%20WORD%20LIST.md) | Plain meanings for the names that could not be avoided |
 
@@ -158,11 +172,26 @@ Each one is a real gap, not a guess dressed up as a question. When a question is
 | Q-22 | Should **online payment** also cover session add-ons, or only memberships? | Decides the reach of R-35 and R-51 | You | ✅ Every fee: memberships, registration, session add-ons, private coaching and other fees. Answered 3 November 2026. |
 | Q-23 | What are **platform notices** for, and who receives them: owners only, or all users? | The spec only names them (page 7). Needed for R-81. | You | ✅ Platform-wide updates such as maintenance notices. Administrator chooses owners of approved gyms (default, deduplicated) or all verified users. Sender excluded; no gym data. Answered 6 November 2026. |
 | Q-24 | Can athletes **cancel their own bookings**, and until when before the session? | Affects R-48 and the booking's life story | You | ✅ Yes, until a cut-off the owner sets (default 2 hours before the start); after that only staff. Answered 5 November 2026. |
+| Q-25 | What does a gym get **during the free trial**: every module, or one chosen plan's modules? | Decides what R-104 switches on | You | ✅ Every module. Answered 9 November 2026. |
+| Q-26 | Does the trial **start** when the owner applies, or when the gym is approved (R-18)? | An application can wait days for review; decides R-104's start date | You | ✅ At approval. Answered 9 November 2026. |
+| Q-27 | When a **paid period ends** unpaid, does the gym get extra days, renew automatically, or drop to Starter at once? | Decides when R-106 locks modules | You | ✅ Drop to Starter at once. Answered 9 November 2026. |
+| Q-28 | Which **billing periods** do plans offer: monthly, yearly, or both? | Shapes plan prices (R-102) and payment (R-105) | You | ✅ Monthly only. Answered 9 November 2026. |
+| Q-29 | Is the staff grace **fixed at 10 minutes** or set by each owner? | Decides R-99 | You | ✅ Owner sets it; minimum and default 10 minutes. Answered 9 November 2026. |
+| Q-30 | How should **late arrivals and absences affect pay**? | Decides R-100 | You | ✅ Keep current rules: late minutes deducted at the minute rate, absent days unpaid. Answered 9 November 2026. |
+| Q-31 | What happens when staff **clock in after the grace period**? | Decides R-99 | You | ✅ They can still clock in; they are marked late with minutes counted from the scheduled start (unchanged from Q-14). Confirmed 9 November 2026. |
+| Q-32 | What is the **current issue with roles and permissions**? | Could add work to R-101 | You | ✅ Nothing extra; the role-filtered sidebar is already there. Answered 9 November 2026. |
+| Q-33 | When a trial ends unsubscribed, are **all or only some** owner-side modules blocked? | Decides R-106 | You | ✅ Only those the free plan does not include. Answered 9 November 2026. |
+| Q-34 | Is the **trial length** fixed or set by the administrator? | Decides R-104 | You | ✅ Set by the administrator; 30 days to start. Answered 9 November 2026. |
+| Q-35 | Is **"Free"** a permanent plan or the trial? | Decides R-102 and R-106 | You | ✅ A permanent free plan (Starter); the trial is separate. Answered 9 November 2026. |
+| Q-36 | **Who runs payroll**: HR, operations or the owner? | Decides who sees R-100 | The rebuild | ✅ The owner and anyone whose role holds the payroll permissions (`backend/config/permissions.php` in the rebuild). No fixed role. Checked 9 November 2026. |
 
 ## Changed
 
 | Date | What prompted it | What it touched |
 |---|---|---|
+| 9 November 2026 | Verification: new migrations applied to the development MySQL database (backup taken first). Browser-checked 9 November 2026 on a throwaway copy of the database: trial banner, My subscription, a real PayMongo GCash test payment for Pro (recorded once, month starts after the trial), free-plan lock (sidebar hides locked modules, Finance refused, banner shows), admin plan edit, and present/late/absent days on a computed pay line (1 / 2 / 9). Fixed during the check: plan module checkboxes now carry their own names for screen readers. Phases 9 and 10 are ✅; the roadmap is 106 finished plus 1 already there, of 107. | [PHASE 9](../05%20-%20ROADMAP/phase-9/PHASE%209.md), [PHASE 10](../05%20-%20ROADMAP/phase-10/PHASE%2010.md), [05 - ROADMAP](../05%20-%20ROADMAP/05%20-%20ROADMAP.md), this note |
+| 9 November 2026 | Progress: Phases 9 and 10 built. Staff grace can no longer go below 10 minutes; pay lines and payslips show present, late and absent days; R-101 confirmed. Platform plans (Starter, Pro, Elite), per-plan modules, an admin-set trial that starts at approval, PayMongo subscription payments, plan limits enforced in the one permission check, the owner's *My subscription* screen, a workspace notice and a daily reminder. Q-25 to Q-28 answered. Full backend suite 603 tests / 27,997 assertions pass; frontend build, lint (no errors) and node tests pass. Not run: browser check, real PayMongo test payment, MySQL migration. All 8 built items are 🟨 until then. | [PHASE 9](../05%20-%20ROADMAP/phase-9/PHASE%209.md), [PHASE 10](../05%20-%20ROADMAP/phase-10/PHASE%2010.md), [05 - ROADMAP](../05%20-%20ROADMAP/05%20-%20ROADMAP.md), this note |
+| 9 November 2026 | New material: your client's later requests in `docs/prompts/P05.md`, with your answers in conversation. Added D-86 to D-93. The rebuild was checked: staff check-in against schedules (R-56), late deductions in payroll (R-59) and the role-filtered sidebar already exist; the staff grace can be set to 0; payroll has no late-day count; there are no subscriptions. Added Phase 9 (R-99 grace of at least 10 minutes, R-100 present/late/absent days on payroll, R-101 sidebar 🔵) and Phase 10 (R-102 to R-107: subscription plans, plan modules, free trial, PayMongo subscription, limits after the trial, owner subscription screen). Open questions Q-25 to Q-28 added; Q-29 to Q-36 record P05's own questions as answered. Added screens S-45 and S-46, diagram 12 and three word-list entries. Roadmap now 98 finished, 1 already there, 8 not started, of 107. | [01 - OVERVIEW](../01%20-%20OVERVIEW/01%20-%20OVERVIEW.md), [02 - FINDINGS](../02%20-%20FINDINGS/02%20-%20FINDINGS.md), [03 - SYSTEM ARCHITECTURE](../03%20-%20SYSTEM%20ARCHITECTURE/03%20-%20SYSTEM%20ARCHITECTURE.md), [04 - DIAGRAMS](../04%20-%20DIAGRAMS/04%20-%20DIAGRAMS.md), [05 - ROADMAP](../05%20-%20ROADMAP/05%20-%20ROADMAP.md), [PHASE 6](../05%20-%20ROADMAP/phase-6/PHASE%206.md), [PHASE 8](../05%20-%20ROADMAP/phase-8/PHASE%208.md), [PHASE 9](../05%20-%20ROADMAP/phase-9/PHASE%209.md), [PHASE 10](../05%20-%20ROADMAP/phase-10/PHASE%2010.md), [06 - SCREENS BY ROLE](../06%20-%20SCREENS%20BY%20ROLE/06%20-%20SCREENS%20BY%20ROLE.md), [07 - WORD LIST](../07%20-%20WORD%20LIST/07%20-%20WORD%20LIST.md), this note |
 | 7 November 2026 | Phase 8 finished and independently accepted: all twelve decision-support views (R-85 to R-96) are built and verified, and the roadmap is **98 finished / 0 open**. Full backend 595 tests / 27,884 assertions pass; isolated throwaway MySQL fresh-seed/sync/stock check and all twelve controller paths pass under ONLY_FULL_GROUP_BY, then database dropped. Frontend Node/lint/build pass. Owner all twelve views at four widths and active reports checked; real decision-only all-view access, plain-employee denial, delegated payroll mask, pure payroll-only and front-desk denial, five-role matrix, keyboard Print/Retry, invalid/empty/stale/basis states, and own/owner payslip print regression all pass. A shared print visibility defect was fixed after reproducing six blank pages; the new stored fixture yields 9/9/12 nonblank attendance/athlete/sustainability pages. Independent validation records **14/14 frozen rows met**. Q-15 answered; user-approved current balance snapshot and inferred coach context documented. | [PHASE 8](../05%20-%20ROADMAP/phase-8/PHASE%208.md), [05 - ROADMAP](../05%20-%20ROADMAP/05%20-%20ROADMAP.md), [S-36](../06%20-%20SCREENS%20BY%20ROLE/06%20-%20SCREENS%20BY%20ROLE.md), packet plans, this note |
 | 7 November 2026 | Progress: Phase 7 built and browser-verified. Gyms can send announcements and events to all members, one class occurrence or one customer group (R-80); the platform administrator can send notices to owners of approved gyms or all verified users without gym data (R-81); session, membership-expiry and follow-up reminders run on their own schedules with no duplicates (R-82); notices and places left update on open screens through 15-second visibility-aware polling (R-83); and every athlete screen fits a phone for the Median.co wrapper, with the setup document and external install/store steps recorded (R-84). Final gates: 520 backend tests / 26,513 assertions; MySQL `migrate:fresh --seed` with 10 demo announcements, 1 platform notice and no jobs; permission sync and schedule list passed; frontend lint, build and 6 node tests passed; the four new migrations roll back and re-apply on a throwaway database. Browser checks covered all audiences, front-desk send, coach denial, expired-member exclusion, non-admin denial, owner and all-user notices, live notice in 4.8 seconds, live places-left in 11.2 seconds, and athlete screens at 360 px and 390 px with no sideways scrolling. Phase 7 is ✅; 86 items are finished and 12 remain in Phase 8. | [PHASE 7](../05%20-%20ROADMAP/phase-7/PHASE%207.md), [05 - ROADMAP](../05%20-%20ROADMAP/05%20-%20ROADMAP.md), [06 - SCREENS BY ROLE](../06%20-%20SCREENS%20BY%20ROLE/06%20-%20SCREENS%20BY%20ROLE.md), this note |
 | 6 November 2026 | Correction: account type is now chosen at sign-up and fixed (`member` or `owner`), replacing "one sign-up, roles later" for the owning/joining split (R-01, R-07). Owner accounts apply to run a gym and browse the member side only, with no joining, preferences or best matches; member accounts cannot apply to own a gym. Staff links are unaffected, and existing accounts were inferred as `owner` if they own a gym or have an application, otherwise `member`. | [PHASE 1](../05%20-%20ROADMAP/phase-1/PHASE%201.md), [ACCOUNTS.md](../../SETUPS/ACCOUNTS.md), this note |

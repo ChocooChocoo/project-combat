@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Enums\GymPersonType;
+use App\Support\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
@@ -35,6 +36,13 @@ class UserResource extends JsonResource
                     'roles' => $roles,
                     'role_names' => $this->resource->gymRoles($gym)->orderBy('name')->pluck('name')->values(),
                     'permissions' => $this->resource->permissionsIn($gym)->values(),
+                    // R-106: why modules are missing, so screens can point the owner to My subscription.
+                    'subscription' => (fn (array $state) => [
+                        'status' => $state['status'],
+                        'plan_name' => $state['plan']?->name,
+                        'locked_modules' => $state['locked_modules'],
+                        'period_ends_at' => Subscription::periodEnd($gym)?->toIso8601String(),
+                    ])(Subscription::state($gym)),
                 ];
             })->values(),
         ];

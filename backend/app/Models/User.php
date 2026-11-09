@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\AccountType;
 use App\Enums\GymPersonType;
 use App\Support\PermissionCatalog;
+use App\Support\Subscription;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -101,10 +102,28 @@ class User extends Authenticatable
         return $this->gyms()->where('gyms.id', $gymId)->wherePivotIn('role', $values)->exists();
     }
 
-    /** Active permissions from active, unexpired grants in this gym only. */
+    /**
+     * Active permissions from active, unexpired grants in this gym only, minus any module
+     * the gym's platform plan does not include (R-106).
+     */
     public function permissionsIn(Gym|int $gym): Collection
     {
         $gymId = $gym instanceof Gym ? $gym->id : $gym;
+        $granted = $this->grantedPermissionsIn($gymId);
+        if ($granted->isEmpty()) {
+            return $granted;
+        }
+
+        $model = $gym instanceof Gym ? $gym : Gym::find($gymId);
+        $locked = $model ? Subscription::lockedModules($model) : [];
+
+        return $locked === [] ? $granted
+            : $granted->reject(fn (string $permission) => in_array(strtok($permission, '.'), $locked, true))->values();
+    }
+
+    /** What roles grant in this gym, before the plan's limits. */
+    public function grantedPermissionsIn(int $gymId): Collection
+    {
         if ($this->hasGymRole($gymId, GymPersonType::Owner)) {
             return Permission::active()->pluck('permission_string');
         }

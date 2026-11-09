@@ -152,6 +152,28 @@ These are not in the spec. Your client asked for them, and you settled how far e
 | D-84 | Take online payments through PayMongo (GCash, Maya, card) for every fee: memberships, registration, session add-ons, private coaching and other fees | Client request; you made it core for all fees |
 | D-85 | Show a person the nearest gyms first, and best-match recommendations that weigh distance with sport, price and schedule | Client request ("the DSS is the nearest combat sports training center"); you chose to add it beside the owner dashboards |
 
+### What your client added later
+
+These came through `docs/prompts/P05.md` (relayed in conversation, 9 November 2026). Your answers that day settle how far each goes.
+
+| # | What it must do | Where it says so |
+|---|---|---|
+| D-86 | Let staff check in and check out against the schedules the gym owner sets, with a grace period of at least 10 minutes for late clock-ins | `P05.md`, *Constraints* and *Tasks: Staff*; you chose owner-set with a 10-minute minimum |
+| D-87 | Show each staff member's attendance (present, late, absent) in payroll | `P05.md`, *Tasks: HR / Operations*; you chose to keep the current pay rules |
+| D-88 | Show each user only the sidebar modules their role allows | `P05.md`, *Tasks: Technical* |
+| D-89 | Let the platform administrator create and edit subscription plans and what each includes | `P05.md`, *Tasks: Admin*; you chose the names Starter, Pro and Elite |
+| D-90 | Let the administrator choose which features each plan can and cannot use | `P05.md`, *Tasks: Admin* |
+| D-91 | Put each newly registered gym on a free trial | `P05.md`, *Context*; you chose an administrator-set length, 30 days to start |
+| D-92 | Require owners to subscribe once the trial ends, and limit owner-side features for gyms that do not | `P05.md`, *Constraints* and *Success Criteria*; you chose "keep only the free plan's modules" |
+| D-93 | Take subscription payments through PayMongo | Your answer, said in conversation, 9 November 2026 |
+
+**What the rebuild already does about these** (rebuild code in the project folder, read 9 November 2026; *confirmed*):
+
+- Staff clock in and out, and lateness and absences are worked out from the owner's schedules (`backend/app/Support/StaffAttendanceBook.php`). Each gym has a staff grace setting starting at 10 minutes, but it accepts 0 (`backend/app/Http/Controllers/Gym/GymSetupController.php`, line 146; `PayrollSettingsController.php`, line 29). D-86 is mostly built; the minimum is missing.
+- Payroll counts days worked and days absent and deducts late minutes (`backend/app/Support/Payroll/Calculator.php`, lines 127 to 243). It does not count late days. D-87 is partly built.
+- The workspace sidebar lists a module only if the person holds one of its permissions (`frontend/src/components/gym-nav.tsx`, lines 12 to 56). D-88 is built.
+- There are no subscription plans, trials or gym subscription records anywhere in the rebuild. D-89 to D-93 are not built. The gym "tiers" (D-12 to D-14) are verification levels and are unrelated.
+
 
 ## Rules it has to follow
 
@@ -392,3 +414,5 @@ These gaps matter for the rebuild. Each is a question in the [open questions](..
 - **Online payment.** Whether it covers session add-ons or only memberships (Q-22, now answered: every fee).
 - **Platform notices.** What they are for, and who gets them (Q-23).
 - **Cancelling a booking.** Whether, and until when, an athlete can cancel their own booking (Q-24).
+- **Free trial.** What a gym gets during the trial (Q-25), and whether it starts at application or approval (Q-26). Both answered 9 November 2026.
+- **Paid periods.** What happens when a paid period ends unpaid (Q-27), and which billing periods are offered (Q-28). Both answered 9 November 2026.

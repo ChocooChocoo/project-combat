@@ -4,7 +4,7 @@
 
 ## What this covers
 
-This is the plan for rebuilding the platform from scratch. It covers all seven modules of the spec. It also includes the old-system features you chose to keep because they fit inside a spec module. It is split into eight phases and 98 capabilities. Every item began as ⭕ Not started because nothing from the old system is being reused (said in conversation, 3 November 2026); 98 are now finished and all eight phases are built. Each item names what the old system did, as reference only. The plan covers building work only: no budget, staffing or dates. It says **what** the system must be able to do, not **how** to build it.
+This is the plan for rebuilding the platform from scratch. It covers all seven modules of the spec. It also includes the old-system features you chose to keep because they fit inside a spec module. It is split into ten phases and 107 capabilities. Every item began as ⭕ Not started because nothing from the old system is being reused (said in conversation, 3 November 2026); 98 are now finished and the first eight phases are built. Phases 9 and 10 were added on 9 November 2026 from your client's later requests (`docs/prompts/P05.md`). Each item names what the old system did, as reference only. The plan covers building work only: no budget, staffing or dates. It says **what** the system must be able to do, not **how** to build it.
 
 ## Where the plan came from
 
@@ -18,6 +18,7 @@ The plan draws on these sources:
   - the spec wins over the old code;
   - keep the old extras that fit inside a spec module;
   - use the spec's permission model for staff.
+- **Your client's later requests, 9 November 2026:** staff grace, attendance on payroll, the role-filtered sidebar and gym subscriptions (D-86 to D-93), with your answers given in conversation that day.
 
 ## The phases
 
@@ -31,6 +32,8 @@ The plan draws on these sources:
 | 6 | The business side runs in one place, fed by training | Phases 3, 4 and 5 | R-56 to R-79 | ✅ Finished | [PHASE 6](phase-6/PHASE%206.md) |
 | 7 | Everyone stays informed, on their phone too | Phase 4; some items also wait for Phases 5 and 6 | R-80 to R-84 | ✅ Finished | [PHASE 7](phase-7/PHASE%207.md) |
 | 8 | Owners decide with data | Phases 4, 5 and 6 | R-85 to R-96 | ✅ Finished | [PHASE 8](phase-8/PHASE%208.md) |
+| 9 | Staff time and access rules are tightened | Phase 6 (R-56, R-59, R-62) | R-99 to R-101 | ✅ Finished | [PHASE 9](phase-9/PHASE%209.md) |
+| 10 | Gyms subscribe to the platform | Phases 2 and 4 (R-18, R-35); R-101 | R-102 to R-107 | ✅ Finished | [PHASE 10](phase-10/PHASE%2010.md) |
 
 A phase is ✅ only when every item in it is ✅, 🔵 or ⬜. It is 🟨 once any item is being worked on, ❌ if it cannot start or continue, and ⭕ otherwise. The order is drawn as diagram 10 in [04 - DIAGRAMS](../04%20-%20DIAGRAMS/04%20-%20DIAGRAMS.md).
 
@@ -64,6 +67,10 @@ Every module of the spec, and the old-system extras, are accounted for.
 | 7. Nearest gyms and best matches for athletes (client request) | [PHASE 3](phase-3/PHASE%203.md) | Complete: R-97, R-98 |
 | 7. Platform-level monitoring (spec 7.4) | [PHASE 2](phase-2/PHASE%202.md) | Complete: R-19 |
 | 7. Dashboards, trends, forecasts, sustainability (spec 7.1 to 7.3) | [PHASE 8](phase-8/PHASE%208.md) | Complete: R-85 to R-96. Employee access "if permitted" is covered by R-08. |
+| 5A. Staff grace of at least 10 minutes; check-in and check-out against owner schedules (client request, 9 November 2026) | [PHASE 9](phase-9/PHASE%209.md), [PHASE 6](phase-6/PHASE%206.md) | Planned: R-99. Check-in and check-out themselves are R-56. |
+| 5B. Present, late and absent days on payroll (client request, 9 November 2026) | [PHASE 9](phase-9/PHASE%209.md) | Planned: R-100 |
+| 1. Sidebar shows only what a role allows (client request, 9 November 2026) | [PHASE 9](phase-9/PHASE%209.md) | Already there: R-101 |
+| 7. Subscription plans, plan features, free trial, paying and limits after the trial (client request, 9 November 2026) | [PHASE 10](phase-10/PHASE%2010.md) | Planned: R-102 to R-107 |
 | Old-system extras kept | Phases 1, 3, 4, 6 | R-06, R-26, R-27, R-32, R-38 (divisions), R-57, R-60. PayMongo (R-35) is now a core requirement. |
 | Old-system extras not decided | — | Left out until answered (see below) |
 
@@ -79,9 +86,11 @@ Every module of the spec, and the old-system extras, are accounted for.
 | [PHASE 6](phase-6/PHASE%206.md) | 24 | 0 | 0 | 0 | 0 | 0 | 0 | 24 |
 | [PHASE 7](phase-7/PHASE%207.md) | 5 | 0 | 0 | 0 | 0 | 0 | 0 | 5 |
 | [PHASE 8](phase-8/PHASE%208.md) | 12 | 0 | 0 | 0 | 0 | 0 | 0 | 12 |
-| **All phases** | **98** | **0** | **0** | **0** | **0** | **0** | **0** | **98** |
+| [PHASE 9](phase-9/PHASE%209.md) | 2 | 0 | 0 | 0 | 1 | 0 | 0 | 3 |
+| [PHASE 10](phase-10/PHASE%2010.md) | 6 | 0 | 0 | 0 | 0 | 0 | 0 | 6 |
+| **All phases** | **106** | **0** | **0** | **0** | **1** | **0** | **0** | **107** |
 
-Phases 1 to 8 are finished: 98 items are done. Phase 1 includes owner-made roles (R-08) as your client asked. Phase 2 was built without tier upgrades or document expiry while Q-16 and Q-17 stay open. Phase 3 was built with the old Philippine leave list, Monday to Friday working days by default, and pay kept as a monthly rate, a per-session rate, or both. Phase 4 was built without a member ID check (Q-04) or a health risk score (Q-05). Phase 6's 24 items are built and browser-verified; residual edge checks are listed in Packet 6H. Phase 7 is built and browser-verified; Median build, install and store checks remain external user steps. Phase 8 is built and browser-verified: all twelve decision-support views, the payroll mask, role denials, print/payslip regression, tenancy and read-only checks pass. The 7 November 2026 full suite passes 595 tests / 27,884 assertions; the isolated MySQL all-view smoke and frontend gates pass; independent validation records 14/14 frozen rows met. The open product questions (Q-04 to Q-08, Q-16, Q-17) remain separate and do not reopen built items.
+Phases 1 to 8 are finished: 98 items are done. Phases 9 and 10 (added 9 November 2026) are finished: 8 items built and browser-checked, including a real PayMongo test payment, and R-101 was already there. Phase 1 includes owner-made roles (R-08) as your client asked. Phase 2 was built without tier upgrades or document expiry while Q-16 and Q-17 stay open. Phase 3 was built with the old Philippine leave list, Monday to Friday working days by default, and pay kept as a monthly rate, a per-session rate, or both. Phase 4 was built without a member ID check (Q-04) or a health risk score (Q-05). Phase 6's 24 items are built and browser-verified; residual edge checks are listed in Packet 6H. Phase 7 is built and browser-verified; Median build, install and store checks remain external user steps. Phase 8 is built and browser-verified: all twelve decision-support views, the payroll mask, role denials, print/payslip regression, tenancy and read-only checks pass. The 7 November 2026 full suite passes 595 tests / 27,884 assertions; the isolated MySQL all-view smoke and frontend gates pass; independent validation records 14/14 frozen rows met. The open product questions (Q-04 to Q-08, Q-16, Q-17) remain separate and do not reopen built items.
 
 ## Deliberately left out
 
@@ -116,7 +125,7 @@ Implementation begins with the next eligible `R-` item: the earliest one that is
 
 **Before the first item: setting up.** The implementation plan for Phase 1 must start by setting up the three parts the rebuild uses, before any `R-` item is built. These are the Laravel backend, a new MySQL store built from scratch rather than imported from the old copy, and the coss UI screen app installed with its official method (the stack was said in conversation, 3 November 2026). The setup also covers the parts the proposed arrangement relies on: private file storage, the background sending line, the scheduled job runner, and secrets kept out of shared folders (see [03 - SYSTEM ARCHITECTURE](../03%20-%20SYSTEM%20ARCHITECTURE/03%20-%20SYSTEM%20ARCHITECTURE.md)). Setup is groundwork, not a capability, so it carries no `R-` number (added in conversation, 3 November 2026).
 
-**The next eligible work right now:** none. All 98 roadmap items are finished, and independent validation records 14/14 Phase 8 acceptance rows met. The open product questions remain separate from the roadmap; they do not reopen built items. The Phase 4 checks that needed later work were moved to R-51, R-54, R-55 (Phase 5), R-63 (Phase 6) and R-82 (Phase 7) on 5 November 2026.
+**The next eligible work right now:** none. All 107 items are finished or already there. The first 98 items are finished, and independent validation records 14/14 Phase 8 acceptance rows met. The open product questions remain separate from the roadmap; they do not reopen built items. The Phase 4 checks that needed later work were moved to R-51, R-54, R-55 (Phase 5), R-63 (Phase 6) and R-82 (Phase 7) on 5 November 2026.
 
 This roadmap decides **what** gets built, **which module it belongs to**, and **in what order**. It deliberately does not decide **how**. A separate implementation-planning workflow breaks the chosen item into tasks, sets technical checks, and hands those tasks to whoever builds them.
 

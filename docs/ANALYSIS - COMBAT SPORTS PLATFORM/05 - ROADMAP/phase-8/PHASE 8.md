@@ -2,7 +2,7 @@
 
 **Owners decide with data**
 
-[00 - START HERE](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) · [05 - ROADMAP](../05%20-%20ROADMAP.md) · Previous: [PHASE 7](../phase-7/PHASE%207.md) · Next: [06 - SCREENS BY ROLE](../../06%20-%20SCREENS%20BY%20ROLE/06%20-%20SCREENS%20BY%20ROLE.md)
+[00 - START HERE](../../00%20-%20START%20HERE/00%20-%20START%20HERE.md) · [05 - ROADMAP](../05%20-%20ROADMAP.md) · Previous: [PHASE 7](../phase-7/PHASE%207.md) · Next: [PHASE 9](../phase-9/PHASE%209.md)
 
 **Status:** ✅ Finished (7 November 2026)
 
@@ -38,7 +38,7 @@ The platform-wide view for the administrator was built earlier, in R-19 in [PHAS
 
 ## What it unlocks
 
-Nothing; this is the last phase. It answers the spec's research questions 3 and 4 (the spec, page 4).
+Nothing in the original plan. It answers the spec's research questions 3 and 4 (the spec, page 4).
 
 ## Where this phase stands
 

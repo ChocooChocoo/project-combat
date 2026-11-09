@@ -1,4 +1,4 @@
-import { Banknote, CalendarDays, ClipboardList, Clock, CreditCard, DoorOpen, Dumbbell, Inbox, Megaphone, Package, Receipt, Settings2, ShoppingCart, UserCheck, Users, UsersRound, Wallet, type LucideIcon } from 'lucide-react'
+import { BadgeCheck, Banknote, CalendarDays, ClipboardList, Clock, CreditCard, DoorOpen, Dumbbell, Inbox, Megaphone, Package, Receipt, Settings2, ShoppingCart, UserCheck, Users, UsersRound, Wallet, type LucideIcon } from 'lucide-react'
 import type { GymAccess } from '@/lib/auth'
 import { can, type Permission } from '@/lib/gym-access'
 
@@ -51,8 +51,27 @@ export function workspaceNavGroups(gym: GymAccess): GymNavGroup[] {
       ({ segment, label: text, icon }) => ({ to: `/gyms/${gym.id}/manage/${segment}`, label: text, icon }),
     )
 
+    // R-107: only the owner manages the gym's platform plan.
+    if (label === 'Setup' && gym.roles.includes('owner')) {
+      items.push({ to: `/gyms/${gym.id}/manage/subscription`, label: 'My subscription', icon: BadgeCheck })
+    }
+
     return items.length > 0 ? [{ label, items }] : []
   })
+}
+
+/**
+ * R-106: the workspace section at this path, when the gym's plan locks every module it uses.
+ * A section that still has one open module (Purchasing's restock list runs on Stock) stays open.
+ */
+export function planLockedSection(gym: GymAccess, pathname: string): string | null {
+  const locked = gym.subscription?.locked_modules ?? []
+  if (locked.length === 0) return null
+  const segment = pathname.match(/\/manage\/([^/]+)/)?.[1]
+  if (segment === 'my-work') return locked.includes('hr') ? 'My work' : null
+  const item = ITEMS.find((entry) => entry.segment === segment)
+  if (!item) return null
+  return item.permissions.every((permission) => locked.includes(permission.split('.')[0])) ? item.label : null
 }
 
 /** Every gym employee can see their own schedule, leave and profile. */

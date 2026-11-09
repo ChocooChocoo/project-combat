@@ -82,6 +82,9 @@ class Gym extends Model
             'checklist' => 'array',
             'submitted_at' => 'datetime',
             'reviewed_at' => 'datetime',
+            'trial_ends_at' => 'datetime',
+            'paid_until' => 'datetime',
+            'subscription_reminded_for' => 'datetime',
         ];
     }
 
@@ -93,6 +96,11 @@ class Gym extends Model
     public function addPerson(User $user, GymPersonType $role): void
     {
         $this->people()->attach($user->id, ['role' => $role->value]);
+    }
+
+    public function subscriptionPlan(): BelongsTo
+    {
+        return $this->belongsTo(SubscriptionPlan::class);
     }
 
     public function applicant(): BelongsTo
