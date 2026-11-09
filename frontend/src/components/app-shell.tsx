@@ -1,6 +1,6 @@
-import { Building2, CalendarDays, Check, CreditCard, ChevronsUpDown, ClipboardCheck, FilePlus2, FileText, House, IdCard, LogOut, Medal, UserRound } from 'lucide-react'
+import { Building2, CalendarDays, ChartColumn, Check, CreditCard, ChevronsUpDown, ClipboardCheck, FilePlus2, FileText, House, IdCard, LogOut, Medal, UserRound } from 'lucide-react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
-import { myWorkNav, workspaceNavGroups } from '@/components/gym-nav'
+import { myDashboardNav, myWorkNav, workspaceNavGroups } from '@/components/gym-nav'
 import { NotificationsMenu } from '@/components/notifications-menu'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Badge } from '@/components/ui/badge'
@@ -181,11 +181,12 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
   const general: Item[] = [{ to: '/', label: 'Home', icon: House, end: true }]
   const isMemberDashboard = !user?.is_platform_admin && (user?.account_type === 'member' || user?.has_member_records)
   if (isMemberDashboard) {
+    general.push({ to: '/dashboard', label: 'My dashboard', icon: ChartColumn })
     general.push({ to: '/memberships', label: 'My memberships', icon: IdCard })
     general.push({ to: '/bookings', label: 'My bookings', icon: CalendarDays })
   }
   // R-106: staff self-service is part of HR, so it hides when the gym's plan locks HR.
-  if (currentGym?.roles.includes('employee') && !currentGym.subscription?.locked_modules.includes('hr')) general.push(myWorkNav(currentGym.id))
+  if (currentGym?.roles.includes('employee') && !currentGym.subscription?.locked_modules.includes('hr')) general.push(myDashboardNav(currentGym.id), myWorkNav(currentGym.id))
   if (currentGym?.roles.includes('member')) general.push({ to: `/gyms/${currentGym.id}/my-record`, label: 'My record', icon: Medal })
   if (currentGym?.roles.includes('member')) general.push({ to: `/gyms/${currentGym.id}/sessions`, label: 'Sessions', icon: CalendarDays })
 
@@ -195,6 +196,7 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
     { to: '/apply', label: 'New application', icon: FilePlus2 },
   ]
   const admin: Item[] = [
+    { to: '/admin/dashboard', label: 'Dashboard', icon: ChartColumn },
     { to: '/admin', label: 'Gym applications', icon: ClipboardCheck, end: true },
     { to: '/admin/notices', label: 'Platform notices', icon: FileText },
     { to: '/admin/plans', label: 'Subscription plans', icon: CreditCard },

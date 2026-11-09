@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth'
 import { NotificationsProvider } from '@/lib/notifications'
 import { approvedGym, homePath } from '@/lib/gym-access'
 import AcceptInvite from '@/pages/AcceptInvite'
+import AdminDashboard from '@/pages/admin/AdminDashboard'
 import AdminHome from '@/pages/admin/AdminHome'
 import AdminPermissions from '@/pages/admin/AdminPermissions'
 import AdminNotices from '@/pages/admin/AdminNotices'
@@ -26,6 +27,7 @@ import GymAttendance from '@/pages/gym/GymAttendance'
 import CustomerRecord from '@/pages/gym/CustomerRecord'
 import GymCustomers from '@/pages/gym/GymCustomers'
 import GymFinance from '@/pages/gym/GymFinance'
+import GymDashboard from '@/pages/gym/GymDashboard'
 import GymDecisionSupport from '@/pages/gym/GymDecisionSupport'
 import GymLeave from '@/pages/gym/GymLeave'
 import GymMembers from '@/pages/gym/GymMembers'
@@ -44,6 +46,7 @@ import GymStaffAttendance from '@/pages/gym/GymStaffAttendance'
 import GymStock from '@/pages/gym/GymStock'
 import GymSubscription from '@/pages/gym/GymSubscription'
 import MemberRecord from '@/pages/gym/MemberRecord'
+import MyDashboard from '@/pages/gym/MyDashboard'
 import MyWork from '@/pages/gym/MyWork'
 import PurchaseOrder from '@/pages/gym/PurchaseOrder'
 import MembershipApply from '@/pages/member/MembershipApply'
@@ -54,6 +57,7 @@ import PrivateCoaching from '@/pages/member/PrivateCoaching'
 import SessionDetails from '@/pages/member/SessionDetails'
 import Timetable from '@/pages/member/Timetable'
 import Home from '@/pages/Home'
+import MemberDashboard from '@/pages/MemberDashboard'
 import MyApplications from '@/pages/MyApplications'
 import Notifications from '@/pages/Notifications'
 import Profile from '@/pages/Profile'
@@ -172,6 +176,7 @@ export default function App() {
           </Route>
           <Route path="/memberships" element={<MyMembershipList />} />
           <Route path="/bookings" element={<MyBookings />} />
+          <Route path="/dashboard" element={<MemberDashboard />} />
           <Route path="/memberships/:id" element={<MyMembership />} />
           <Route element={<GymMember />}>
             <Route path="/gyms/:gymId/my-record" element={<MyRecord />} />
@@ -202,17 +207,20 @@ export default function App() {
               <Route path="customers" element={<GymCustomers />} />
               <Route path="customers/:customerId" element={<CustomerRecord />} />
               <Route path="finance" element={<GymFinance />} />
+              <Route path="dashboard" element={<GymDashboard />} />
               <Route path="decision-support" element={<GymDecisionSupport />} />
               <Route path="payments" element={<GymPayments />} />
               <Route path="stock" element={<GymStock />} />
               <Route path="purchasing" element={<GymPurchasing />} />
               <Route path="purchasing/orders/:orderId" element={<PurchaseOrder />} />
               <Route path="my-work" element={<MyWork />} />
+              <Route path="my-dashboard" element={<MyDashboard />} />
               <Route path="subscription" element={<GymSubscription />} />
             </Route>
           </Route>
           <Route element={<AdminOnly />}>
             <Route path="/admin" element={<AdminHome />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/permissions" element={<AdminPermissions />} />
             <Route path="/admin/notices" element={<AdminNotices />} />
             <Route path="/admin/plans" element={<AdminPlans />} />

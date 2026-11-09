@@ -1,4 +1,4 @@
-import { BadgeCheck, Banknote, CalendarDays, ClipboardList, Clock, CreditCard, DoorOpen, Dumbbell, Inbox, Megaphone, Package, Receipt, Settings2, ShoppingCart, UserCheck, Users, UsersRound, Wallet, type LucideIcon } from 'lucide-react'
+import { BadgeCheck, Banknote, ChartColumn, CalendarDays, ClipboardList, Clock, CreditCard, DoorOpen, Dumbbell, Inbox, Megaphone, Package, Receipt, Settings2, ShoppingCart, UserCheck, Users, UsersRound, Wallet, type LucideIcon } from 'lucide-react'
 import type { GymAccess } from '@/lib/auth'
 import { can, type Permission } from '@/lib/gym-access'
 
@@ -30,6 +30,7 @@ const ITEMS: ItemDefinition[] = [
   { segment: 'purchasing', label: 'Purchasing', icon: ShoppingCart, permissions: ['procurement.requests.view', 'procurement.orders.view', 'procurement.suppliers.view', 'inventory.items.view'], group: 'Business' },
   { segment: 'settings', label: 'Setup', icon: Settings2, permissions: ['gym_setup.settings.view'], group: 'Setup' },
   { segment: 'rooms', label: 'Rooms', icon: DoorOpen, permissions: ['gym_setup.rooms.view'], group: 'Setup' },
+  { segment: 'dashboard', label: 'Dashboard', icon: ChartColumn, permissions: ['decision_support.general.view'], group: 'Business' },
   { segment: 'decision-support', label: 'Decision support', icon: ClipboardList, permissions: ['decision_support.general.view'], group: 'Business' },
 ]
 
@@ -68,7 +69,7 @@ export function planLockedSection(gym: GymAccess, pathname: string): string | nu
   const locked = gym.subscription?.locked_modules ?? []
   if (locked.length === 0) return null
   const segment = pathname.match(/\/manage\/([^/]+)/)?.[1]
-  if (segment === 'my-work') return locked.includes('hr') ? 'My work' : null
+  if (segment === 'my-work' || segment === 'my-dashboard') return locked.includes('hr') ? (segment === 'my-work' ? 'My work' : 'Work dashboard') : null
   const item = ITEMS.find((entry) => entry.segment === segment)
   if (!item) return null
   return item.permissions.every((permission) => locked.includes(permission.split('.')[0])) ? item.label : null
@@ -77,6 +78,11 @@ export function planLockedSection(gym: GymAccess, pathname: string): string | nu
 /** Every gym employee can see their own schedule, leave and profile. */
 export function myWorkNav(gymId: number): GymNavItem {
   return { to: `/gyms/${gymId}/manage/my-work`, label: 'My work', icon: ClipboardList }
+}
+
+/** P07: the employee's own dashboard, beside My work. */
+export function myDashboardNav(gymId: number): GymNavItem {
+  return { to: `/gyms/${gymId}/manage/my-dashboard`, label: 'Work dashboard', icon: ChartColumn }
 }
 
 /**

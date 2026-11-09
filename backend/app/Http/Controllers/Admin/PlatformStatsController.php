@@ -13,6 +13,8 @@ use Illuminate\Http\JsonResponse;
  */
 class PlatformStatsController extends Controller
 {
+    public const MONTHS = 12;
+
     public function __invoke(): JsonResponse
     {
         $byStatus = Gym::toBase()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
@@ -29,6 +31,44 @@ class PlatformStatsController extends Controller
             'applications_pending' => $count(GymStatus::Submitted, GymStatus::UnderReview),
             'applications_returned' => $count(GymStatus::Returned),
             'applications_rejected' => $count(GymStatus::Rejected),
+            // P07: dashboard trend and plan mix, still from the gyms table only.
+            'monthly' => $this->monthly(),
+            'subscriptions' => $this->subscriptions(),
         ]);
+    }
+
+    /** Applications sent and gyms approved per month, last twelve months. */
+    private function monthly(): array
+    {
+        $from = now()->startOfMonth()->subMonths(self::MONTHS - 1);
+        $sent = Gym::toBase()->where('submitted_at', '>=', $from)->pluck('submitted_at')
+            ->countBy(fn ($at) => substr((string) $at, 0, 7));
+        $approved = Gym::toBase()->where('status', GymStatus::Approved->value)->where('reviewed_at', '>=', $from)
+            ->pluck('reviewed_at')->countBy(fn ($at) => substr((string) $at, 0, 7));
+
+        return collect(range(0, self::MONTHS - 1))->map(function ($i) use ($from, $sent, $approved) {
+            $month = $from->copy()->addMonths($i)->format('Y-m');
+
+            return ['period' => $month, 'submitted' => $sent[$month] ?? 0, 'approved' => $approved[$month] ?? 0];
+        })->all();
+    }
+
+    /** Live gyms by plan state, using the same order as Subscription::state (trial, paid, free). */
+    private function subscriptions(): array
+    {
+        $now = now();
+        $counts = ['trial' => 0, 'paid' => 0, 'free' => 0, 'unmanaged' => 0];
+        Gym::toBase()->where('status', GymStatus::Approved->value)->get(['trial_ends_at', 'paid_until'])
+            ->each(function ($gym) use ($now, &$counts) {
+                $state = match (true) {
+                    $gym->trial_ends_at === null => 'unmanaged',
+                    $now->lt($gym->trial_ends_at) => 'trial',
+                    $gym->paid_until !== null && $now->lt($gym->paid_until) => 'paid',
+                    default => 'free',
+                };
+                $counts[$state]++;
+            });
+
+        return $counts;
     }
 }

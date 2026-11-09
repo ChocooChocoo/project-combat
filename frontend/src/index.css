@@ -212,7 +212,7 @@
     --ring: var(--color-neutral-500);
     --secondary: --alpha(var(--color-white) / 4%);
     --secondary-foreground: var(--color-neutral-100);
-    --chart-1: var(--color-blue-700);
+    --chart-1: #3a83ef;
     --chart-2: var(--color-emerald-500);
     --chart-3: var(--color-amber-500);
     --chart-4: var(--color-purple-500);

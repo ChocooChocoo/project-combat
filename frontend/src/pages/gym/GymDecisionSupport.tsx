@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { PageHeader } from '@/components/page-header'
-import { DashboardEmpty, DashboardError, DashboardLoading } from '@/components/decision-support/dashboard-parts'
+import { DashboardEmpty, DashboardError, DashboardLoading, Disclosure } from '@/components/decision-support/dashboard-parts'
 import { ReportMode } from '@/components/decision-support/report-mode'
 import { AttendanceView } from '@/components/decision-support/attendance-view'
 import { AthleteView } from '@/components/decision-support/athlete-view'
@@ -19,9 +19,9 @@ import { PrintSheet } from '@/components/decision-support/print-sheet'
 import { RangePicker } from '@/components/decision-support/range-picker'
 import { Button } from '@/components/ui/button'
 import { Activity, Users, ChartNoAxesCombined, Printer } from 'lucide-react'
-import '@/components/decision-support/decision-support.css'
+import { Card, CardPanel } from '@/components/ui/card'
 import { Field, FieldLabel } from '@/components/ui/field'
-import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectGroup, SelectGroupLabel, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { approvedGym, can } from '@/lib/gym-access'
@@ -101,21 +101,60 @@ function DecisionWorkspace({ gymId, gymName }: { gymId: number; gymName: string 
     return () => { live = false }
   }, [gymId, version])
 
-  return <div className="decision-workspace min-w-0 space-y-6">
+  return <div className="flex min-w-0 flex-col gap-6">
     <PageHeader title="Decision support" description="Your gym, in perspective. Activity, business performance and what comes next." actions={<Button variant="outline" disabled={!dashboard.data} onClick={() => window.print()}><Printer aria-hidden="true" />Print report</Button>} />
-    {!options ? error ? <DashboardError message={error} retry={() => { setError(''); setVersion((value) => value + 1) }} /> : <DashboardLoading /> : <>
-      <nav className="ds-navigation" aria-label="Decision support views">{VIEW_GROUPS.map((group) => <div className="ds-nav-group" key={group.title}><h2><group.icon aria-hidden="true" />{group.title}</h2><div>{group.keys.map((key) => <button key={key} type="button" aria-pressed={view === key} aria-controls="decision-panel" onClick={() => setView(key)}>{VIEWS.find((item) => item.key === key)!.label}</button>)}</div></div>)}</nav>
-      <label className="ds-mobile-nav">View<select value={view} onChange={(event) => setView(event.target.value as View)}>{VIEW_GROUPS.map((group) => <optgroup key={group.title} label={group.title}>{group.keys.map((key) => <option key={key} value={key}>{VIEWS.find((item) => item.key === key)!.label}</option>)}</optgroup>)}</select></label>
-      <div className="ds-toolbar"><div><h2 id="decision-heading">{title}</h2><p>{VIEW_DESCRIPTIONS[view]}</p></div><RangePicker value={range} onChange={setRange} /></div>
-      {view === 'forecast' && <Field name="forecast-basis" className="max-w-sm print:hidden"><FieldLabel>Forecast basis</FieldLabel><Select name="forecast-basis" items={BASIS_CHOICES} value={basis} onValueChange={(value) => { if (value === 'income_expense' || value === 'cash_flow') setBasis(value) }}><SelectTrigger aria-label="Forecast basis" className="min-h-11"><SelectValue /></SelectTrigger><SelectPopup>{BASIS_CHOICES.map((choice) => <SelectItem key={choice.value} value={choice.value}>{choice.label}</SelectItem>)}</SelectPopup></Select></Field>}
-      <section id="decision-panel" aria-labelledby="decision-heading" aria-busy={dashboard.loading} className="ds-content space-y-6" key={view}>
+    {!options ? error ? <DashboardError message={error} retry={() => { setError(''); setVersion((value) => value + 1) }} /> : <DashboardLoading /> : <div className="grid min-w-0 items-start gap-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
+      <ViewMenu view={view} onChange={setView} />
+      <div className="flex min-w-0 flex-col gap-6">
+        <Card>
+          <CardPanel className="flex flex-col gap-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div className="min-w-0">
+                <h2 id="decision-heading" className="font-semibold text-xl tracking-tight">{title}</h2>
+                <p className="mt-1 max-w-prose text-muted-foreground text-sm">{VIEW_DESCRIPTIONS[view]}</p>
+              </div>
+              <RangePicker value={range} onChange={setRange} />
+            </div>
+            {view === 'forecast' && <Field name="forecast-basis" className="max-w-sm border-t pt-5 print:hidden"><FieldLabel>Forecast basis</FieldLabel><Select name="forecast-basis" items={BASIS_CHOICES} value={basis} onValueChange={(value) => { if (value === 'income_expense' || value === 'cash_flow') setBasis(value) }}><SelectTrigger aria-label="Forecast basis"><SelectValue /></SelectTrigger><SelectPopup>{BASIS_CHOICES.map((choice) => <SelectItem key={choice.value} value={choice.value}>{choice.label}</SelectItem>)}</SelectPopup></Select></Field>}
+          </CardPanel>
+        </Card>
+        <section id="decision-panel" aria-labelledby="decision-heading" aria-busy={dashboard.loading} className="flex min-w-0 flex-col gap-6" key={view}>
           {dashboard.loading ? <DashboardLoading /> : dashboard.error ? <DashboardError message={dashboard.error} retry={dashboard.retry} /> : dashboard.data && <>
             {!dashboard.data.meta.has_data && <DashboardEmpty />}
             <LoadedView view={view} data={dashboard.data} mode="screen" />
-            <details className="ds-detail ds-methodology"><summary>Report notes & methodology</summary><ul className="list-disc space-y-2 p-5 pl-9 text-sm text-muted-foreground">{dashboard.data.meta.notes.map((note, index) => <li key={index}>{note}</li>)}</ul></details>
+            <Disclosure title="Report notes and methodology"><ul className="list-disc space-y-2 p-5 pl-9 text-muted-foreground text-sm">{dashboard.data.meta.notes.map((note, index) => <li key={index}>{note}</li>)}</ul></Disclosure>
           </>}
-      </section>
-    </>}
+        </section>
+      </div>
+    </div>}
     {dashboard.data && <PrintSheet gymName={gymName} title={title} meta={dashboard.data.meta}><LoadedView view={view} data={dashboard.data} mode="print" /></PrintSheet>}
   </div>
+}
+
+const VIEW_ITEMS = VIEWS.map(({ key, label }) => ({ value: key, label }))
+
+/** View picker: grouped list on wide screens, grouped select on phones. */
+function ViewMenu({ view, onChange }: { view: View; onChange: (view: View) => void }) {
+  return <>
+    <Field name="decision-view" className="lg:hidden">
+      <FieldLabel>View</FieldLabel>
+      <Select name="decision-view" items={VIEW_ITEMS} value={view} onValueChange={(value) => { if (VIEWS.some(({ key }) => key === value)) onChange(value as View) }}>
+        <SelectTrigger aria-label="Decision support view"><SelectValue /></SelectTrigger>
+        <SelectPopup>{VIEW_GROUPS.map((group) => <SelectGroup key={group.title}>
+          <SelectGroupLabel>{group.title}</SelectGroupLabel>
+          {group.keys.map((key) => <SelectItem key={key} value={key}>{VIEWS.find((item) => item.key === key)!.label}</SelectItem>)}
+        </SelectGroup>)}</SelectPopup>
+      </Select>
+    </Field>
+    <Card render={<nav aria-label="Decision support views" />} className="sticky top-4 hidden p-2 lg:flex">
+      {VIEW_GROUPS.map((group, index) => <div key={group.title} className={index > 0 ? 'mt-2 border-t pt-2' : undefined}>
+        <h2 className="flex items-center gap-2 px-2 py-1.5 font-medium text-muted-foreground text-xs"><group.icon aria-hidden="true" className="size-3.5" />{group.title}</h2>
+        <div className="flex flex-col gap-0.5">
+          {group.keys.map((key) => <Button key={key} size="sm" variant={view === key ? 'secondary' : 'ghost'} aria-pressed={view === key} aria-controls="decision-panel" className={view === key ? 'justify-start font-semibold' : 'justify-start font-normal text-muted-foreground'} onClick={() => onChange(key)}>
+            {VIEWS.find((item) => item.key === key)!.label}
+          </Button>)}
+        </div>
+      </div>)}
+    </Card>
+  </>
 }

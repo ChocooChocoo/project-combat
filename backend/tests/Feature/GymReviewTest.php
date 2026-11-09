@@ -187,17 +187,23 @@ class GymReviewTest extends TestCase
         $this->sent(2)->forceFill(['status' => GymStatus::UnderReview])->save();
         Gym::factory()->application($this->applicant)->create(['status' => GymStatus::Returned]);
         Gym::factory()->application($this->applicant)->create(['status' => GymStatus::Rejected]);
-        Gym::factory()->application($this->applicant)->approved(1)->create();
-        Gym::factory()->application($this->applicant)->approved(2)->count(2)->create();
+        Gym::factory()->application($this->applicant)->approved(1)->create(['reviewed_at' => now(), 'trial_ends_at' => now()->addDays(5)]);
+        Gym::factory()->application($this->applicant)->approved(2)->create(['reviewed_at' => now()->subMonths(2), 'trial_ends_at' => now()->subDay(), 'paid_until' => now()->addMonth()]);
+        Gym::factory()->application($this->applicant)->approved(2)->create(['trial_ends_at' => now()->subDay()]);
 
-        $response = $this->actingAs($this->admin)->getJson('/api/admin/stats')->assertOk()->assertExactJson([
+        $response = $this->actingAs($this->admin)->getJson('/api/admin/stats')->assertOk()->assertJson([
             'gyms_registered' => 7,
             'gyms_verified' => 3,
             'verified_by_tier' => ['1' => 1, '2' => 2],
             'applications_pending' => 2,
             'applications_returned' => 1,
             'applications_rejected' => 1,
+            'subscriptions' => ['trial' => 1, 'paid' => 1, 'free' => 1, 'unmanaged' => 0],
         ]);
-        $this->assertCount(6, $response->json());
+        $this->assertCount(8, $response->json());
+        $monthly = collect($response->json('monthly'))->keyBy('period');
+        $this->assertCount(12, $monthly);
+        $this->assertSame(['period' => now()->format('Y-m'), 'submitted' => 2, 'approved' => 1], $monthly[now()->format('Y-m')]);
+        $this->assertSame(1, $monthly[now()->subMonths(2)->format('Y-m')]['approved']);
     }
 }

@@ -61,6 +61,7 @@ use App\Http\Controllers\Gym\WorkController;
 use App\Http\Controllers\GymPreferenceController;
 use App\Http\Controllers\MembershipApplicationController;
 use App\Http\Controllers\MyBookingController;
+use App\Http\Controllers\MemberDashboardController;
 use App\Http\Controllers\MyMembershipController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PayMongoWebhookController;
@@ -139,6 +140,8 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('my-memberships', [MyMembershipController::class, 'index']);
             Route::get('my-balance', [ReceivableController::class, 'mine']);
             Route::get('my-bookings', [MyBookingController::class, 'index']);
+            // P07: the person's own dashboard numbers across their gyms.
+            Route::get('me/dashboard', MemberDashboardController::class);
             Route::post('my-bookings/{booking}/checkout', [MyBookingController::class, 'checkout'])->whereNumber('booking');
             Route::post('my-bookings/{booking}/checkout/confirm', [MyBookingController::class, 'confirm'])->whereNumber('booking');
             Route::get('my-memberships/{membership}', [MyMembershipController::class, 'show'])->whereNumber('membership');

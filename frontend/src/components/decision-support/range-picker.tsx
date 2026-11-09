@@ -3,7 +3,7 @@ import { validRange, type Range } from '@/lib/decision-support'
 
 export function RangePicker({ value, onChange }: { value: Range; onChange: (range: Range) => void }) {
   const invalid = !validRange(value.from, value.to)
-  return <div className="ds-range print:hidden"><div className="grid grid-cols-2 gap-3">
+  return <div className="w-full shrink-0 sm:w-80 print:hidden"><div className="grid grid-cols-2 gap-3">
     <TextField name="decision-from" label="From" type="date" value={value.from} aria-invalid={invalid} onChange={(event) => {
       const from = event.target.value
       onChange({ from, to: from && value.to && from > value.to ? from : value.to })

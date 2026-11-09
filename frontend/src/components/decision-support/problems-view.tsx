@@ -1,4 +1,5 @@
-import { AggregateTable, MetricsList } from '@/components/decision-support/dashboard-parts'
+import { AggregateTable, Disclosure, MetricsList, Note } from '@/components/decision-support/dashboard-parts'
+import { Badge } from '@/components/ui/badge'
 import { rateLabel, type ProblemItem, type ProblemPayload } from '@/lib/decision-support'
 import { BarChart } from './visuals'
 
@@ -33,12 +34,15 @@ export function ProblemsView({ data, mode }: { data: ProblemPayload; mode: 'scre
   return <div className="space-y-6" data-report-mode={mode}>
     <MetricsList items={[{ label: 'Triggered rules', value: data.summary.total }, { label: labels.falling_attendance, value: data.summary.falling_attendance }, { label: labels.low_use_slot, value: data.summary.low_use_slot }, { label: labels.high_no_show, value: data.summary.high_no_show }]} />
     {mode === 'screen' && <BarChart title="Where attention is needed" description="Triggered rules, not a business score or a count of unique classes." points={[{ label: labels.falling_attendance, value: data.summary.falling_attendance }, { label: labels.low_use_slot, value: data.summary.low_use_slot }, { label: labels.high_no_show, value: data.summary.high_no_show }]} />}
-    <details className="ds-detail" open={mode === 'print'}><summary>Configured thresholds</summary><ul className="list-disc space-y-1 p-5 pl-9 text-sm">
+    <Disclosure title="Configured thresholds"><ul className="list-disc space-y-1 p-5 pl-9 text-sm">
       <li>Falling attendance: latest {falling.window_sessions} completed occurrences against previous {falling.window_sessions}; drop at least {falling.drop_points} percentage points and current rate below {falling.current_below}%.</li>
       <li>Low-use slot: at least {slot.minimum_sessions} valid-capacity sessions, arithmetic mean fill below {slot.fill_below}%.</li>
       <li>High no-show: at least {missed.minimum_expected} marked outcomes, no-show rate at least {missed.rate_at_least}%.</li>
-    </ul></details>
-    {data.items.length === 0 && <p>No rules triggered for this range. This is not a grade for the whole business.</p>}
-    {data.items.map((item) => <section key={`${item.code}:${item.key}`} className="ds-problem space-y-3"><h3 className="break-words font-semibold">{labels[item.code]}: {item.name}</h3><Evidence item={item} /></section>)}
+    </ul></Disclosure>
+    {data.items.length === 0 && <Note>No rules triggered for this range. This is not a grade for the whole business.</Note>}
+    {data.items.map((item) => <section key={`${item.code}:${item.key}`} className="space-y-4 border-t pt-6">
+      <header className="flex flex-wrap items-center gap-2"><Badge variant="warning">{labels[item.code]}</Badge><h3 className="break-words font-semibold text-base">{item.name}</h3></header>
+      <Evidence item={item} />
+    </section>)}
   </div>
 }

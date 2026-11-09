@@ -15,7 +15,7 @@ export function TrendsView({ data, mode }: { data: TrendPayload; mode: 'screen' 
       { label: 'Window net revenue', value: money(data.totals.revenue) },
     ]} />
     <AggregateTable caption="First actual source records (no later than effective end)" columns={['Attendance markers', 'Membership activity', 'Revenue']} rows={[{ key: 'sources', cells: [data.first_records.attendance ?? 'No records', data.first_records.memberships ?? 'No records', data.first_records.revenue ?? 'No records'] }]} />
-    {mode === 'screen' && <div className="ds-trends-grid">
+    {mode === 'screen' && <div className="grid gap-6 lg:grid-cols-2 *:last:lg:col-span-2">
       <TrendChart title="Class attendance rate" points={data.buckets.map((row) => ({ label: row.period, value: row.attendance_rate, text: rateLabel(row.attendance_rate) }))} />
       <TrendChart title="Closing active/frozen membership stock" points={data.buckets.map((row) => ({ label: row.period, value: row.active_at_end, text: String(row.active_at_end) }))} />
       <TrendChart title="Signed net revenue" points={data.buckets.map((row) => ({ label: row.period, value: Number(row.revenue), text: money(row.revenue) }))} />
