@@ -1,12 +1,11 @@
-import { Pencil } from 'lucide-react'
+import { ArrowLeft, Pencil } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { AthleteRecordView, HealthSummary } from '@/components/membership/athlete-record-view'
 import { ContactsEditor, HealthQuestions, MembershipStatusBadge } from '@/components/membership/membership-parts'
-import { PageHeader } from '@/components/page-header'
 import { Alert, AlertAction, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Card, CardAction, CardDescription, CardHeader, CardPanel, CardTitle } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogPanel, DialogPopup, DialogTitle } from '@/components/ui/dialog'
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 import { Form } from '@/components/ui/form'
@@ -139,37 +138,40 @@ export default function MyRecord() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="My record"
-        description={current ? `${current.gym_name}` : undefined}
-        meta={current ? <MembershipStatusBadge status={current.status} /> : null}
-        actions={
-          current && (
-            <Button size="sm" variant="outline" render={<Link to={`/memberships/${current.id}`} />}>
-              My membership{periodLabel(current) ? ` · ${periodLabel(current)}` : ''}
-            </Button>
-          )
-        }
-      />
+      {current && (
+        <Button className="-ms-3 min-h-11 self-start" size="sm" variant="ghost" render={<Link to={`/memberships/${current.id}`} />}>
+          <ArrowLeft aria-hidden /> My membership
+        </Button>
+      )}
+      <header className="flex flex-col gap-3 border-b pb-6">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+          <h1 className="font-semibold text-3xl tracking-tight sm:text-4xl">My record</h1>
+          {current && <MembershipStatusBadge status={current.status} />}
+        </div>
+        {current && (
+          <div className="flex flex-col gap-1">
+            <p className="font-medium text-base wrap-anywhere">{current.gym_name}</p>
+            {periodLabel(current) && <p className="text-muted-foreground text-sm">{periodLabel(current)}</p>}
+          </div>
+        )}
+      </header>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="grid min-w-0 grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <AthleteRecordView record={record} />
 
         {record.health && (
-          <Card>
-            <CardHeader>
-              <CardTitle render={<h2 />}>Health and emergency</CardTitle>
-              <CardDescription>Only you and staff allowed to see health details can see this.</CardDescription>
-              <CardAction>
-                <Button size="sm" variant="outline" onClick={startEditing}>
+          <Card className="min-w-0 gap-0 overflow-hidden p-0">
+            <div className="border-b bg-muted/30 p-5">
+              <h2 className="font-semibold text-lg tracking-tight">Health and emergency</h2>
+              <p className="mt-2 text-muted-foreground text-xs leading-relaxed">Only you and staff allowed to see health details can see this.</p>
+                <Button className="mt-4 min-h-11 w-full" size="sm" variant="outline" onClick={startEditing}>
                   <Pencil aria-hidden />
-                  Update
+                   Update details
                 </Button>
-              </CardAction>
-            </CardHeader>
-            <CardPanel>
+            </div>
+            <div className="p-5">
               <HealthSummary health={record.health} form={form} onOpenFile={openFile} />
-            </CardPanel>
+            </div>
           </Card>
         )}
       </div>

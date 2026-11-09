@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
+import { RefreshCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { api, ApiError } from '@/lib/api'
 import type { Membership } from '@/lib/membership'
 
 /** R-52: show only active gyms, including active gyms without any bookings. */
-export function CheckInCodes({ gymId }: { gymId?: number }) {
+export function CheckInCodes({ gymId, columns = 2 }: { gymId?: number; columns?: 1 | 2 }) {
   const [gyms, setGyms] = useState<{ id: number; name: string }[] | null>(null)
   const [error, setError] = useState('')
   const [version, setVersion] = useState(0)
@@ -19,9 +20,29 @@ export function CheckInCodes({ gymId }: { gymId?: number }) {
     }).catch(() => live && setError('Check-in codes could not be loaded.'))
     return () => { live = false }
   }, [gymId, version])
-  if (error) return <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => setVersion((v) => v + 1)}>Retry check-in codes</Button></div>
+  if (error) {
+    return (
+      <div className="rounded-xl border bg-card p-5" role="alert">
+        <p className="font-medium text-sm">Check-in code unavailable</p>
+        <p className="mt-1 text-muted-foreground text-sm">{error}</p>
+        <Button className="mt-4 min-h-11" variant="outline" onClick={() => setVersion((v) => v + 1)}>Try again</Button>
+      </div>
+    )
+  }
   if (!gyms) return <p className="text-muted-foreground text-sm" role="status">Loading check-in codes…</p>
-  return <div className="grid gap-4 sm:grid-cols-2">{gyms.map((gym) => <CheckInCodeCard key={gym.id} gym={gym} />)}</div>
+  if (gyms.length === 0) {
+    return (
+      <div className="rounded-xl border bg-card p-5">
+        <h2 className="font-semibold text-base">Check-in code</h2>
+        <p className="mt-2 text-muted-foreground text-sm leading-relaxed">Your code appears once a membership here is active.</p>
+      </div>
+    )
+  }
+  return (
+    <div className={columns === 2 ? 'grid gap-4 sm:grid-cols-2' : 'flex flex-col gap-4'}>
+      {gyms.map((gym) => <CheckInCodeCard key={gym.id} gym={gym} />)}
+    </div>
+  )
 }
 
 function CheckInCodeCard({ gym }: { gym: { id: number; name: string } }) {
@@ -53,13 +74,40 @@ function CheckInCodeCard({ gym }: { gym: { id: number; name: string } }) {
     return () => { live = false; clearTimeout(timer); clearInterval(tick) }
   }, [gym.id, version])
   const remaining = code ? Math.max(0, Math.ceil((Date.parse(code.expires_at) - clock) / 1000)) : 0
-  return <section className="flex min-w-0 flex-col items-start gap-2 rounded-xl border p-4" aria-label={`Check-in code for ${gym.name}`}>
-    <h2 className="font-semibold">Check-in code</h2><p className="break-words text-sm">{gym.name}</p>
-    <p className="text-muted-foreground text-sm">Show this to gym staff when you arrive. Only staff can check you in.</p>
-    {error ? <><p role="alert" className="text-sm">{error}</p><Button variant="outline" onClick={() => setVersion((v) => v + 1)}>Refresh code</Button></> : code && remaining > 0 ? <>
-      <img src={code.image} width={224} height={224} className="max-w-full" alt="Your rotating check-in QR code" />
-      <p className="font-mono text-2xl tracking-widest" aria-label={`Short code ${code.short_code.split('').join(' ')}`}>{code.short_code}</p>
-      <p className="text-muted-foreground text-sm">Refreshes in {remaining}s</p>
-    </> : <p role="status" className="text-sm">Refreshing code…</p>}
-  </section>
+  return (
+    <section className="flex min-w-0 flex-col gap-4 rounded-xl border bg-card p-5" aria-label={`Check-in code for ${gym.name}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="font-semibold text-base">Check-in code</h2>
+          <p className="mt-1 text-muted-foreground text-sm wrap-anywhere">{gym.name}</p>
+        </div>
+        <span className="shrink-0 rounded-sm border px-2 py-0.5 font-medium text-xs" aria-hidden>Live</span>
+      </div>
+
+      {error ? (
+        <div role="alert" className="flex flex-col gap-3 rounded-lg border bg-muted/30 p-4">
+          <p className="text-sm leading-relaxed">{error}</p>
+          <Button className="min-h-11 h-auto whitespace-normal py-2" variant="outline" onClick={() => setVersion((v) => v + 1)}>
+            <RefreshCcw aria-hidden /> Refresh code
+          </Button>
+        </div>
+      ) : code && remaining > 0 ? (
+        <>
+          <div className="flex items-center justify-center rounded-lg bg-white p-3 ring-1 ring-black/10">
+            <img src={code.image} width={224} height={224} className="h-auto w-full max-w-56" alt="Your rotating check-in QR code" />
+          </div>
+          <div className="flex flex-col items-center gap-1 text-center">
+            <p className="text-muted-foreground text-xs">Short code</p>
+            <p className="font-mono font-semibold text-3xl tracking-widest" aria-label={`Short code ${code.short_code.split('').join(' ')}`}>{code.short_code}</p>
+            <p className="text-muted-foreground text-xs tabular-nums" role="status">Refreshes in {remaining}s</p>
+          </div>
+          <p className="border-t pt-4 text-muted-foreground text-xs leading-relaxed">Show this to gym staff when you arrive. Only staff can check you in.</p>
+        </>
+      ) : (
+        <div className="flex aspect-square items-center justify-center rounded-lg bg-muted" role="status">
+          <p className="text-muted-foreground text-sm">Refreshing code…</p>
+        </div>
+      )}
+    </section>
+  )
 }

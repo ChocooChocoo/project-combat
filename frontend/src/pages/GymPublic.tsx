@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, ChevronDown, Clock, Dumbbell, Mail, MapPin, Phone, Users } from 'lucide-react'
+import { ArrowLeft, Check, ChevronDown, Clock, Dumbbell, Mail, MapPin, Phone } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { NotificationsMenu } from '@/components/notifications-menu'
@@ -104,17 +104,18 @@ function planLength(plan: PublicPlan): string {
   return `${plan.duration_months ?? 0} ${plan.duration_months === 1 ? 'month' : 'months'}`
 }
 
-function BrandBar({ signedIn }: { signedIn: boolean }) {
+function BrandBar({ signedIn, showBack = false }: { signedIn: boolean; showBack?: boolean }) {
   return (
-    <header className="safe-area-top flex flex-wrap items-center gap-3">
-      <Link className="flex items-center gap-2 font-semibold" to="/">
+    <header className="safe-area-top flex flex-wrap items-center gap-3 border-b pb-5">
+      <Link className="flex min-h-11 items-center gap-2.5 font-medium text-sm" to="/">
         <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm">CP</span>
         Combat Platform
       </Link>
       <div className="ms-auto flex items-center gap-2">
         {signedIn && <NotificationsMenu />}
-        <Button size="sm" variant="outline" render={<Link to={signedIn ? '/' : '/sign-in'} />}>
-          {signedIn ? 'Home' : 'Sign in'}
+        <Button className="min-h-11" size="sm" variant="ghost" render={<Link to={signedIn ? '/' : '/sign-in'} />}>
+          {showBack && <ArrowLeft aria-hidden />}
+          {signedIn ? (showBack ? 'Back to gyms' : 'Home') : 'Sign in'}
         </Button>
       </div>
     </header>
@@ -289,57 +290,50 @@ export default function GymPublic() {
 
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-8 wrap-anywhere px-4 py-8 md:px-8">
-      <BrandBar signedIn />
+      <BrandBar signedIn showBack />
 
-      <PageHeader
-        title={<span className="text-2xl sm:text-3xl">{gym.name}</span>}
-        meta={
-          gym.badge && (
-            <Badge variant={gym.tier === 2 ? 'success' : 'info'}>{gym.badge}</Badge>
-          )
-        }
-        description={
-          <div className="flex flex-col gap-2">
-            <span className="flex items-start gap-1.5">
-              <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden />
-              {address || 'Address not listed'}
-            </span>
+      <section className="flex flex-col gap-6 border-b pt-2 pb-8 lg:flex-row lg:items-end lg:justify-between" aria-labelledby="gym-name">
+          <div className="flex min-w-0 flex-1 flex-col items-start">
+            <h1 id="gym-name" className="max-w-3xl text-balance font-semibold text-3xl leading-tight tracking-tight sm:text-4xl">{gym.name}</h1>
+            {gym.badge && (
+              <Badge className="mt-3 h-auto max-w-full whitespace-normal py-1 sm:h-auto" variant={gym.tier === 2 ? 'success' : 'info'}>{gym.badge}</Badge>
+            )}
+            <p className="mt-5 flex items-start gap-2 text-muted-foreground text-sm leading-6">
+              <MapPin className="mt-1 size-4 shrink-0" aria-hidden />
+              <span>{address || 'Address not listed'}</span>
+            </p>
             {(gym.contact_phone || gym.contact_email) && (
-              <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <div className="mt-1 flex w-full flex-wrap items-center gap-x-6 gap-y-1 text-sm">
                 {gym.contact_phone && (
-                  <a className="flex items-center gap-1.5 underline-offset-4 hover:underline" href={`tel:${gym.contact_phone}`}>
-                    <Phone className="size-4" aria-hidden />
-                    {gym.contact_phone}
+                  <a className="flex min-h-11 items-center gap-2 underline-offset-4 hover:underline" href={`tel:${gym.contact_phone}`}>
+                    <Phone className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                    <span>{gym.contact_phone}</span>
                   </a>
                 )}
                 {gym.contact_email && (
-                  <a className="flex items-center gap-1.5 underline-offset-4 hover:underline" href={`mailto:${gym.contact_email}`}>
-                    <Mail className="size-4" aria-hidden />
-                    {gym.contact_email}
+                  <a className="flex min-h-11 min-w-0 items-center gap-2 underline-offset-4 hover:underline" href={`mailto:${gym.contact_email}`}>
+                    <Mail className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                    <span className="min-w-0 wrap-anywhere">{gym.contact_email}</span>
                   </a>
                 )}
-              </span>
+              </div>
             )}
           </div>
-        }
-        actions={
-          <>
-            <Button size="sm" variant="outline" render={<Link to="/" />}>
-              <ArrowLeft aria-hidden /> Back
-            </Button>
+          {(manage || mine) && (
+          <div className="flex flex-wrap items-center gap-3 lg:max-w-xs lg:justify-end">
             {manage && (
-              <Button size="sm" render={<Link to={`/gyms/${id}/manage`} />}>
+              <Button className="min-h-11" render={<Link to={`/gyms/${id}/manage`} />}>
                 Open workspace
               </Button>
             )}
             {mine && (
-              <Button size="sm" variant={manage ? 'outline' : 'default'} render={<Link to={`/memberships/${mine.id}`} />}>
+              <Button className="min-h-11 h-auto whitespace-normal py-2" variant={manage ? 'outline' : 'default'} render={<Link to={`/memberships/${mine.id}`} />}>
                 My membership · {STATUS_LABELS[mine.status]}
               </Button>
             )}
-          </>
-        }
-      />
+          </div>
+          )}
+      </section>
 
       {(gym.disciplines.length > 0 || gym.activity_types.length > 0) && (
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:gap-x-8">
@@ -366,80 +360,69 @@ export default function GymPublic() {
         </div>
       )}
 
-      <div className="grid items-start gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle render={<h2 />}>Opening hours</CardTitle>
-            <CardDescription>When the gym is open during the week.</CardDescription>
-          </CardHeader>
-          <CardPanel className="pt-2">
-            <dl className="divide-y">
+      <div className="grid overflow-hidden rounded-xl border bg-card text-card-foreground lg:grid-cols-5">
+        <section className="min-w-0 border-b p-5 sm:p-6 lg:col-span-2 lg:border-r lg:border-b-0 lg:p-8" aria-labelledby="gym-hours">
+          <div className="mb-5 flex items-center justify-between gap-4">
+            <h2 id="gym-hours" className="font-semibold text-lg tracking-tight">Opening hours</h2>
+            <Clock className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+          </div>
+            <dl className="flex flex-col gap-1">
               {DAYS.map((day) => {
                 const hours = gym.operating_hours[day.key]
                 const isToday = day.key === todayKey
                 return (
                   <div
                     className={cn(
-                      'flex items-center justify-between gap-3 px-1 py-2.5 text-sm',
-                      isToday && 'rounded-md bg-accent',
+                      'flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 rounded-md px-3 py-2.5 text-sm',
+                      isToday ? 'bg-accent font-medium' : 'text-muted-foreground',
                     )}
                     key={day.key}
                   >
-                    <dt className="flex items-center gap-2 font-medium">
+                    <dt className="flex items-baseline gap-2">
                       {day.label}
-                      {isToday && <span className="font-normal text-muted-foreground text-xs">Today</span>}
+                      {isToday && <span className="text-xs text-success-foreground">Today</span>}
                     </dt>
-                    <dd className={cn('tabular-nums', !hours && 'text-muted-foreground')}>
+                    <dd className={cn('ms-auto whitespace-nowrap tabular-nums', hours && 'text-card-foreground')}>
                       {hours ? `${timeLabel(hours.open)} – ${timeLabel(hours.close)}` : 'Closed'}
                     </dd>
                   </div>
                 )
               })}
             </dl>
-          </CardPanel>
-        </Card>
+        </section>
 
-        <div className="flex flex-col gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle render={<h2 />}>Policies</CardTitle>
-              <CardDescription>House rules and what members agree to.</CardDescription>
-            </CardHeader>
-            <CardPanel className="pt-2">
-              {policyParagraphs.length > 0 ? (
-                <div className="flex flex-col gap-3">
-                  {policyParagraphs.map((paragraph, index) => (
-                    <p className="whitespace-pre-line text-sm leading-relaxed" key={`${index}-${paragraph.slice(0, 24)}`}>
-                      {paragraph}
-                    </p>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground text-sm">The gym has not published its policies yet.</p>
-              )}
-            </CardPanel>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle render={<h2 />}>Facilities</CardTitle>
-              <CardDescription>What is available at the gym.</CardDescription>
-            </CardHeader>
-            <CardPanel className="pt-2">
+        <div className="min-w-0 lg:col-span-3">
+          <section className="p-5 sm:p-6 lg:p-8" aria-labelledby="gym-facilities">
+            <h2 id="gym-facilities" className="mb-5 font-semibold text-lg tracking-tight">Facilities</h2>
               {gym.facilities.length > 0 ? (
-                <ul className="grid gap-2 sm:grid-cols-2">
+                <ul className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
                   {gym.facilities.map((facility) => (
-                    <li className="flex items-start gap-2 text-sm" key={facility}>
-                      <Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
-                      {facility}
+                    <li className="flex items-start gap-3 text-sm leading-6" key={facility}>
+                      <Check className="mt-1 size-4 shrink-0 text-success-foreground" aria-hidden />
+                      <span>{facility}</span>
                     </li>
                   ))}
                 </ul>
               ) : (
                 <p className="text-muted-foreground text-sm">No facilities are listed yet.</p>
               )}
-            </CardPanel>
-          </Card>
+          </section>
+
+          <section className="border-t p-5 sm:p-6 lg:p-8" aria-labelledby="gym-policies">
+            <h2 id="gym-policies" className="mb-2 font-semibold text-lg tracking-tight">Policies</h2>
+            <p className="mb-4 text-xs text-muted-foreground">Before you train</p>
+            {policyParagraphs.length > 0 ? (
+              <div className="flex max-w-prose flex-col gap-3">
+                {policyParagraphs.map((paragraph, index) => (
+                  <p className="whitespace-pre-line text-sm leading-7" key={`${index}-${paragraph.slice(0, 24)}`}>
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">The gym has not published its policies yet.</p>
+            )}
+          </section>
         </div>
       </div>
 
@@ -459,85 +442,105 @@ export default function GymPublic() {
             </EmptyHeader>
           </Empty>
         ) : (
-          <ul className="grid items-start gap-4 lg:grid-cols-2">
+          <ul className="grid gap-5 lg:grid-cols-2">
             {services.map((service) => {
               const images = serviceImages(service)
               return (
                 <li key={service.id} className="min-w-0">
-                  <Card className="overflow-hidden">
+                  <Card className="flex h-full flex-col gap-0 overflow-hidden p-0">
                     {images.length > 0 ? (
                       <button
                         type="button"
                         className="block w-full bg-muted text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
                         onClick={() => openGallery(service, 0)}
+                        aria-label={`Open ${service.name} photo gallery`}
                       >
                         <img
-                          className="aspect-[16/9] w-full object-cover"
+                          className="aspect-[16/10] w-full object-cover"
                           src={images[0]}
                           alt={`${service.name} cover photo`}
                           loading="lazy"
                         />
                       </button>
                     ) : (
-                      <div className="flex aspect-[16/9] items-center justify-center bg-muted text-muted-foreground">
+                      <div className="flex aspect-[16/10] flex-col items-center justify-center gap-3 bg-muted text-muted-foreground">
                         <Dumbbell className="size-8" aria-hidden />
-                        <span className="sr-only">No cover photo</span>
+                        <span className="text-sm">No cover photo yet</span>
                       </div>
                     )}
 
-                    <CardHeader>
-                      <CardTitle render={<h3 />}>{service.name}</CardTitle>
-                      <CardDescription className="flex flex-wrap gap-1.5">
+                    {images.length > 1 && (
+                      <div className="flex flex-wrap gap-2 border-b bg-muted/30 p-3" aria-label={`${service.name} photos`}>
+                        {images.map((url, index) => (
+                          <button
+                            key={url}
+                            type="button"
+                            className="overflow-hidden rounded-md border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                            onClick={() => openGallery(service, index)}
+                            aria-label={`Open ${service.name} photo ${index + 1}`}
+                          >
+                            <img className="size-12 object-cover" src={url} alt="" loading="lazy" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex flex-1 flex-col gap-5 p-6">
+                      <div>
+                      <h3 className="font-semibold text-2xl tracking-tight wrap-anywhere">{service.name}</h3>
+                      <div className="mt-3 flex flex-wrap gap-2">
                         {service.discipline && (
                           <Badge variant="outline">{DISCIPLINE_LABELS[service.discipline] ?? labelKey(service.discipline)}</Badge>
                         )}
                         {service.activity_type && (
                           <Badge variant="secondary">{ACTIVITY_LABELS[service.activity_type] ?? labelKey(service.activity_type)}</Badge>
                         )}
-                      </CardDescription>
-                    </CardHeader>
+                      </div>
+                      </div>
 
-                    <CardPanel className="flex flex-col gap-4 pt-0">
-                      {service.overview && <p className="whitespace-pre-line text-sm leading-relaxed">{service.overview}</p>}
+                      {service.overview && <p className="whitespace-pre-line text-muted-foreground text-sm leading-7 wrap-anywhere">{service.overview}</p>}
 
-                      <dl className="grid gap-3 sm:grid-cols-3">
+                      <dl className="mt-auto grid grid-cols-2 gap-x-4 gap-y-4 border-t pt-5 sm:grid-cols-3">
                         <div>
                           <dt className="text-muted-foreground text-xs">Level</dt>
-                          <dd className="text-sm">{service.level ? (LEVEL_LABELS[service.level] ?? labelKey(service.level)) : 'Not stated'}</dd>
+                          <dd className="mt-1 font-medium text-sm">{service.level ? (LEVEL_LABELS[service.level] ?? labelKey(service.level)) : 'Not stated'}</dd>
                         </div>
                         <div>
                           <dt className="text-muted-foreground text-xs">Duration</dt>
-                          <dd className="text-sm">{service.duration_minutes ? `${service.duration_minutes} minutes` : 'Not stated'}</dd>
+                          <dd className="mt-1 font-medium text-sm tabular-nums">{service.duration_minutes ? `${service.duration_minutes} minutes` : 'Not stated'}</dd>
                         </div>
                         <div>
-                          <dt className="text-muted-foreground text-xs">Runs</dt>
-                          <dd className="text-sm">
+                          <dt className="text-muted-foreground text-xs">Schedule</dt>
+                          <dd className="mt-1 font-medium text-sm">
                             {service.frequency ? (FREQUENCY_LABELS[service.frequency] ?? labelKey(service.frequency)) : 'Not stated'}
                           </dd>
                         </div>
                       </dl>
+                    </div>
 
-                      <p className="font-semibold tabular-nums">
+                    <div className="border-t bg-muted/30 p-6">
+                      <p className="mb-1 text-muted-foreground text-xs">Price</p>
+                      <p className={cn('font-semibold tracking-tight tabular-nums wrap-anywhere', service.price_included || service.price == null ? 'text-lg' : 'text-2xl')}>
                         {service.price_included || service.price == null ? 'Included in membership' : money(service.price)}
                       </p>
 
                       {((service.included ?? []).length > 0 || (service.bring ?? []).length > 0) && (
-                        <Collapsible className="border-t pt-3">
+                        <Collapsible className="mt-4 border-t pt-3">
                           <CollapsibleTrigger
-                            render={<Button variant="ghost" size="sm" className="-ms-2 group" />}
+                            render={<Button variant="ghost" size="sm" className="group min-h-11 h-auto w-full justify-between gap-3 whitespace-normal py-2 text-left" />}
                           >
-                            What is included and what to bring
-                            <ChevronDown className="transition-transform group-data-panel-open:rotate-180" aria-hidden />
+                            Included & what to bring
+                            <ChevronDown className="shrink-0 transition-transform motion-reduce:transition-none group-data-panel-open:rotate-180" aria-hidden />
                           </CollapsibleTrigger>
                           <CollapsiblePanel>
                             <div className="flex flex-col gap-4 pt-3">
                             {(service.included ?? []).length > 0 && (
                               <div>
                                 <h4 className="mb-1.5 font-medium text-sm">Included</h4>
-                                <ul className="flex flex-col gap-1 text-sm">
+                                <ul className="flex flex-col gap-2 text-sm leading-6">
                                   {(service.included ?? []).map((item) => (
                                     <li key={item} className="flex items-start gap-2">
-                                      <Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
+                                      <Check className="mt-1 size-4 shrink-0 text-success-foreground" aria-hidden />
                                       {item}
                                     </li>
                                   ))}
@@ -548,7 +551,7 @@ export default function GymPublic() {
                             {(service.bring ?? []).length > 0 && (
                               <div>
                                 <h4 className="mb-1.5 font-medium text-sm">What to bring</h4>
-                                <ul className="flex flex-col gap-1 text-sm">
+                                <ul className="flex flex-col gap-2 text-sm leading-6">
                                   {(service.bring ?? []).map((item) => (
                                     <li key={item} className="flex items-start gap-2">
                                       <span className="mt-2 size-1.5 shrink-0 rounded-full bg-muted-foreground" aria-hidden />
@@ -563,22 +566,7 @@ export default function GymPublic() {
                         </Collapsible>
                       )}
 
-                      {images.length > 1 && (
-                        <div className="flex flex-wrap gap-2 border-t pt-3">
-                          {images.map((url, index) => (
-                            <button
-                              key={url}
-                              type="button"
-                              className="overflow-hidden rounded-md border focus-visible:ring-2 focus-visible:ring-ring"
-                              onClick={() => openGallery(service, index)}
-                              aria-label={`Open ${service.name} photo ${index + 1}`}
-                            >
-                              <img className="size-16 object-cover" src={url} alt="" loading="lazy" />
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </CardPanel>
+                    </div>
                   </Card>
                 </li>
               )
@@ -607,36 +595,38 @@ export default function GymPublic() {
             </EmptyHeader>
           </Empty>
         ) : (
-          <ul className="grid gap-4 lg:grid-cols-2">
+          <ul className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {plans.map((plan) => (
               <li key={plan.id} className="min-w-0">
-                <Card className="h-full">
-                  <CardHeader>
-                    <div className="flex flex-wrap items-start gap-2">
-                      <CardTitle render={<h3 />} className="mr-auto">
+                <Card className="flex h-full flex-col gap-0 overflow-hidden p-0">
+                  <div className="flex flex-col gap-5 p-6">
+                      <h3 className="font-semibold text-xl tracking-tight wrap-anywhere">
                         {plan.name}
-                      </CardTitle>
-                      {plan.registration_included && <Badge variant="success">Registration included</Badge>}
-                    </div>
-                    <CardDescription>
+                      </h3>
+                    <p className="-mt-3 text-muted-foreground text-sm">
                       {plan.billing_type === 'sessions' ? 'Priced by sessions' : 'Priced by time'} · {planLength(plan)}
-                    </CardDescription>
-                  </CardHeader>
-
-                  <CardPanel className="flex flex-col gap-5 pt-0">
-                    <div className="flex flex-wrap items-baseline justify-between gap-2 rounded-lg border bg-muted/40 px-3 py-2.5">
-                      <span className="font-medium text-sm">Total fee</span>
-                      <span className="font-semibold text-xl tabular-nums">{money(plan.total_fee)}</span>
+                    </p>
+                    <div className="py-3">
+                      <p className="font-semibold text-4xl tracking-tight tabular-nums wrap-anywhere">{money(plan.total_fee) || 'Not set'}</p>
+                      <p className="mt-2 text-muted-foreground text-sm">Total for {planLength(plan)}</p>
                     </div>
+                  </div>
 
+                  <div className="flex flex-1 flex-col gap-6 border-t p-6">
                     <div>
-                      <h4 className="mb-2 font-medium text-sm">What the fee covers</h4>
-                      {(plan.inclusions ?? []).length > 0 ? (
-                        <ul className="flex flex-col gap-1.5 text-sm">
-                          {(plan.inclusions ?? []).map((item) => (
-                            <li key={item} className="flex items-start gap-2">
-                              <Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
-                              {item}
+                      <h4 className="mb-4 font-medium text-sm">What’s included</h4>
+                      {(plan.inclusions ?? []).length > 0 || plan.registration_included ? (
+                        <ul className="flex flex-col gap-3">
+                          {plan.registration_included && (
+                            <li className="flex items-start gap-3 text-sm leading-6">
+                              <Check className="mt-1 size-4 shrink-0 text-success-foreground" aria-hidden />
+                              <span>Registration included</span>
+                            </li>
+                          )}
+                          {(plan.inclusions ?? []).map((item, index) => (
+                            <li key={`${index}-${item}`} className="flex items-start gap-3 text-sm leading-6">
+                              <Check className="mt-1 size-4 shrink-0 text-success-foreground" aria-hidden />
+                              <span className="min-w-0 wrap-anywhere">{item}</span>
                             </li>
                           ))}
                         </ul>
@@ -646,31 +636,29 @@ export default function GymPublic() {
                     </div>
 
                     {(plan.addons ?? []).length > 0 && (
-                      <div className="rounded-lg border border-dashed px-3 py-3">
-                        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-                          <h4 className="font-medium text-sm">Not included</h4>
-                          <span className="text-muted-foreground text-xs">Optional extras, priced separately</span>
-                        </div>
-                        <ul className="divide-y">
+                      <div className="border-t pt-4">
+                        <h4 className="font-medium text-sm">Optional add-ons</h4>
+                        <p className="mt-1 text-muted-foreground text-xs">Priced separately from the plan</p>
+                        <ul className="mt-3 flex flex-col gap-2">
                           {(plan.addons ?? []).map((addon, index) => (
                             <li key={addon.id ?? `${addon.service_name}-${index}`} className="flex flex-wrap items-baseline justify-between gap-2 py-1.5 text-sm">
-                              <span>{addon.service_name ?? addon.service?.name ?? 'Extra service'}</span>
-                              <span className="font-medium tabular-nums">{money(addon.price)}</span>
+                              <span className="min-w-0 text-muted-foreground wrap-anywhere">{addon.service_name ?? addon.service?.name ?? 'Extra service'}</span>
+                              <span className="ms-auto font-medium tabular-nums">{money(addon.price)}</span>
                             </li>
                           ))}
                         </ul>
                       </div>
                     )}
 
-                    <Collapsible className="border-t pt-3">
-                      <CollapsibleTrigger render={<Button variant="ghost" size="sm" className="-ms-2 group" />}>
+                    <Collapsible className="mt-auto border-t pt-3">
+                      <CollapsibleTrigger render={<Button variant="ghost" size="sm" className="-ms-2 group min-h-11" />}>
                         Plan policies
                         <ChevronDown className="transition-transform group-data-panel-open:rotate-180" aria-hidden />
                       </CollapsibleTrigger>
                       <CollapsiblePanel>
-                        <dl className="grid gap-3 pt-3 sm:grid-cols-2">
+                        <dl className="flex flex-col gap-4 pt-3">
                           {POLICY_LABELS.map((policy) => (
-                            <div key={policy.key} className="rounded-lg border px-3 py-2">
+                            <div key={policy.key}>
                               <dt className="font-medium text-xs">{policy.label}</dt>
                               <dd className="mt-1 whitespace-pre-line text-muted-foreground text-sm">{plan[policy.key] || 'Not stated.'}</dd>
                             </div>
@@ -679,12 +667,14 @@ export default function GymPublic() {
                       </CollapsiblePanel>
                     </Collapsible>
 
-                    {canApply && (
-                      <Button className="self-start" render={<Link to={`/gyms/${id}/apply?plan=${plan.id}`} />}>
+                  </div>
+                  {canApply && (
+                    <div className="border-t bg-muted/30 p-6">
+                      <Button className="min-h-11 w-full" render={<Link to={`/gyms/${id}/apply?plan=${plan.id}`} />}>
                         Apply on this plan
                       </Button>
-                    )}
-                  </CardPanel>
+                    </div>
+                  )}
                 </Card>
               </li>
             ))}
@@ -708,7 +698,7 @@ export default function GymPublic() {
             </EmptyHeader>
           </Empty>
         ) : (
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {coaches.map((coach) => (
               <li key={coach.id} className="min-w-0">
                 <CoachCard coach={coach} />
@@ -763,45 +753,48 @@ export default function GymPublic() {
 
 function CoachCard({ coach }: { coach: PublicCoach }) {
   return (
-    <Card className="h-full">
-      <CardPanel className="flex flex-col gap-4">
-        <div className="flex items-start gap-3">
+    <Card className="flex h-full flex-col gap-0 overflow-hidden p-0">
+      <div className="flex items-center gap-4 bg-muted/30 p-5">
           {coach.photo_url ? (
-            <img className="size-16 rounded-full object-cover" src={coach.photo_url} alt={`${coach.name} photo`} loading="lazy" />
+            <img
+              className="size-20 shrink-0 rounded-full border-2 border-card object-cover object-top"
+              src={coach.photo_url}
+              alt={`${coach.name} photo`}
+              width={80}
+              height={80}
+              loading="lazy"
+            />
           ) : (
-            <span className="flex size-16 items-center justify-center rounded-full bg-muted font-semibold text-muted-foreground text-lg">
+            <span className="flex size-20 shrink-0 items-center justify-center rounded-full border-2 border-card bg-muted font-semibold text-2xl tracking-tight" aria-hidden>
               {initials(coach.name)}
             </span>
           )}
-          <div className="flex min-w-0 flex-col gap-1">
-            <h3 className="font-semibold">{coach.name}</h3>
+          <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5">
+            <h3 className="font-semibold text-lg tracking-tight wrap-anywhere">{coach.name}</h3>
             {coach.rank && (
-              <Badge variant="outline" className="h-auto min-h-5.5 w-fit max-w-full whitespace-normal wrap-anywhere py-0.5">
-                {coach.rank}
+              <Badge variant="outline" className="h-auto min-h-5.5 max-w-full justify-start bg-card px-2 py-1 text-left sm:h-auto" title={coach.rank}>
+                <span className="min-w-0 truncate">{coach.rank}</span>
               </Badge>
             )}
-            {coach.specialisation && <p className="text-muted-foreground text-sm">{coach.specialisation}</p>}
+            {coach.specialisation && <p className="max-w-prose text-muted-foreground text-sm leading-relaxed wrap-anywhere">{coach.specialisation}</p>}
           </div>
+      </div>
+      {(coach.bio || coach.experience) && (
+        <div className="flex flex-1 flex-col gap-4 border-t p-5">
+          {coach.bio && (
+            <div>
+              <h4 className="mb-1 font-medium text-sm">About</h4>
+              <p className="whitespace-pre-line text-muted-foreground text-sm leading-6 wrap-anywhere">{coach.bio}</p>
+            </div>
+          )}
+          {coach.experience && (
+            <div className={cn(coach.bio && 'border-t pt-4')}>
+              <h4 className="mb-1 font-medium text-sm">Experience</h4>
+              <p className="whitespace-pre-line text-muted-foreground text-sm leading-6 wrap-anywhere">{coach.experience}</p>
+            </div>
+          )}
         </div>
-
-        {coach.experience && (
-          <div>
-            <h4 className="mb-1 flex items-center gap-1.5 font-medium text-sm">
-              <Users className="size-4" aria-hidden /> Experience
-            </h4>
-            <p className="whitespace-pre-line text-sm leading-relaxed">{coach.experience}</p>
-          </div>
-        )}
-
-        {coach.bio && (
-          <div>
-            <h4 className="mb-1 flex items-center gap-1.5 font-medium text-sm">
-              <Clock className="size-4" aria-hidden /> About
-            </h4>
-            <p className="whitespace-pre-line text-sm leading-relaxed">{coach.bio}</p>
-          </div>
-        )}
-      </CardPanel>
+      )}
     </Card>
   )
 }

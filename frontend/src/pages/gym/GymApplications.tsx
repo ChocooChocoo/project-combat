@@ -2,11 +2,9 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { HealthSummary } from '@/components/membership/athlete-record-view'
 import { MembershipStatusBadge } from '@/components/membership/membership-parts'
-import { PageHeader } from '@/components/page-header'
 import { Alert, AlertAction, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardDescription, CardHeader, CardPanel, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogPanel, DialogPopup, DialogTitle } from '@/components/ui/dialog'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
@@ -27,6 +25,10 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: 'rejected', label: 'Not approved' },
   { value: 'all', label: 'All applications' },
 ]
+
+function initials(name: string): string {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part.charAt(0)).join('').toUpperCase()
+}
 
 /** S-21, R-33: membership applications waiting for a decision. */
 export default function GymApplications() {
@@ -117,47 +119,49 @@ export default function GymApplications() {
   }
 
   const reviewButton = (row: Membership) => (
-    <Button size="xs" variant="outline" onClick={() => review(row)}>
+    <Button size="sm" variant="outline" onClick={() => review(row)}>
       {row.status === 'applied' && canDecide && row.member.id !== user?.id ? 'Review' : 'View'}
     </Button>
   )
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Membership applications"
-        description="Approve or reject people who applied to join. Approval creates their athlete profile; their membership starts once the fee is paid."
-        meta={canDecide ? <Badge variant="outline">Can decide</Badge> : null}
-      />
+    <div className="flex min-w-0 flex-col gap-6">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b pb-6">
+        <div>
+          <h1 className="font-semibold text-3xl tracking-tight sm:text-4xl">Membership applications</h1>
+          <p className="mt-3 max-w-prose text-muted-foreground text-sm leading-relaxed">Approve or reject people who applied to join. Approval creates their athlete profile; their membership starts once the fee is paid.</p>
+        </div>
+        <div className="flex items-center gap-4">
+          {canDecide && <Badge variant="outline">Can decide</Badge>}
+          {rows && (
+            <div>
+              <p className="text-muted-foreground text-xs">In view</p>
+              <p className="mt-1 font-semibold text-2xl tabular-nums">{rows.length}</p>
+            </div>
+          )}
+        </div>
+      </header>
 
-      <Card>
-        <CardHeader>
-          <CardTitle render={<h2 />}>Applications</CardTitle>
-          <CardDescription>{canDecide ? 'You cannot decide your own application.' : 'You can view applications. Deciding needs membership approval access.'}</CardDescription>
-        </CardHeader>
-        <CardPanel className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center gap-3">
-            {rows === null ? (
-              <Skeleton className="mr-auto h-4 w-24" />
-            ) : (
-              <p className="mr-auto text-muted-foreground text-sm">
-                {rows.length} {rows.length === 1 ? 'application' : 'applications'}
-              </p>
-            )}
-            <Select items={FILTERS} value={filter} onValueChange={(next) => setFilter((next as Filter) ?? 'applied')}>
-              <SelectTrigger size="sm" className="w-48" aria-label="Filter applications">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectPopup>
-                {FILTERS.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectPopup>
-            </Select>
+      <section className="min-w-0 overflow-hidden rounded-xl border bg-card" aria-labelledby="applications-list">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b bg-muted/30 px-5 py-4">
+          <div>
+            <h2 id="applications-list" className="font-medium text-sm">Applications</h2>
+            <p className="mt-1 max-w-prose text-muted-foreground text-xs leading-relaxed">{canDecide ? 'You cannot decide your own application.' : 'You can view applications. Deciding needs membership approval access.'}</p>
           </div>
-
+          <Select items={FILTERS} value={filter} onValueChange={(next) => setFilter((next as Filter) ?? 'applied')}>
+            <SelectTrigger size="sm" className="w-48" aria-label="Filter applications">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectPopup>
+              {FILTERS.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectPopup>
+          </Select>
+        </div>
+        <div className="p-5">
           {error ? (
             <Alert variant="error">
               <AlertTitle>Applications could not be loaded</AlertTitle>
@@ -184,16 +188,17 @@ export default function GymApplications() {
             <>
               <ul className="flex flex-col gap-3 md:hidden">
                 {rows.map((row) => (
-                  <li key={row.id} className="flex flex-col gap-2 rounded-xl border p-4">
-                    <div className="flex items-start gap-2">
-                      <span className="flex min-w-0 flex-1 flex-col">
-                        <span className="font-medium">{row.member.name}</span>
-                        <span className="text-muted-foreground text-sm">{row.plan?.name}</span>
-                      </span>
+                  <li key={row.id} className="flex flex-col gap-3 rounded-xl border p-4">
+                    <div className="flex items-start gap-3">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-xs" aria-hidden>{initials(row.member.name)}</span>
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <span className="font-medium wrap-anywhere">{row.member.name}</span>
+                        <span className="text-muted-foreground text-sm wrap-anywhere">{row.plan?.name}</span>
+                      </div>
                       <MembershipStatusBadge status={row.status} />
                     </div>
-                    <span className="text-muted-foreground text-sm">Applied {dateLabel(row.created_at)}</span>
-                    <div>{reviewButton(row)}</div>
+                    <p className="text-muted-foreground text-xs">Applied {dateLabel(row.created_at)}</p>
+                    <div className="flex justify-end">{reviewButton(row)}</div>
                   </li>
                 ))}
               </ul>
@@ -213,17 +218,20 @@ export default function GymApplications() {
                   <TableBody>
                     {rows.map((row) => (
                       <TableRow key={row.id}>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{row.member.name}</span>
-                            <span className="text-muted-foreground text-xs">{row.member.email}</span>
+                        <TableCell className="max-w-56 whitespace-normal">
+                          <div className="flex items-center gap-3">
+                            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-xs" aria-hidden>{initials(row.member.name)}</span>
+                            <div className="flex min-w-0 flex-col">
+                              <span className="font-medium wrap-anywhere">{row.member.name}</span>
+                              <span className="text-muted-foreground text-xs wrap-anywhere">{row.member.email}</span>
+                            </div>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          {row.plan?.name}
-                          <span className="block text-muted-foreground text-xs tabular-nums">{money(row.plan?.total_fee)}</span>
+                        <TableCell className="max-w-48 whitespace-normal">
+                          <p className="wrap-anywhere">{row.plan?.name}</p>
+                          <p className="mt-0.5 text-muted-foreground text-xs tabular-nums">{money(row.plan?.total_fee)}</p>
                         </TableCell>
-                        <TableCell>{dateLabel(row.created_at)}</TableCell>
+                        <TableCell><span className="whitespace-nowrap">{dateLabel(row.created_at)}</span></TableCell>
                         <TableCell>
                           <MembershipStatusBadge status={row.status} />
                         </TableCell>
@@ -237,53 +245,66 @@ export default function GymApplications() {
               </div>
             </>
           )}
-        </CardPanel>
-      </Card>
+        </div>
+      </section>
 
       <Dialog open={open !== null} onOpenChange={(next) => !next && setOpen(null)}>
         <DialogPopup className="sm:max-w-2xl">
           {open && (
             <Form errors={errors} onSubmit={decide} className="flex min-h-0 flex-col">
               <DialogHeader>
-                <DialogTitle>{open.member.name}</DialogTitle>
-                <DialogDescription>
-                  {open.plan?.name} · {money(open.plan?.total_fee)} · applied {dateLabel(open.created_at)}
-                </DialogDescription>
+                <div className="flex items-start gap-3">
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-sm" aria-hidden>{initials(open.member.name)}</span>
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <DialogTitle className="wrap-anywhere">{open.member.name}</DialogTitle>
+                    <DialogDescription className="mt-1">
+                      <span className="wrap-anywhere">{open.plan?.name ?? 'No plan listed'}</span> · {money(open.plan?.total_fee)}
+                    </DialogDescription>
+                    <p className="mt-1 text-muted-foreground text-xs">Applied {dateLabel(open.created_at)}</p>
+                  </div>
+                  <MembershipStatusBadge status={open.status} />
+                </div>
               </DialogHeader>
-              <DialogPanel className="flex flex-col gap-4">
+              <DialogPanel className="flex flex-col gap-5">
                 {open.status === 'rejected' && open.decision_reason && (
                   <Alert variant="error">
                     <AlertTitle>Not approved</AlertTitle>
                     <AlertDescription>{open.decision_reason}</AlertDescription>
                   </Alert>
                 )}
-                <dl className="grid gap-3 rounded-xl border p-3 text-sm sm:grid-cols-2">
-                  <div>
-                    <dt className="text-muted-foreground">Background</dt>
-                    <dd className="whitespace-pre-line">{open.background || 'Not given'}</dd>
+                <section className="overflow-hidden rounded-xl border">
+                  <h3 className="border-b bg-muted/30 px-4 py-2.5 font-medium text-sm">Application details</h3>
+                  <dl className="grid gap-5 p-4 text-sm sm:grid-cols-2">
+                    <div className="min-w-0">
+                      <dt className="text-muted-foreground text-xs">Background</dt>
+                      <dd className="mt-1 whitespace-pre-line leading-relaxed wrap-anywhere">{open.background || 'Not given'}</dd>
+                    </div>
+                    <div className="min-w-0">
+                      <dt className="text-muted-foreground text-xs">Current rank</dt>
+                      <dd className="mt-1 leading-relaxed wrap-anywhere">{open.current_rank || 'Not given'}</dd>
+                    </div>
+                    <div className="min-w-0 sm:col-span-2">
+                      <dt className="text-muted-foreground text-xs">Training history</dt>
+                      <dd className="mt-1 whitespace-pre-line leading-relaxed wrap-anywhere">{open.training_history || 'Not given'}</dd>
+                    </div>
+                    <div className="min-w-0 border-t pt-4 sm:col-span-2">
+                      <dt className="text-muted-foreground text-xs">Waivers</dt>
+                      <dd className="mt-1 leading-relaxed wrap-anywhere">
+                        Accepted and signed by “{open.signature_name}” on {dateLabel(open.signed_on)}
+                      </dd>
+                    </div>
+                  </dl>
+                </section>
+                <section className="overflow-hidden rounded-xl border">
+                  <h3 className="border-b bg-muted/30 px-4 py-2.5 font-medium text-sm">Health and emergency</h3>
+                  <div className="p-4">
+                    {open.health ? (
+                      <HealthSummary health={open.health} form={form} onOpenFile={() => openFile(open)} />
+                    ) : (
+                      <p className="text-muted-foreground text-sm leading-relaxed">Health answers and emergency contacts are hidden. They need health details access.</p>
+                    )}
                   </div>
-                  <div>
-                    <dt className="text-muted-foreground">Current rank</dt>
-                    <dd>{open.current_rank || 'Not given'}</dd>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <dt className="text-muted-foreground">Training history</dt>
-                    <dd className="whitespace-pre-line">{open.training_history || 'Not given'}</dd>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <dt className="text-muted-foreground">Waivers</dt>
-                    <dd>
-                      Accepted and signed by “{open.signature_name}” on {dateLabel(open.signed_on)}
-                    </dd>
-                  </div>
-                </dl>
-                {open.health ? (
-                  <section className="rounded-xl border p-3">
-                    <HealthSummary health={open.health} form={form} onOpenFile={() => openFile(open)} />
-                  </section>
-                ) : (
-                  <p className="text-muted-foreground text-sm">Health answers and emergency contacts are hidden. They need health details access.</p>
-                )}
+                </section>
 
                 {action === 'reject' && (
                   <Field name="reason" className="w-full">

@@ -1,7 +1,6 @@
 import { ChevronLeft, ChevronRight, Plus, Trash2, X } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { PageHeader } from '@/components/page-header'
 import { TextField } from '@/components/text-field'
 import { Alert, AlertAction, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -168,7 +167,9 @@ export default function GymPayroll() {
   if (!canView) {
     return (
       <div className="flex flex-col gap-6">
-        <PageHeader title="Payroll" />
+        <header className="border-b pb-6">
+          <h1 className="font-semibold text-3xl tracking-tight sm:text-4xl">Payroll</h1>
+        </header>
         <Empty className="rounded-xl border">
           <EmptyHeader>
             <EmptyTitle>Payroll is not available</EmptyTitle>
@@ -198,22 +199,26 @@ export default function GymPayroll() {
     ) : undefined
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Payroll"
-        description={`${gym.name}: pay every employee from stored attendance, leave, overtime, holidays and sessions. Runs move through an approval chain before release.`}
-        meta={isOwner ? <Badge variant="outline">Owner</Badge> : null}
-        actions={actions}
-      />
+    <div className="flex min-w-0 flex-col gap-6">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b pb-6">
+        <div className="min-w-0">
+          <h1 className="font-semibold text-3xl tracking-tight sm:text-4xl">Payroll</h1>
+          <p className="mt-3 max-w-prose text-muted-foreground text-sm leading-relaxed">{gym.name}: pay every employee from stored attendance, leave, overtime, holidays and sessions. Runs move through an approval chain before release.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          {isOwner && <Badge variant="outline">Owner</Badge>}
+          {actions}
+        </div>
+      </header>
 
       <Tabs value={activeTab} onValueChange={(value) => setTab(String(value))}>
-        <TabsList variant="underline" aria-label="Payroll sections" className="max-w-full overflow-x-auto overflow-y-hidden [scrollbar-width:none]">
-          <TabsTab value="runs">Runs</TabsTab>
-          <TabsTab value="settings">Settings</TabsTab>
-          <TabsTab value="rates">Rates</TabsTab>
+        <TabsList variant="underline" aria-label="Payroll sections" className="h-auto max-w-full flex-wrap justify-start overflow-x-auto overflow-y-hidden [scrollbar-width:none]">
+          <TabsTab className="min-h-11" value="runs">Runs</TabsTab>
+          <TabsTab className="min-h-11" value="settings">Settings</TabsTab>
+          <TabsTab className="min-h-11" value="rates">Rates</TabsTab>
         </TabsList>
 
-        <TabsPanel value="runs" className="pt-4">
+        <TabsPanel value="runs" className="pt-6">
           <RunsPanel
             gymId={gymId}
             runs={runs}
@@ -226,7 +231,7 @@ export default function GymPayroll() {
           />
         </TabsPanel>
 
-        <TabsPanel value="settings" className="pt-4">
+        <TabsPanel value="settings" className="pt-6">
           {settingsError ? (
             <Alert variant="error">
               <AlertTitle>Payroll settings could not be loaded</AlertTitle>
@@ -252,7 +257,7 @@ export default function GymPayroll() {
           )}
         </TabsPanel>
 
-        <TabsPanel value="rates" className="pt-4">
+        <TabsPanel value="rates" className="pt-6">
           <RatesPanel
             rates={rates}
             error={ratesError}
@@ -427,9 +432,19 @@ function RunsPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-muted-foreground text-sm" aria-live="polite">
-        {countLabel(meta?.total ?? runs.length, 'run', 'runs')}, newest period first
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-medium text-sm">Payroll runs</h2>
+          <p className="mt-1 text-muted-foreground text-xs" aria-live="polite">
+            {countLabel(meta?.total ?? runs.length, 'run', 'runs')}, newest period first
+          </p>
+        </div>
+        {canManage && (
+          <Button size="sm" variant="outline" onClick={onNew}>
+            <Plus aria-hidden /> New run
+          </Button>
+        )}
+      </div>
 
       <ul className="flex flex-col divide-y rounded-xl border bg-card md:hidden">
         {runs.map((run) => {
@@ -599,86 +614,90 @@ function SettingsForm({
   }
 
   return (
-    <Form errors={errors} onSubmit={save} className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4 shadow-xs/5 sm:p-6">
-        <div className="flex flex-col gap-1">
-          <h2 className="font-heading font-semibold text-base">Pay period</h2>
-          <p className="text-muted-foreground text-sm">How often this gym pays. A period cannot overlap another run.</p>
+    <Form errors={errors} onSubmit={save} className="flex flex-col gap-5">
+      <section className="overflow-hidden rounded-xl border bg-card">
+        <div className="border-b bg-muted/30 px-5 py-4">
+          <h2 className="font-heading font-semibold text-sm">Pay period</h2>
+          <p className="mt-1 text-muted-foreground text-xs leading-relaxed">How often this gym pays. A period cannot overlap another run.</p>
         </div>
-        <Choice
-          name="frequency"
-          label="Pay frequency"
-          value={frequency}
-          choices={Object.entries(PAYROLL_FREQUENCY_LABELS).map(([value, label]) => ({ value, label }))}
-          onChange={(value) => setFrequency(value === 'monthly' ? 'monthly' : 'semi_monthly')}
-          disabled={!canEdit}
-          required
-          description={frequency === 'semi_monthly' ? 'Periods are the 1st to the 15th and the 16th to the end of the month.' : 'One period a month, from the 1st to the last day.'}
-        />
-      </div>
+        <div className="p-5">
+          <Choice
+            name="frequency"
+            label="Pay frequency"
+            value={frequency}
+            choices={Object.entries(PAYROLL_FREQUENCY_LABELS).map(([value, label]) => ({ value, label }))}
+            onChange={(value) => setFrequency(value === 'monthly' ? 'monthly' : 'semi_monthly')}
+            disabled={!canEdit}
+            required
+            description={frequency === 'semi_monthly' ? 'Periods are the 1st to the 15th and the 16th to the end of the month.' : 'One period a month, from the 1st to the last day.'}
+          />
+        </div>
+      </section>
 
-      <Field name="approval_steps" className="flex flex-col gap-4 rounded-2xl border bg-card p-4 shadow-xs/5 sm:p-6">
-        <div className="flex flex-col gap-1">
-          <FieldLabel className="text-base">Approval chain</FieldLabel>
-          <FieldDescription>
+      <Field name="approval_steps" className="flex flex-col overflow-hidden rounded-xl border bg-card">
+        <div className="border-b bg-muted/30 px-5 py-4">
+          <FieldLabel className="font-heading font-semibold text-sm">Approval chain</FieldLabel>
+          <FieldDescription className="mt-1">
             One to three steps. The owner is always the final step and releases the run. Nobody can approve two steps of the same round.
           </FieldDescription>
         </div>
 
-        <ol className="flex flex-col gap-3">
-          {nonOwner.map((step, index) => (
-            <li key={`${step}-${index}`} className="flex flex-wrap items-end gap-3 rounded-xl border bg-background p-3">
-              <div className="min-w-48 flex-1">
-                <Choice
-                  name={`approval_steps.${index}`}
-                  label={`Step ${index + 1}`}
-                  value={step}
-                  choices={PAYROLL_STEP_CHOICES.filter(
-                    (choice) => choice.value === step || (choice.value !== 'owner' && !nonOwner.includes(choice.value)),
-                  )}
-                  onChange={(value) => setStepAt(index, value)}
-                  disabled={!canEdit}
-                />
+        <div className="flex flex-col gap-4 p-5">
+          <ol className="flex flex-col gap-3">
+            {nonOwner.map((step, index) => (
+              <li key={`${step}-${index}`} className="flex flex-wrap items-end gap-3 rounded-lg border bg-background p-3">
+                <div className="min-w-48 flex-1">
+                  <Choice
+                    name={`approval_steps.${index}`}
+                    label={`Step ${index + 1}`}
+                    value={step}
+                    choices={PAYROLL_STEP_CHOICES.filter(
+                      (choice) => choice.value === step || (choice.value !== 'owner' && !nonOwner.includes(choice.value)),
+                    )}
+                    onChange={(value) => setStepAt(index, value)}
+                    disabled={!canEdit}
+                  />
+                </div>
+                {canEdit && (
+                  <Button
+                    type="button"
+                    size="icon-sm"
+                    variant="ghost"
+                    aria-label={`Remove step ${index + 1}`}
+                    onClick={() => removeStep(index)}
+                  >
+                    <Trash2 aria-hidden />
+                  </Button>
+                )}
+              </li>
+            ))}
+            <li className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/40 p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary">Last step</Badge>
+                <span className="font-medium text-sm">Owner</span>
               </div>
-              {canEdit && (
-                <Button
-                  type="button"
-                  size="icon-sm"
-                  variant="ghost"
-                  aria-label={`Remove step ${index + 1}`}
-                  onClick={() => removeStep(index)}
-                >
-                  <Trash2 aria-hidden />
-                </Button>
-              )}
+              <span className="text-muted-foreground text-xs">Fixed. Only the owner can release.</span>
             </li>
-          ))}
-          <li className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-muted/40 p-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">Last step</Badge>
-              <span className="font-medium text-sm">Owner</span>
-            </div>
-            <span className="text-muted-foreground text-xs">Fixed. Only the owner can release.</span>
-          </li>
-        </ol>
+          </ol>
 
-        {canEdit && (
-          <div>
-            <Button type="button" size="sm" variant="outline" disabled={nonOwner.length >= 2 || available.length === 0} onClick={addStep}>
-              <Plus aria-hidden />
-              Add step
-            </Button>
-          </div>
-        )}
-        <FieldError />
+          {canEdit && (
+            <div>
+              <Button type="button" size="sm" variant="outline" disabled={nonOwner.length >= 2 || available.length === 0} onClick={addStep}>
+                <Plus aria-hidden />
+                Add step
+              </Button>
+            </div>
+          )}
+          <FieldError />
+        </div>
       </Field>
 
-      <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4 shadow-xs/5 sm:p-6">
-        <div className="flex flex-col gap-1">
-          <h2 className="font-heading font-semibold text-base">Attendance thresholds</h2>
-          <p className="text-muted-foreground text-sm">These decide when lateness becomes a deduction and when extra time counts as overtime.</p>
+      <section className="overflow-hidden rounded-xl border bg-card">
+        <div className="border-b bg-muted/30 px-5 py-4">
+          <h2 className="font-heading font-semibold text-sm">Attendance thresholds</h2>
+          <p className="mt-1 text-muted-foreground text-xs leading-relaxed">These decide when lateness becomes a deduction and when extra time counts as overtime.</p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 p-5 sm:grid-cols-2">
           <TextField
             name="staff_grace_minutes"
             label="Grace period (minutes)"
@@ -708,7 +727,7 @@ function SettingsForm({
             description="Extra minutes below this are not treated as an overtime request."
           />
         </div>
-      </div>
+      </section>
 
       {messages.length > 0 && (
         <Alert variant="error">
@@ -718,7 +737,7 @@ function SettingsForm({
       )}
 
       {canEdit ? (
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 border-t pt-5">
           <Button type="submit" loading={busy} disabled={busy || nonOwner.length !== new Set(nonOwner).size}>
             Save payroll settings
           </Button>
@@ -800,11 +819,14 @@ function RatesPanel({
   return (
     <div className="flex flex-col gap-8">
       <section aria-labelledby="rates-current" className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 id="rates-current" className="font-heading font-semibold text-base">
-            In effect now
-          </h2>
-          <p className="text-muted-foreground text-sm">Newest rate per kind starting on or before today.</p>
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <div>
+            <h2 id="rates-current" className="font-medium text-sm">
+              In effect now
+            </h2>
+            <p className="mt-1 text-muted-foreground text-xs">Newest rate per kind starting on or before today.</p>
+          </div>
+          <span className="text-muted-foreground text-xs tabular-nums">{currentRows.length} of {STATUTORY_KINDS.length} kinds</span>
         </div>
         {currentRows.length === 0 ? (
           <p className="rounded-xl border px-4 py-3 text-muted-foreground text-sm">
@@ -817,9 +839,15 @@ function RatesPanel({
 
       {history.length > 0 && (
         <section aria-labelledby="rates-history" className="flex flex-col gap-3">
-          <h2 id="rates-history" className="font-heading font-semibold text-base">
-            Past and upcoming
-          </h2>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <div>
+              <h2 id="rates-history" className="font-medium text-sm">
+                Past and upcoming
+              </h2>
+              <p className="mt-1 text-muted-foreground text-xs">Rates that start later or have been replaced.</p>
+            </div>
+            <span className="text-muted-foreground text-xs tabular-nums">{history.length} {history.length === 1 ? 'rate' : 'rates'}</span>
+          </div>
           <RateTable rates={history} currentIds={currentIds} today={today} />
         </section>
       )}
@@ -836,24 +864,33 @@ function RatesPanel({
   )
 }
 
+const KIND_VARIANTS: Record<StatutoryKind, 'info' | 'success' | 'warning' | 'secondary'> = {
+  sss: 'info',
+  philhealth: 'success',
+  pagibig: 'warning',
+  tax_semi_monthly: 'secondary',
+  tax_monthly: 'secondary',
+}
+
 function RateTable({ rates, currentIds, today }: { rates: StatutoryRate[]; currentIds: Set<number>; today: string }) {
+  const stateOf = (rate: StatutoryRate) => currentIds.has(rate.id) ? 'Current' : rate.effective_from > today ? 'Upcoming' : 'Past'
   return (
     <>
       <ul className="flex flex-col divide-y rounded-xl border bg-card md:hidden">
         {rates.map((rate) => {
-          const state = currentIds.has(rate.id) ? 'Current' : rate.effective_from > today ? 'Upcoming' : 'Past'
+          const state = stateOf(rate)
           return (
-            <li key={rate.id} className="flex min-w-0 flex-col gap-2 p-4">
+            <li key={rate.id} className="flex min-w-0 flex-col gap-3 p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 flex-col gap-1">
-                  <span className="font-medium">{statutoryKindLabel(rate.kind)}</span>
-                  <span className="text-muted-foreground text-sm">From {dateLabel(rate.effective_from)}</span>
+                  <Badge variant={KIND_VARIANTS[rate.kind]} className="w-fit">{statutoryKindLabel(rate.kind)}</Badge>
+                  <span className="text-muted-foreground text-xs">From {dateLabel(rate.effective_from)}</span>
                 </div>
                 <Badge variant={state === 'Current' ? 'success' : state === 'Upcoming' ? 'info' : 'outline'} className="shrink-0">
                   {state}
                 </Badge>
               </div>
-              <p className="text-sm">{bracketSummary(rate)}</p>
+              <p className="text-sm leading-relaxed">{bracketSummary(rate)}</p>
               <p className="break-words text-muted-foreground text-xs">{rate.source || 'No source recorded'}</p>
             </li>
           )
@@ -864,8 +901,8 @@ function RateTable({ rates, currentIds, today }: { rates: StatutoryRate[]; curre
         <Table variant="card" className="min-w-[46rem]">
           <TableHeader>
             <TableRow>
-              <TableHead>Effective from</TableHead>
               <TableHead>Kind</TableHead>
+              <TableHead>Effective from</TableHead>
               <TableHead>Brackets</TableHead>
               <TableHead>Source</TableHead>
               <TableHead>State</TableHead>
@@ -873,16 +910,18 @@ function RateTable({ rates, currentIds, today }: { rates: StatutoryRate[]; curre
           </TableHeader>
           <TableBody>
             {rates.map((rate) => {
-              const state = currentIds.has(rate.id) ? 'Current' : rate.effective_from > today ? 'Upcoming' : 'Past'
+              const state = stateOf(rate)
               return (
                 <TableRow key={rate.id}>
                   <TableCell>
-                    <time dateTime={rate.effective_from}>{dateLabel(rate.effective_from)}</time>
+                    <Badge variant={KIND_VARIANTS[rate.kind]}>{statutoryKindLabel(rate.kind)}</Badge>
                   </TableCell>
-                  <TableCell className="font-medium">{statutoryKindLabel(rate.kind)}</TableCell>
-                  <TableCell>{bracketSummary(rate)}</TableCell>
+                  <TableCell>
+                    <time className="whitespace-nowrap tabular-nums" dateTime={rate.effective_from}>{dateLabel(rate.effective_from)}</time>
+                  </TableCell>
+                  <TableCell className="max-w-64 whitespace-normal text-sm">{bracketSummary(rate)}</TableCell>
                   <TableCell className="max-w-64 whitespace-normal">
-                    {rate.source ? <span className="break-words">{rate.source}</span> : <span className="text-muted-foreground">No source</span>}
+                    {rate.source ? <span className="break-words text-sm">{rate.source}</span> : <span className="text-muted-foreground text-sm">No source</span>}
                     {rate.created_by_name && <span className="mt-0.5 block text-muted-foreground text-xs">Added by {rate.created_by_name}</span>}
                   </TableCell>
                   <TableCell>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { CheckboxGroup } from '@/components/ui/checkbox-group'
@@ -28,6 +29,7 @@ import { TextField } from '@/components/text-field'
 import { toastManager } from '@/components/ui/toast'
 import { api, ApiError, type FieldErrors } from '@/lib/api'
 import type { GymRole, StaffMember } from '@/lib/workspace'
+import { cn } from '@/lib/utils'
 
 /** R-22: add a person by email. Existing accounts keep their details and gain this gym's roles. */
 export function AddEmployeeDialog({
@@ -240,18 +242,25 @@ export function AssignRolesDialog({
   }
 
   const messages = [...new Set(Object.values(errors).flat())]
+  const initials = `${employee.first_name[0] ?? ''}${employee.last_name[0] ?? ''}`
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Edit roles</DialogTitle>
-          <DialogDescription>
-            {employee.first_name} {employee.last_name} will have exactly these roles. This replaces what they have now.
-          </DialogDescription>
+          <div className="flex items-start gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-sm" aria-hidden>{initials}</span>
+            <div className="flex min-w-0 flex-1 flex-col">
+              <DialogTitle>Edit roles</DialogTitle>
+              <DialogDescription className="mt-1">
+                {employee.first_name} {employee.last_name} · <span className="wrap-anywhere">{employee.email}</span>
+              </DialogDescription>
+              <p className="mt-1 text-muted-foreground text-xs">They will have exactly these roles. This replaces what they have now.</p>
+            </div>
+          </div>
         </DialogHeader>
         <Form errors={errors} onSubmit={save}>
-          <DialogPanel className="flex flex-col gap-4">
+          <DialogPanel className="flex flex-col gap-5">
             {loadError ? (
               <Alert variant="error">
                 <AlertTitle>Roles could not be loaded</AlertTitle>
@@ -276,11 +285,18 @@ export function AssignRolesDialog({
                   </p>
                 )}
                 <Field name="role_ids" className="w-full">
-                  <FieldLabel>Roles</FieldLabel>
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <FieldLabel>Roles</FieldLabel>
+                    {roles.length > 0 && (
+                      <span className="text-muted-foreground text-xs tabular-nums">
+                        {selected.length} of {roles.length} selected
+                      </span>
+                    )}
+                  </div>
                   {roles.length === 0 ? (
                     <FieldDescription>No roles exist yet. Create one on the Roles tab first.</FieldDescription>
                   ) : (
-                    <div className="flex flex-col gap-4">
+                    <div className="mt-2 flex w-full flex-col gap-2">
                       {roles.map((role) => {
                         const id = String(role.id)
                         const checked = selected.includes(id)
@@ -290,19 +306,40 @@ export function AssignRolesDialog({
                         const canAdd = role.status === 'active' && role.permissions.every((key) => ownPermissions.includes(key))
                         const canRemove = role.permissions.every((key) => role.inactive_permissions.includes(key) || ownPermissions.includes(key))
                         const dateValue = Object.hasOwn(expiryChanges, id) ? expiryChanges[id] ?? '' : expired ? '' : original
-                        return <div key={role.id} className="flex flex-col gap-2">
-                          <label className="flex min-h-11 items-center gap-2 text-sm">
-                            <Checkbox aria-label={role.name} checked={checked} disabled={checked ? !canRemove : !canAdd} onCheckedChange={(value) => setSelected((current) => value ? [...(current ?? []), id] : (current ?? []).filter((key) => key !== id))} />
-                            {role.name}{role.status === 'inactive' && ' (off)'}
-                          </label>
-                          {checked && <Field name={`expires_at.${id}`}>
-                            <FieldLabel>Last day for {role.name}</FieldLabel>
-                            {expired && !Object.hasOwn(expiryChanges, id) && <FieldDescription>Expired on {original}. Leave unchanged to keep this historical grant.</FieldDescription>}
-                            <Input type="date" min={today} value={dateValue} disabled={!canAdd} onChange={(event) => setExpiryChanges((current) => ({ ...current, [id]: event.target.value || null }))} />
-                            <FieldDescription>{canAdd ? 'Blank means no end date when changed. Unchanged grants keep their current end date.' : 'This dormant grant can be preserved or removed, not extended.'}</FieldDescription>
-                            <FieldError />
-                          </Field>}
-                        </div>
+                        return (
+                          <div key={role.id} className={cn('w-full rounded-lg border p-3 transition-colors has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:ring-offset-1 hover:bg-muted/30', checked && 'border-ring/40 bg-muted/40 hover:bg-muted/50')}>
+                            <label className="flex w-full cursor-pointer items-start gap-3 data-disabled:cursor-not-allowed">
+                              <Checkbox
+                                className="mt-0.5 size-5 shrink-0 rounded-md sm:size-5"
+                                aria-label={role.name}
+                                checked={checked}
+                                disabled={checked ? !canRemove : !canAdd}
+                                onCheckedChange={(value) => setSelected((current) => value ? [...(current ?? []), id] : (current ?? []).filter((key) => key !== id))}
+                              />
+                              <span className="min-w-0 flex-1">
+                                <span className="flex flex-wrap items-center gap-2 font-medium text-sm">
+                                  <span className="wrap-anywhere">{role.name}</span>
+                                  {role.status === 'inactive' && <Badge variant="outline">Off</Badge>}
+                                </span>
+                                <span className="mt-0.5 block text-muted-foreground text-xs leading-relaxed">
+                                  {role.permissions.length} {role.permissions.length === 1 ? 'permission' : 'permissions'}
+                                  {role.description ? ` · ${role.description}` : ''}
+                                </span>
+                              </span>
+                            </label>
+                            {checked && (
+                              <div className="mt-3 border-t pt-3 ps-8">
+                                <Field name={`expires_at.${id}`}>
+                                  <FieldLabel>Last day for {role.name}</FieldLabel>
+                                  {expired && !Object.hasOwn(expiryChanges, id) && <FieldDescription>Expired on {original}. Leave unchanged to keep this historical grant.</FieldDescription>}
+                                  <Input type="date" min={today} value={dateValue} disabled={!canAdd} onChange={(event) => setExpiryChanges((current) => ({ ...current, [id]: event.target.value || null }))} />
+                                  <FieldDescription>{canAdd ? 'Blank means no end date when changed. Unchanged grants keep their current end date.' : 'This dormant grant can be preserved or removed, not extended.'}</FieldDescription>
+                                  <FieldError />
+                                </Field>
+                              </div>
+                            )}
+                          </div>
+                        )
                       })}
                     </div>
                   )}

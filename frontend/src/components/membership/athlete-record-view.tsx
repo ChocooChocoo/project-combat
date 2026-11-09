@@ -10,21 +10,22 @@ import { ATTENDANCE_LABELS } from '@/lib/attendance'
 /** Current ranks plus the four lists of the athlete record (R-37 to R-39, R-41). */
 export function AthleteRecordView({ record, action }: { record: AthleteRecord; action?: React.ReactNode }) {
   return (
-    <Card>
+    <Card className="min-w-0">
       <CardHeader>
-        <CardTitle render={<h2 />}>Athlete record</CardTitle>
+        <CardTitle render={<h2 />} className="text-xl tracking-tight">Athlete record</CardTitle>
         <CardDescription>Rank, skill assessments, competitions and achievements recorded by the gym's coaches.</CardDescription>
         {action && <CardAction>{action}</CardAction>}
       </CardHeader>
-      <CardPanel className="flex flex-col gap-5">
-        <div className="flex flex-col gap-2">
+      <CardPanel className="flex min-w-0 flex-col gap-6">
+        <div className="flex flex-col gap-3 border-y bg-muted/30 px-4 py-5">
           <h3 className="font-medium text-sm">Current rank</h3>
           {record.ranks.length > 0 ? (
-            <ul className="flex flex-wrap gap-2">
+            <ul className="grid gap-4 sm:grid-cols-2">
               {record.ranks.map((rank) => (
-                <li key={rank.discipline} className="rounded-lg border px-3 py-2 text-sm">
-                  <span className="font-medium">{rank.rank}</span>
-                  <span className="text-muted-foreground"> · {rank.discipline}, since {dateLabel(rank.since)}</span>
+                <li key={rank.discipline} className="min-w-0">
+                  <p className="font-semibold text-lg tracking-tight wrap-anywhere">{rank.rank}</p>
+                  <p className="mt-1 text-sm wrap-anywhere">{rank.discipline}</p>
+                  <p className="mt-1 text-muted-foreground text-xs">Since {dateLabel(rank.since)}</p>
                 </li>
               ))}
             </ul>
@@ -35,12 +36,12 @@ export function AthleteRecordView({ record, action }: { record: AthleteRecord; a
           )}
         </div>
 
-        <Tabs defaultValue="promotion">
-          <TabsList variant="underline" aria-label="Record sections" className="max-w-full overflow-x-auto">
-            <TabsTab value="promotion">Rank history</TabsTab>
-            <TabsTab value="assessment">Assessments</TabsTab>
-            <TabsTab value="competition">Competitions</TabsTab>
-            <TabsTab value="achievement">Achievements</TabsTab>
+        <Tabs defaultValue="promotion" className="min-w-0">
+          <TabsList variant="underline" aria-label="Record sections" className="h-auto max-w-full flex-wrap justify-start">
+            <TabsTab className="min-h-11" value="promotion">Rank history</TabsTab>
+            <TabsTab className="min-h-11" value="assessment">Assessments</TabsTab>
+            <TabsTab className="min-h-11" value="competition">Competitions</TabsTab>
+            <TabsTab className="min-h-11" value="achievement">Achievements</TabsTab>
           </TabsList>
           {(['promotion', 'assessment', 'competition', 'achievement'] as const).map((type) => (
             <TabsPanel key={type} value={type} className="pt-3">
@@ -49,16 +50,16 @@ export function AthleteRecordView({ record, action }: { record: AthleteRecord; a
           ))}
         </Tabs>
 
-        <section className="flex min-w-0 flex-col gap-3 border-t pt-4">
-          <h3 className="font-semibold">Attendance</h3>
-          <dl className="flex flex-wrap gap-4 text-sm">{Object.entries(record.attendance_counts).map(([status, count]) => <div key={status}><dt className="text-muted-foreground">{ATTENDANCE_LABELS[status as keyof typeof ATTENDANCE_LABELS]}</dt><dd className="font-medium tabular-nums">{count}</dd></div>)}</dl>
+        <section className="flex min-w-0 flex-col gap-4 border-t pt-6">
+          <h3 className="font-semibold text-lg tracking-tight">Attendance</h3>
+          <dl className="flex flex-wrap gap-x-8 gap-y-4 pb-2 text-sm">{Object.entries(record.attendance_counts).map(([status, count]) => <div key={status}><dt className="text-muted-foreground text-xs">{ATTENDANCE_LABELS[status as keyof typeof ATTENDANCE_LABELS]}</dt><dd className="mt-1 font-semibold text-2xl tabular-nums">{count}</dd></div>)}</dl>
           <AttendanceList rows={record.attendance} />
         </section>
-        <section className="flex min-w-0 flex-col gap-3 border-t pt-4">
-          <h3 className="font-semibold">Progress notes</h3><ProgressNotes notes={record.progress_notes} />
+        <section className="flex min-w-0 flex-col gap-4 border-t pt-6">
+          <h3 className="font-semibold text-lg tracking-tight">Progress notes</h3><ProgressNotes notes={record.progress_notes} />
         </section>
         {(record.background || record.training_history) && (
-          <dl className="grid gap-3 border-t pt-4 text-sm sm:grid-cols-2">
+          <dl className="grid gap-6 border-t pt-6 text-sm sm:grid-cols-2">
             {record.background && (
               <div>
                 <dt className="font-medium">Background</dt>
@@ -91,42 +92,50 @@ export function HealthSummary({
   const yes = Object.entries(health.answers).filter(([, answer]) => answer)
 
   return (
-    <div className="flex flex-col gap-4 text-sm">
+    <div className="flex min-w-0 flex-col gap-5 text-sm">
       <div>
         <h3 className="mb-2 font-medium">Emergency contacts</h3>
-        <ul className="flex flex-col gap-1.5">
+        <ul className="divide-y">
           {health.emergency_contacts.map((contact, index) => (
-            <li key={index}>
-              <span className="font-medium">{contact.name}</span>
-              <span className="text-muted-foreground">
-                {' '}
-                · {contact.relationship} ·{' '}
-                <a className="underline-offset-4 hover:underline" href={`tel:${contact.phone}`}>
+            <li key={index} className="flex min-w-0 flex-col items-start py-3 first:pt-0 last:pb-0">
+              <span className="font-medium wrap-anywhere">{contact.name}</span>
+              <span className="mt-1 text-muted-foreground text-xs wrap-anywhere">{contact.relationship}</span>
+                <a className="flex min-h-11 items-center underline-offset-4 hover:underline wrap-anywhere" href={`tel:${contact.phone}`}>
                   {contact.phone}
                 </a>
-              </span>
             </li>
           ))}
         </ul>
       </div>
-      <div>
-        <h3 className="mb-2 font-medium">Health declaration</h3>
+      <div className="border-t pt-5">
+        <h3 className="mb-3 font-medium">Health declaration</h3>
         {yes.length === 0 ? (
-          <p className="text-muted-foreground">Answered no to every question.</p>
+          <p className="text-muted-foreground leading-relaxed">Answered no to every question.</p>
         ) : (
-          <ul className="flex list-inside list-disc flex-col gap-1">
+          <dl className="divide-y">
             {yes.map(([key]) => (
-              <li key={key}>{form?.health_questions[key] ?? key} — Yes</li>
+              <div key={key} className="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0">
+                <dt className="min-w-0 flex-1 leading-relaxed wrap-anywhere">{form?.health_questions[key] ?? key}</dt>
+                <dd className="shrink-0 rounded-sm bg-muted px-2 py-0.5 font-medium text-xs leading-5">Yes</dd>
+              </div>
             ))}
-          </ul>
+          </dl>
         )}
-        {health.notes && <p className="mt-2 whitespace-pre-line text-muted-foreground">{health.notes}</p>}
+        {health.notes && (
+          <div className="mt-5 border-t pt-4">
+            <h4 className="mb-2 font-medium text-xs">Additional health notes</h4>
+            <p className="whitespace-pre-line text-muted-foreground leading-relaxed wrap-anywhere">{health.notes}</p>
+          </div>
+        )}
       </div>
       {health.medical_file_name && onOpenFile && (
-        <Button type="button" size="sm" variant="outline" className="self-start" onClick={onOpenFile}>
-          <FileText aria-hidden />
-          {health.medical_file_name}
-        </Button>
+        <div className="min-w-0 border-t pt-5">
+          <h3 className="mb-3 font-medium">Medical clearance</h3>
+          <Button type="button" size="sm" variant="outline" className="min-h-11 h-auto w-full justify-start gap-3 whitespace-normal px-3 py-3 text-left" onClick={onOpenFile}>
+            <FileText className="shrink-0" aria-hidden />
+            <span className="min-w-0 leading-relaxed wrap-anywhere">{health.medical_file_name}</span>
+          </Button>
+        </div>
       )}
     </div>
   )

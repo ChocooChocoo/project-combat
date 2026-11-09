@@ -1,6 +1,5 @@
 import { useCallback, useState } from 'react'
 import { useParams } from 'react-router'
-import { PageHeader } from '@/components/page-header'
 import { BookingActionDialog, BookingEmpty, BookingError, BookingLoading, StaffBookingList, type BookingAction } from '@/components/schedule/booking-parts'
 import { api, ApiError } from '@/lib/api'
 import { usePolling } from '@/hooks/use-polling'
@@ -31,8 +30,19 @@ export default function GymBookings() {
   if (!gym) return null
   if (!canView) return <BookingEmpty title="Bookings are not available" description="Your role does not include training access for this gym." />
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader title="Bookings" description="Requested bookings reserve places until someone with approval access decides." />
+    <div className="flex min-w-0 flex-col gap-6">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b pb-6">
+        <div>
+          <h1 className="font-semibold text-3xl tracking-tight sm:text-4xl">Bookings</h1>
+          <p className="mt-3 max-w-prose text-muted-foreground text-sm leading-relaxed">Requested bookings reserve places until someone with approval access decides.</p>
+        </div>
+        {bookings && bookings.length > 0 && (
+          <div>
+            <p className="text-muted-foreground text-xs">Waiting for a decision</p>
+            <p className="mt-1 font-semibold text-2xl tabular-nums">{bookings.length}</p>
+          </div>
+        )}
+      </header>
       {error ? (
         <BookingError message={error} retry={() => setVersion((v) => v + 1)} />
       ) : !bookings ? (

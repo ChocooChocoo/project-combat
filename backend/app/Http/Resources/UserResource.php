@@ -33,6 +33,7 @@ class UserResource extends JsonResource
                     'name' => $gym->name,
                     'status' => $gym->status,
                     'roles' => $roles,
+                    'role_names' => $this->resource->gymRoles($gym)->orderBy('name')->pluck('name')->values(),
                     'permissions' => $this->resource->permissionsIn($gym)->values(),
                 ];
             })->values(),

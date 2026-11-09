@@ -6,6 +6,7 @@ export type GymAccess = {
   name: string
   status: string
   roles: string[]
+  role_names?: string[]
   permissions: string[]
 }
 

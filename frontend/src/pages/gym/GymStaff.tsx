@@ -1,9 +1,8 @@
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { MoreVertical, Pencil, Plus, Power, Shield, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { AddEmployeeDialog, AssignRolesDialog, RemoveEmployeeDialog } from '@/components/gym/staff-dialogs'
 import { RoleDialog } from '@/components/gym/role-dialog'
-import { PageHeader } from '@/components/page-header'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import {
   AlertDialog,
@@ -15,8 +14,9 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardAction, CardDescription, CardHeader, CardPanel, CardTitle } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
+import { Menu, MenuItem, MenuPopup, MenuTrigger } from '@/components/ui/menu'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs'
@@ -44,6 +44,10 @@ const isCoach = (employee: StaffMember) =>
       employee.profile?.coach_specialisation ||
       employee.profile?.coach_bio,
   )
+
+function initials(name: string): string {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part.charAt(0)).join('').toUpperCase()
+}
 
 /** S-17, R-22: the people side of the gym, with roles kept in the same place. */
 export default function GymStaff() {
@@ -94,6 +98,58 @@ export default function GymStaff() {
     }
   }, [gymId, canView, canViewRoles, version])
 
+  const employeeActions = (employee: StaffMember, isOwner: boolean, own: boolean) => {
+    if (isOwner || own) {
+      return <span className="text-muted-foreground text-xs">{isOwner ? 'Owner' : 'You'}</span>
+    }
+    const removable = canManage && (employee.roles.length === 0 || canAssign)
+    if (!canAssign && !removable) return <span className="text-muted-foreground" aria-hidden>—</span>
+    return (
+      <Menu>
+        <MenuTrigger render={<Button size="icon-sm" variant="ghost" aria-label={`Actions for ${employee.first_name} ${employee.last_name}`} />}>
+          <MoreVertical aria-hidden />
+        </MenuTrigger>
+        <MenuPopup align="end" className="min-w-44">
+          {canAssign && (
+            <MenuItem onClick={() => setAssignTarget(employee)}>
+              <Shield aria-hidden /> Edit roles
+            </MenuItem>
+          )}
+          {removable && (
+            <MenuItem variant="destructive" onClick={() => setRemoveTarget(employee)}>
+              <Trash2 aria-hidden /> Remove from staff
+            </MenuItem>
+          )}
+        </MenuPopup>
+      </Menu>
+    )
+  }
+
+  const roleActions = (role: GymRole) => {
+    if (!canEditRole(role)) return null
+    const toggleBlocked = deleting || (role.status === 'inactive' && role.permissions.some((key) => !(gym?.permissions.includes(key) ?? false)))
+    return (
+      <Menu>
+        <MenuTrigger render={<Button size="icon-sm" variant="ghost" aria-label={`Actions for ${role.name}`} />}>
+          <MoreVertical aria-hidden />
+        </MenuTrigger>
+        <MenuPopup align="end" className="min-w-44">
+          <MenuItem disabled={toggleBlocked} onClick={() => toggleRole(role)}>
+            <Power aria-hidden /> {role.status === 'active' ? 'Turn role off' : 'Turn role on'}
+          </MenuItem>
+          <MenuItem onClick={() => setRoleDialog({ role })}>
+            <Pencil aria-hidden /> Edit role
+          </MenuItem>
+          {!role.is_system && (role.users_count ?? 0) === 0 && (
+            <MenuItem variant="destructive" onClick={() => setRoleDelete(role)}>
+              <Trash2 aria-hidden /> Delete role
+            </MenuItem>
+          )}
+        </MenuPopup>
+      </Menu>
+    )
+  }
+
   if (!gym) return null
 
   if (!canView && !canViewRoles) {
@@ -142,11 +198,19 @@ export default function GymStaff() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Staff"
-        description="The people who work at this gym, the roles they hold, and what each role can do."
-      />
+    <div className="flex min-w-0 flex-col gap-6">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b pb-6">
+        <div>
+          <h1 className="font-semibold text-3xl tracking-tight sm:text-4xl">Staff</h1>
+          <p className="mt-3 max-w-prose text-muted-foreground text-sm leading-relaxed">The people who work at this gym, the roles they hold, and what each role can do.</p>
+        </div>
+        {staff && (
+          <div>
+            <p className="text-muted-foreground text-xs">Employees</p>
+            <p className="mt-1 font-semibold text-2xl tabular-nums">{staff.length}</p>
+          </div>
+        )}
+      </header>
 
       {loadError && (
         <Alert variant="error">
@@ -176,13 +240,13 @@ export default function GymStaff() {
             {canViewRoles && <TabsTab value="roles">Roles {roles.length}</TabsTab>}
           </TabsList>
 
-          {canView && <TabsPanel value="employees" keepMounted className="flex flex-col gap-4 pt-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <p className="mr-auto text-muted-foreground text-sm">
+          {canView && <TabsPanel value="employees" keepMounted className="flex flex-col gap-4 pt-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-muted-foreground text-sm">
                 {staff.length === 0
                   ? 'No employees yet.'
-                  : `${staff.length} ${staff.length === 1 ? 'employee' : 'employees'}.`}
-                {owner && ` Owner: ${owner.first_name} ${owner.last_name}.`}
+                  : `${staff.length} ${staff.length === 1 ? 'employee' : 'employees'}`}
+                {owner && ` · Owner: ${owner.first_name} ${owner.last_name}`}
               </p>
               {canManage && (
                 <Button onClick={() => setAddOpen(true)}>
@@ -207,7 +271,40 @@ export default function GymStaff() {
               </Empty>
             ) : (
               <div className="flex flex-col gap-4">
-                <div className="overflow-x-auto">
+                <ul className="flex flex-col gap-3 md:hidden">
+                  {owner && (
+                    <li className="flex items-start gap-3 rounded-xl border bg-card p-4">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-xs" aria-hidden>{initials(`${owner.first_name} ${owner.last_name}`)}</span>
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <p className="font-medium wrap-anywhere">{owner.first_name} {owner.last_name}</p>
+                        <p className="text-muted-foreground text-xs wrap-anywhere">{owner.email}</p>
+                        <div className="mt-2"><Badge variant="secondary">Owner</Badge></div>
+                      </div>
+                    </li>
+                  )}
+                  {staff.map((employee) => {
+                    const own = employee.id === user?.id
+                    const isOwner = employee.roles.includes('owner')
+                    return (
+                      <li key={employee.id} className="flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-4">
+                        <div className="flex items-start gap-3">
+                          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-xs" aria-hidden>{initials(`${employee.first_name} ${employee.last_name}`)}</span>
+                          <div className="flex min-w-0 flex-1 flex-col">
+                            <Link className="font-medium wrap-anywhere" to={`/gyms/${gymId}/manage/staff/${employee.id}`}>{employee.first_name} {employee.last_name}</Link>
+                            <span className="text-muted-foreground text-xs wrap-anywhere">{employee.email}</span>
+                          </div>
+                          {(canManage || canAssign) && employeeActions(employee, isOwner, own)}
+                        </div>
+                        <p className="text-sm">{employee.profile?.job_title || <span className="text-muted-foreground">No job title</span>}</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {employee.roles.map((role) => <Badge key={role} variant="outline">{role}</Badge>)}
+                          {isCoach(employee) && <Badge variant="info">Coach</Badge>}
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+                <div className="hidden overflow-x-auto md:block">
                   <Table variant="card">
                     <TableHeader>
                       <TableRow>
@@ -248,16 +345,21 @@ export default function GymStaff() {
                         const isOwner = employee.roles.includes('owner')
                         return (
                           <TableRow key={employee.id}>
-                            <TableCell>
-                              <Link
-                                className="font-medium underline-offset-4 hover:underline"
-                                to={`/gyms/${gymId}/manage/staff/${employee.id}`}
-                              >
-                                {employee.first_name} {employee.last_name}
-                              </Link>
-                              <span className="block pt-1 text-muted-foreground text-xs">{employee.email}</span>
+                            <TableCell className="max-w-56 whitespace-normal">
+                              <div className="flex items-center gap-3">
+                                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-xs" aria-hidden>{initials(`${employee.first_name} ${employee.last_name}`)}</span>
+                                <div className="flex min-w-0 flex-col">
+                                  <Link
+                                    className="font-medium underline-offset-4 wrap-anywhere transition-colors hover:text-muted-foreground"
+                                    to={`/gyms/${gymId}/manage/staff/${employee.id}`}
+                                  >
+                                    {employee.first_name} {employee.last_name}
+                                  </Link>
+                                  <span className="text-muted-foreground text-xs wrap-anywhere">{employee.email}</span>
+                                </div>
+                              </div>
                             </TableCell>
-                            <TableCell>{employee.profile?.job_title || <span className="text-muted-foreground">Not set</span>}</TableCell>
+                            <TableCell className="whitespace-normal">{employee.profile?.job_title || <span className="text-muted-foreground">Not set</span>}</TableCell>
                             <TableCell>
                               {employee.roles.length > 0 ? (
                                 <div className="flex flex-wrap gap-1">
@@ -273,21 +375,8 @@ export default function GymStaff() {
                             </TableCell>
                             <TableCell>{isCoach(employee) && <Badge variant="info">Coach</Badge>}</TableCell>
                             {(canManage || canAssign) && (
-                              <TableCell className="text-right">
-                                {isOwner ? (
-                                  <span className="text-muted-foreground text-xs">Owner</span>
-                                ) : own ? (
-                                  <span className="text-muted-foreground text-xs">You</span>
-                                ) : (
-                                  <div className="flex flex-wrap justify-end gap-1">
-                                    {canAssign && <Button size="xs" variant="ghost" onClick={() => setAssignTarget(employee)}>
-                                      Edit roles
-                                    </Button>}
-                                    {canManage && (employee.roles.length === 0 || canAssign) && <Button size="xs" variant="destructive-outline" onClick={() => setRemoveTarget(employee)}>
-                                      Remove
-                                    </Button>}
-                                  </div>
-                                )}
+                              <TableCell className="w-12 text-right">
+                                {employeeActions(employee, isOwner, own)}
                               </TableCell>
                             )}
                           </TableRow>
@@ -311,9 +400,9 @@ export default function GymStaff() {
             )}
           </TabsPanel>}
 
-          {canViewRoles && <TabsPanel value="roles" keepMounted className="flex flex-col gap-4 pt-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <p className="mr-auto text-muted-foreground text-sm">
+          {canViewRoles && <TabsPanel value="roles" keepMounted className="flex flex-col gap-4 pt-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-muted-foreground text-sm">
                 Roles hold independent permissions. Turning a role off keeps its grants but gives no access.
               </p>
               {canManageRoles && (
@@ -338,55 +427,53 @@ export default function GymStaff() {
                 )}
               </Empty>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-5 md:grid-cols-2">
                 {roles.map((role) => {
                   const summary = [...new Set(role.permissions.map((key) => key.split('.')[0]))]
                   return (
-                    <Card key={role.id}>
-                      <CardHeader>
-                        <CardTitle render={<h2 />}>{role.name}</CardTitle>
-                        <CardDescription>
-                          {role.users_count ?? 0} {(role.users_count ?? 0) === 1 ? 'person' : 'people'}
-                          {' · '}{role.permissions.length} permissions{' · '}{role.status === 'active' ? 'On' : 'Off'}
-                          {role.is_system && ' · Starter role'}
-                          {role.held_by_me && ' · You hold this role; another authorized person must edit it.'}
-                          {role.description && <span className="block pt-1">{role.description}</span>}
-                        </CardDescription>
-                        {canEditRole(role) && (
-                          <CardAction className="flex gap-1">
-                            <Button size="xs" variant="ghost" disabled={deleting || (role.status === 'inactive' && role.permissions.some((key) => !gym.permissions.includes(key)))} onClick={() => toggleRole(role)}>
-                              {role.status === 'active' ? 'Turn off' : 'Turn on'}
-                            </Button>
-                            <Button
-                              size="icon-sm"
-                              variant="ghost"
-                              aria-label={`Edit ${role.name}`}
-                              onClick={() => setRoleDialog({ role })}
-                            >
-                              <Pencil aria-hidden />
-                            </Button>
-                            {!role.is_system && (role.users_count ?? 0) === 0 && <Button
-                              size="icon-sm"
-                              variant="ghost"
-                              aria-label={`Delete ${role.name}`}
-                              onClick={() => setRoleDelete(role)}
-                            >
-                              <Trash2 aria-hidden />
-                            </Button>}
-                          </CardAction>
+                    <Card key={role.id} className="min-w-0 gap-0 overflow-hidden p-0">
+                      <div className="flex items-start justify-between gap-3 border-b bg-muted/30 px-5 py-4">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h2 className="font-semibold text-base tracking-tight wrap-anywhere">{role.name}</h2>
+                            <Badge variant={role.status === 'active' ? 'success' : 'secondary'}>{role.status === 'active' ? 'On' : 'Off'}</Badge>
+                            {role.is_system && <Badge variant="outline">Starter</Badge>}
+                          </div>
+                          {role.description && <p className="mt-1 text-muted-foreground text-xs leading-relaxed wrap-anywhere">{role.description}</p>}
+                        </div>
+                        {roleActions(role)}
+                      </div>
+                      <div className="flex flex-1 flex-col gap-4 p-5">
+                        <dl className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <dt className="text-muted-foreground text-xs">People</dt>
+                            <dd className="mt-1 font-medium tabular-nums">{role.users_count ?? 0}</dd>
+                          </div>
+                          <div>
+                            <dt className="text-muted-foreground text-xs">Permissions</dt>
+                            <dd className="mt-1 font-medium tabular-nums">{role.permissions.length}</dd>
+                          </div>
+                        </dl>
+                        {role.held_by_me && (
+                          <p className="rounded-lg bg-muted/50 px-3 py-2 text-muted-foreground text-xs leading-relaxed">
+                            You hold this role; another authorized person must edit it.
+                          </p>
                         )}
-                      </CardHeader>
-                      <CardPanel className="flex flex-wrap content-start gap-1.5">
-                        {summary.length === 0 ? (
-                          <span className="text-muted-foreground text-sm">No permissions</span>
-                        ) : (
-                          summary.map((module) => (
-                            <Badge key={module} variant="outline">
-                              {moduleLabel(module)}: {role.permissions.filter((key) => key.startsWith(`${module}.`)).length}
-                            </Badge>
-                          ))
-                        )}
-                      </CardPanel>
+                        <div className="mt-auto border-t pt-4">
+                          <p className="mb-2 text-muted-foreground text-xs">Access by module</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {summary.length === 0 ? (
+                              <span className="text-muted-foreground text-sm">No permissions</span>
+                            ) : (
+                              summary.map((module) => (
+                                <Badge key={module} variant="outline">
+                                  {moduleLabel(module)}: {role.permissions.filter((key) => key.startsWith(`${module}.`)).length}
+                                </Badge>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </Card>
                   )
                 })}

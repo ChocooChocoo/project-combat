@@ -1,4 +1,4 @@
-import { CreditCard, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Check, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { PlanEditor } from '@/components/offer/plan-editor'
@@ -184,11 +184,10 @@ export default function GymPlans() {
           </AlertDescription>
         </Alert>
       ) : !plans || !options ? (
-        <div className="grid gap-3 xl:grid-cols-2" aria-busy="true">
-          <Skeleton className="h-40" />
-          <Skeleton className="h-40" />
-          <Skeleton className="h-40" />
-          <Skeleton className="h-40" />
+        <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3" aria-busy="true">
+          <Skeleton className="h-96" />
+          <Skeleton className="h-96" />
+          <Skeleton className="h-96" />
         </div>
       ) : plans.length === 0 ? (
         <Empty className="rounded-xl border">
@@ -207,56 +206,86 @@ export default function GymPlans() {
           )}
         </Empty>
       ) : (
-        <ul className="grid gap-3 xl:grid-cols-2">
+        <ul className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
           {plans.map((plan) => {
             const addonCount = plan.addons?.length ?? 0
             return (
               <li key={plan.id} className="min-w-0">
-                <Card className="flex flex-col gap-3 p-4">
-                  <div className="flex flex-wrap items-start gap-2">
-                    <span className="mr-auto flex items-center gap-2 font-semibold">
-                      <CreditCard className="size-4 text-muted-foreground" aria-hidden />
+                <Card className="flex h-full flex-col gap-0 overflow-hidden p-0">
+                  <div className="flex flex-col gap-5 p-6">
+                  <div className="flex items-start justify-between gap-3">
+                    <h2 className="min-w-0 font-semibold text-xl tracking-tight wrap-anywhere">
                       {plan.name}
-                    </span>
-                    <Badge variant={plan.published_at ? 'success' : 'secondary'}>
+                    </h2>
+                    <Badge className="shrink-0" variant={plan.published_at ? 'success' : 'secondary'}>
                       {plan.published_at ? 'Published' : 'Draft'}
                     </Badge>
                   </div>
 
-                  <p className="text-muted-foreground text-sm">
+                  <p className="-mt-3 text-muted-foreground text-sm">
                     {(options.plan_billing as Record<string, string>)[plan.billing_type] ?? labelKey(plan.billing_type)} ·{' '}
                     {billingLength(plan)}
                   </p>
 
-                  <div className="flex flex-wrap items-baseline gap-2">
-                    <span className="font-semibold text-lg tabular-nums">{priceLabel(plan.total_fee)}</span>
-                    {plan.registration_included && <Badge variant="outline">Registration included</Badge>}
+                  <div className="py-3">
+                    <p className="font-semibold text-4xl tracking-tight tabular-nums wrap-anywhere">{priceLabel(plan.total_fee)}</p>
+                    <p className="mt-2 text-muted-foreground text-sm">Total for {billingLength(plan)}</p>
+                  </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2 text-sm">
-                    <span className="text-muted-foreground">
-                      {addonCount} {addonCount === 1 ? 'add-on' : 'add-ons'}
-                    </span>
-                    <span className="text-muted-foreground">·</span>
-                    <span className="text-muted-foreground">
-                      {(plan.inclusions ?? []).length} {(plan.inclusions ?? []).length === 1 ? 'inclusion' : 'inclusions'}
-                    </span>
+                  <div className="flex flex-1 flex-col gap-6 border-t px-6 py-6">
+                    <div>
+                      <h3 className="mb-4 font-medium text-sm">What’s included</h3>
+                      {(plan.inclusions ?? []).length > 0 || plan.registration_included ? (
+                        <ul className="flex flex-col gap-3">
+                          {plan.registration_included && (
+                            <li className="flex items-start gap-3 text-sm leading-6">
+                              <Check className="mt-1 size-4 shrink-0 text-success-foreground" aria-hidden />
+                              <span>Registration included</span>
+                            </li>
+                          )}
+                          {(plan.inclusions ?? []).map((item, index) => (
+                            <li key={`${index}-${item}`} className="flex items-start gap-3 text-sm leading-6">
+                              <Check className="mt-1 size-4 shrink-0 text-success-foreground" aria-hidden />
+                              <span className="min-w-0 wrap-anywhere">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-muted-foreground text-sm">No inclusions listed yet.</p>
+                      )}
+                    </div>
+                    {addonCount > 0 && (
+                      <div className="border-t pt-4">
+                        <h3 className="font-medium text-sm">Optional add-ons</h3>
+                        <p className="mt-1 text-muted-foreground text-xs">Priced separately from the plan</p>
+                        <ul className="mt-3 flex flex-col gap-2">
+                          {(plan.addons ?? []).map((addon, index) => (
+                            <li key={addon.id ?? index} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-sm">
+                              <span className="min-w-0 text-muted-foreground wrap-anywhere">{addon.service_name ?? addon.service?.name ?? 'Extra service'}</span>
+                              <span className="ms-auto font-medium tabular-nums">{priceLabel(addon.price)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
-
                   {canManage && (
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      <Button size="sm" variant="outline" onClick={() => setEditing(plan)}>
-                        <Pencil aria-hidden /> Edit
+                    <div className="mt-auto flex items-center gap-3 border-t bg-muted/30 p-6">
+                      <Button className="min-h-11 flex-1" variant="outline" onClick={() => setEditing(plan)}>
+                        <Pencil aria-hidden /> Edit plan
                       </Button>
                       <Button
-                        size="sm"
-                        variant="destructive-outline"
+                        className="size-11 shrink-0"
+                        size="icon"
+                        variant="ghost"
+                        aria-label={`Delete ${plan.name}`}
                         onClick={() => {
                           setDeleteError('')
                           setDeleteTarget(plan)
                         }}
                       >
-                        <Trash2 aria-hidden /> Delete
+                        <Trash2 className="text-destructive-foreground" aria-hidden />
                       </Button>
                     </div>
                   )}

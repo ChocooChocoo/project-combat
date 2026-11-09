@@ -2,6 +2,7 @@ import { Building2, CalendarDays, Check, ChevronsUpDown, ClipboardCheck, FilePlu
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { myWorkNav, workspaceNavGroups } from '@/components/gym-nav'
 import { NotificationsMenu } from '@/components/notifications-menu'
+import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Menu, MenuGroup, MenuGroupLabel, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
 import {
@@ -103,7 +104,7 @@ function GymSwitcher({ gyms, current }: { gyms: GymAccess[]; current?: GymAccess
   )
 }
 
-function AccountMenu() {
+function AccountMenu({ roleLabel }: { roleLabel: string }) {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
   if (!user) return null
@@ -120,13 +121,25 @@ function AccountMenu() {
         </Avatar>
         <span className="grid flex-1 text-left text-sm leading-tight">
           <span className="truncate font-medium">{user.first_name} {user.last_name}</span>
-          <span className="truncate text-muted-foreground text-xs">
-            {user.is_platform_admin ? 'Platform administrator' : user.email}
-          </span>
+          <span className="truncate text-muted-foreground text-xs">{roleLabel}</span>
         </span>
         <ChevronsUpDown className="ms-auto size-4 opacity-60" />
       </MenuTrigger>
-      <MenuPopup side="top" align="start" className="min-w-56">
+      <MenuPopup side="top" align="start" className="min-w-60">
+        <div className="flex items-center gap-3 px-2 py-2">
+          <Avatar className="size-9 rounded-lg">
+            {user.photo_url && <AvatarImage src={user.photo_url} alt="" />}
+            <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
+          </Avatar>
+          <div className="flex min-w-0 flex-col gap-1">
+            <p className="truncate font-medium text-sm">{user.first_name} {user.last_name}</p>
+            <p className="truncate text-muted-foreground text-xs">{user.email}</p>
+          </div>
+        </div>
+        <div className="px-2 pb-2">
+          <Badge variant="outline" className="h-auto max-w-full whitespace-normal py-0.5">{roleLabel}</Badge>
+        </div>
+        <MenuSeparator />
         <MenuItem onClick={() => navigate('/profile')}>
           <UserRound /> Profile
         </MenuItem>
@@ -139,6 +152,13 @@ function AccountMenu() {
   )
 }
 
+function gymRoleLabel(roles: string[]): string {
+  if (roles.includes('owner')) return 'Gym owner'
+  if (roles.includes('employee')) return 'Gym employee'
+  if (roles.includes('member')) return 'Gym member'
+  return 'Signed in'
+}
+
 /** Frame for every signed-in screen: a sidebar that shows only what this person's role allows. */
 export function AppShell({ children }: { children?: React.ReactNode }) {
   const { user } = useAuth()
@@ -147,6 +167,15 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
 
   const approvedGyms = user?.gyms.filter((gym) => gym.status === 'approved') ?? []
   const currentGym = approvedGym(user, Number(pathname.match(/^\/gyms\/(\d+)(?:\/|$)/)?.[1]))
+  const roleLabel = user?.is_platform_admin
+    ? 'Platform administrator'
+    : currentGym
+      ? (currentGym.role_names ?? []).length > 0
+        ? (currentGym.role_names ?? []).join(' · ')
+        : gymRoleLabel(currentGym.roles)
+      : user?.account_type === 'owner'
+        ? 'Gym owner'
+        : 'Member'
 
   const general: Item[] = [{ to: '/', label: 'Home', icon: House, end: true }]
   const isMemberDashboard = !user?.is_platform_admin && (user?.account_type === 'member' || user?.has_member_records)
@@ -204,7 +233,7 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
         <SidebarFooter className="safe-area-bottom [--safe-area-bottom-padding:0.5rem]">
           <SidebarMenu>
             <SidebarMenuItem>
-              <AccountMenu />
+              <AccountMenu roleLabel={roleLabel} />
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>
