@@ -5,6 +5,7 @@ import { BookingActionDialog, BookingEmpty, BookingError, BookingLoading, Sessio
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs'
 import { CancelSessionDialog } from '@/components/schedule/session-actions'
 import { RecordPaymentDialog } from '@/components/membership/payment-dialogs'
 import { SessionAttendance, SessionNoteDialog } from '@/components/schedule/session-attendance'
@@ -62,24 +63,40 @@ export default function GymSession() {
           <PageHeader title={data.session.name} meta={<Badge variant={SESSION_PHASES[data.session.phase].variant}>{SESSION_PHASES[data.session.phase].label}</Badge>} actions={can(gym, 'training.sessions.manage') && data.session.status === 'scheduled' && <Button variant="destructive-outline" onClick={() => setCancelling(true)}>Cancel session</Button>} />
           {data.session.flagged_at && <Alert variant="warning"><AlertTitle>Needs attention</AlertTitle><AlertDescription>{flagReasonLabel(data.session.flag_reason)}. Use Schedule to reassign, move or cancel.</AlertDescription></Alert>}
           {data.session.cancel_reason && <p className="text-sm">Cancellation reason: {data.session.cancel_reason}</p>}
-          <SessionFacts session={data.session} />
-          <section className="flex min-w-0 flex-col gap-3">
-            <h2 className="font-semibold text-xl">Session notes</h2>
-            <ProgressNotes notes={data.notes.filter((note) => note.user_id === null)} />
-            {(can(gym, 'training.sessions.manage') || data.session.coach.id === user?.id) && <Button variant="outline" className="self-start" onClick={() => setNoteTarget({ userId: null, name: data.session.name })}>Add session note</Button>}
-          </section>
-          <section className="flex min-w-0 flex-col gap-4">
-            <h2 className="font-semibold text-xl">Roster</h2>
-            <p className="text-muted-foreground text-sm">Booked athletes, requests, waiting-list positions, then cancelled or rejected bookings.</p>
-            <StaffBookingList
-              bookings={data.bookings}
-              canApprove={can(gym, 'training.bookings.approve')}
-              canManage={can(gym, 'training.bookings.manage')}
-              onAction={setTarget}
-              onPayment={can(gym, 'finance.payments.manage') ? setPaying : undefined}
-              participant={(booking) => <SessionAttendance booking={booking} canManage={can(gym, 'training.attendance.manage')} notes={data.notes.filter((note) => note.user_id === booking.user_id)} onSaved={() => setVersion((v) => v + 1)} onNote={can(gym, 'training.sessions.manage') || data.session.coach.id === user?.id ? () => setNoteTarget({ userId: booking.user_id, name: booking.athlete.name }) : undefined} />}
-            />
-          </section>
+          <Tabs defaultValue="details" className="min-w-0">
+            <TabsList variant="underline" aria-label="Session sections" className="max-w-full overflow-x-auto overflow-y-hidden [scrollbar-width:none]">
+              <TabsTab value="details" className="min-h-11">Details</TabsTab>
+              <TabsTab value="roster" className="min-h-11">Roster</TabsTab>
+              <TabsTab value="notes" className="min-h-11">Session notes</TabsTab>
+            </TabsList>
+
+            <TabsPanel value="details" keepMounted className="pt-4">
+              <SessionFacts session={data.session} />
+            </TabsPanel>
+
+            <TabsPanel value="roster" keepMounted className="pt-4">
+              <section className="flex min-w-0 flex-col gap-4">
+                <h2 className="font-semibold text-xl">Roster</h2>
+                <p className="text-muted-foreground text-sm">Booked athletes, requests, waiting-list positions, then cancelled or rejected bookings.</p>
+                <StaffBookingList
+                  bookings={data.bookings}
+                  canApprove={can(gym, 'training.bookings.approve')}
+                  canManage={can(gym, 'training.bookings.manage')}
+                  onAction={setTarget}
+                  onPayment={can(gym, 'finance.payments.manage') ? setPaying : undefined}
+                  participant={(booking) => <SessionAttendance booking={booking} canManage={can(gym, 'training.attendance.manage')} notes={data.notes.filter((note) => note.user_id === booking.user_id)} onSaved={() => setVersion((v) => v + 1)} onNote={can(gym, 'training.sessions.manage') || data.session.coach.id === user?.id ? () => setNoteTarget({ userId: booking.user_id, name: booking.athlete.name }) : undefined} />}
+                />
+              </section>
+            </TabsPanel>
+
+            <TabsPanel value="notes" keepMounted className="pt-4">
+              <section className="flex min-w-0 flex-col gap-3">
+                <h2 className="font-semibold text-xl">Session notes</h2>
+                <ProgressNotes notes={data.notes.filter((note) => note.user_id === null)} />
+                {(can(gym, 'training.sessions.manage') || data.session.coach.id === user?.id) && <Button variant="outline" className="self-start" onClick={() => setNoteTarget({ userId: null, name: data.session.name })}>Add session note</Button>}
+              </section>
+            </TabsPanel>
+          </Tabs>
         </>
       )}
       {cancelling && data && <CancelSessionDialog gymId={Number(gymId)} session={data.session} onClose={() => setCancelling(false)} onSaved={() => { setCancelling(false); setVersion((v) => v + 1) }} />}

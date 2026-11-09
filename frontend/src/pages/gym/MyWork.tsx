@@ -122,7 +122,7 @@ export default function MyWork() {
   const [data, setData] = useState<WorkData | null>(null)
   const [error, setError] = useState('')
   const [version, setVersion] = useState(0)
-  const [tab, setTab] = useState('work')
+  const [tab, setTab] = useState<string | null>(null)
   const [options, setOptions] = useState<GymOptions | null>(null)
   const [optionsError, setOptionsError] = useState('')
   const [optionsVersion, setOptionsVersion] = useState(0)
@@ -175,6 +175,8 @@ export default function MyWork() {
 
   if (!gym) return null
 
+  const isEmployee = gym.roles.includes('employee')
+  const activeTab = tab ?? (isEmployee ? 'attendance' : 'schedule')
   const schedule = data?.schedule ?? []
   const todaySchedule = schedule.find((day) => day.weekday === TODAY_KEY)
   const todayShift = todaySchedule ? { start: todaySchedule.start_time, end: todaySchedule.end_time, dayOff: todaySchedule.is_day_off } : null
@@ -272,18 +274,19 @@ export default function MyWork() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="My work"
-        description={`${gym.name}: your schedule, leave, the holidays that affect them and your released payslips.`}
+        description={`${gym.name}: your attendance, schedule, leave and released payslips.`}
         meta={<Badge variant="outline">Employee</Badge>}
       />
 
-      <Tabs value={tab} onValueChange={(value) => setTab(String(value))}>
-        <TabsList variant="underline" aria-label="My work sections" className="max-w-full overflow-x-auto overflow-y-hidden [scrollbar-width:none]">
-          <TabsTab value="work">My work</TabsTab>
-          <TabsTab value="payslips">Payslips</TabsTab>
-        </TabsList>
+      <Tabs value={activeTab} onValueChange={(value) => setTab(String(value))} className="min-w-0">
+          <TabsList variant="underline" aria-label="My work sections" className="max-w-full overflow-x-auto overflow-y-hidden [scrollbar-width:none]">
+            {isEmployee && <TabsTab value="attendance" className="min-h-11">Attendance</TabsTab>}
+            <TabsTab value="schedule" className="min-h-11">Schedule</TabsTab>
+            <TabsTab value="leave" className="min-h-11">Leave</TabsTab>
+            <TabsTab value="payslips" className="min-h-11">Payslips</TabsTab>
+          </TabsList>
 
-        <TabsPanel value="work" keepMounted className="pt-4">
-          {error ? (
+          {activeTab !== 'payslips' && (error ? (
             <Alert variant="error">
               <AlertTitle>Your work details could not be loaded</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
@@ -300,11 +303,19 @@ export default function MyWork() {
               <Skeleton className="h-96" />
               <Skeleton className="h-96" />
             </div>
-          ) : (
+          ) : null)}
+
+          {!error && data !== null && (
         <>
-          {gym.roles.includes('employee') && <MyAttendance gymId={gymId} shift={todayShift} />}
+          {isEmployee && (
+            <TabsPanel value="attendance" keepMounted className="pt-4">
+              <MyAttendance gymId={gymId} shift={todayShift} />
+            </TabsPanel>
+          )}
+
+          <TabsPanel value="schedule" keepMounted className="pt-4">
+          <div className="flex flex-col gap-6">
           {data.is_coach && user && <CoachCalendar gymId={gymId} userId={user.id} refreshKey={version} />}
-          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle render={<h2 />}>Your week</CardTitle>
@@ -331,7 +342,11 @@ export default function MyWork() {
                 </ul>
               </CardPanel>
             </Card>
+          </div>
+          </TabsPanel>
 
+          <TabsPanel value="leave" keepMounted className="pt-4">
+          <div className="flex min-w-0 flex-col gap-6">
             <Card>
               <CardHeader>
                 <CardTitle render={<h2 />}>Leave balances</CardTitle>
@@ -346,7 +361,7 @@ export default function MyWork() {
                     </EmptyHeader>
                   </Empty>
                 ) : (
-                  <ul className="flex flex-col gap-5">
+                  <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                     {balances.map((balance) => (
                       <li key={balance.type} className="flex flex-col gap-2">
                         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -354,7 +369,7 @@ export default function MyWork() {
                           <Badge size="sm" variant="outline">
                             {balance.paid ? 'Paid' : 'Unpaid'}
                           </Badge>
-                          <span className="ms-auto text-muted-foreground text-sm tabular-nums">
+                           <span className="w-full text-muted-foreground text-sm tabular-nums">
                             {balance.remaining} of {balance.allowance} {balance.allowance === 1 ? 'day' : 'days'} left
                           </span>
                         </div>
@@ -379,6 +394,7 @@ export default function MyWork() {
               </CardPanel>
             </Card>
 
+          <div className="grid min-w-0 grid-cols-1 items-start gap-6 xl:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle render={<h2 />}>Request leave</CardTitle>
@@ -632,9 +648,10 @@ export default function MyWork() {
               )}
             </CardPanel>
           </Card>
+          </div>
+          </TabsPanel>
         </>
       )}
-        </TabsPanel>
 
         <TabsPanel value="payslips" className="pt-4">
           <PayslipsPanel gymName={gym.name} />

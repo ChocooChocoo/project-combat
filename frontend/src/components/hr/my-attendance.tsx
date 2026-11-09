@@ -215,21 +215,22 @@ export function MyAttendance({ gymId, shift = null }: { gymId: number; shift?: T
   )
 }
 
-/** Updates every 15 seconds. Not announced to screen readers, so it never interrupts. */
+/** Gym-local time updates each second without interrupting screen readers. */
 function LiveClock() {
   const [now, setNow] = useState(() => new Date())
   useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), 15_000)
+    const id = window.setInterval(() => setNow(new Date()), 1_000)
     return () => window.clearInterval(id)
   }, [])
   const manilaDay = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })
   return (
-    <>
-      {longDayLabel(manilaDay)} ·{' '}
-      <time dateTime={now.toISOString()} className="tabular-nums">
-        {now.toLocaleTimeString('en-PH', { timeZone: 'Asia/Manila', hour: 'numeric', minute: '2-digit' })}
+    <div className="flex flex-col gap-1 text-center" aria-live="off">
+      <p className="text-muted-foreground text-xs">{longDayLabel(manilaDay)}</p>
+      <time dateTime={now.toISOString()} className="font-semibold text-3xl tabular-nums tracking-tight">
+        {now.toLocaleTimeString('en-PH', { timeZone: 'Asia/Manila', hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}
       </time>
-    </>
+      <p className="text-muted-foreground text-xs">Philippine time (Asia/Manila)</p>
+    </div>
   )
 }
 
@@ -285,9 +286,6 @@ function ClockHero({
     <section aria-labelledby="clock-heading" className="flex flex-col gap-5 rounded-2xl border bg-card p-4 shadow-xs/5 sm:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
         <div className="flex min-w-0 flex-col gap-2">
-          <p className="text-muted-foreground text-sm">
-            <LiveClock />
-          </p>
           <h2 id="clock-heading" className="text-balance font-heading font-semibold text-2xl leading-tight">
             {state.title}
           </h2>
@@ -300,20 +298,23 @@ function ClockHero({
           </p>
         </div>
 
-        {state.action && (
-          <div className="flex flex-col gap-2 sm:min-w-44 sm:items-stretch">
-            {state.action === 'clock-in' ? (
-              <Button size="xl" className="w-full" onClick={onClockIn} loading={busy === 'clock-in'}>
-                Clock in
-              </Button>
-            ) : (
-              <Button size="xl" className="w-full" variant={today?.clock_in_time ? 'default' : 'outline'} onClick={onClockOut} loading={busy === 'clock-out'}>
-                Clock out
-              </Button>
-            )}
-            <p className="text-muted-foreground text-xs sm:text-center">Grace is {graceMinutes} minutes.</p>
-          </div>
-        )}
+        <div className="flex shrink-0 flex-col gap-3 sm:min-w-52 sm:items-stretch">
+          <LiveClock />
+          {state.action && (
+            <>
+              {state.action === 'clock-in' ? (
+                <Button size="xl" className="w-full" onClick={onClockIn} loading={busy === 'clock-in'}>
+                  Clock in
+                </Button>
+              ) : (
+                <Button size="xl" className="w-full" variant={today?.clock_in_time ? 'default' : 'outline'} onClick={onClockOut} loading={busy === 'clock-out'}>
+                  Clock out
+                </Button>
+              )}
+              <p className="text-muted-foreground text-xs sm:text-center">Grace is {graceMinutes} minutes.</p>
+            </>
+          )}
+        </div>
       </div>
 
       {(planStart || planEnd || today) && (
