@@ -46,6 +46,14 @@ class AthleteRecordTest extends TestCase
             ->assertJsonPath('record.entries.2.recorded_by', trim("{$coach->first_name} {$coach->last_name}"));
     }
 
+    public function test_athlete_view_alone_reaches_the_member_list_and_record(): void
+    {
+        $viewer = $this->employeeWith(['training.athletes.view']);
+
+        $this->actingAs($viewer)->getJson($this->url('memberships?view=members'))->assertOk();
+        $this->actingAs($viewer)->getJson($this->url("athletes/{$this->applicant->id}/record"))->assertOk();
+    }
+
     public function test_competitions_and_achievements_are_kept_and_viewers_cannot_add(): void
     {
         $coach = $this->employeeWith(['training' => 'manage']);

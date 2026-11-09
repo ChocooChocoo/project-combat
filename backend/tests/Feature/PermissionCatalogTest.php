@@ -14,10 +14,10 @@ class PermissionCatalogTest extends TestCase
         $this->assertEqualsCanonicalizing(array_column(Module::cases(), 'value'), array_keys(config('permissions.catalog')));
     }
 
-    public function test_catalog_has_70_unique_exact_keys(): void
+    public function test_catalog_has_67_unique_exact_keys(): void
     {
         $all = PermissionCatalog::all();
-        $this->assertCount(70, $all);
+        $this->assertCount(67, $all);
         $this->assertSame($all, array_values(array_unique($all)));
         foreach ($all as $key) {
             $this->assertMatchesRegularExpression('/^[a-z_]+\.[a-z_]+\.[a-z_]+$/', $key);

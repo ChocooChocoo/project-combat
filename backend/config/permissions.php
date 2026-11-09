@@ -58,7 +58,7 @@ return [
             'orders' => ['view', 'manage'],
             'receipts' => ['manage'],
         ],
-        'announcements' => ['general' => ['view', 'manage', 'approve']],
-        'decision_support' => ['general' => ['view', 'manage', 'approve']],
+        'announcements' => ['general' => ['view', 'manage']],
+        'decision_support' => ['general' => ['view']],
     ],
 ];

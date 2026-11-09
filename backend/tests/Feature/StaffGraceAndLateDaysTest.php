@@ -17,11 +17,9 @@ class StaffGraceAndLateDaysTest extends TestCase
         $this->setUpPayrollGym();
     }
 
-    public function test_staff_grace_below_ten_minutes_is_refused_everywhere(): void
+    public function test_staff_grace_below_ten_minutes_is_refused(): void
     {
         $this->actingAs($this->owner)->putJson($this->url('payroll/settings'), ['staff_grace_minutes' => 9])
-            ->assertUnprocessable()->assertJsonValidationErrors('staff_grace_minutes');
-        $this->actingAs($this->owner)->putJson($this->url('setup'), ['staff_grace_minutes' => 0])
             ->assertUnprocessable()->assertJsonValidationErrors('staff_grace_minutes');
 
         $this->actingAs($this->owner)->putJson($this->url('payroll/settings'), ['staff_grace_minutes' => 10])->assertOk();

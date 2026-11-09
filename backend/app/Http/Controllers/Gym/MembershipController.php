@@ -30,7 +30,7 @@ class MembershipController extends Controller
     {
         $viewer = $request->user();
         abort_unless(
-            $viewer->hasPermission($gym, 'members.memberships.view', 'training.sessions.view', 'finance.payments.view'),
+            $viewer->hasPermission($gym, 'members.memberships.view', 'training.sessions.view', 'training.athletes.view', 'finance.payments.view'),
             403,
             'You do not have access to this part of the gym.',
         );

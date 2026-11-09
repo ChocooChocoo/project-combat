@@ -11,7 +11,7 @@ type ItemDefinition = Omit<GymNavItem, 'to'> & { segment: string; permissions: P
 
 const ITEMS: ItemDefinition[] = [
   { segment: 'staff', label: 'Staff', icon: Users, permissions: ['hr.staff.view', 'hr.roles.view'], group: 'People' },
-  { segment: 'staff-attendance', label: 'Staff attendance', icon: Clock, permissions: ['hr.attendance.view'], group: 'People' },
+  { segment: 'staff-attendance', label: 'Staff attendance', icon: Clock, permissions: ['hr.attendance.view', 'hr.overtime.approve'], group: 'People' },
   { segment: 'leave', label: 'Leave', icon: CalendarDays, permissions: ['hr.leave.view', 'hr.leave.manage', 'hr.holidays.manage'], group: 'People' },
   { segment: 'payroll', label: 'Payroll', icon: Banknote, permissions: ['payroll.runs.view'], group: 'People' },
   { segment: 'schedule', label: 'Schedule', icon: CalendarDays, permissions: ['training.sessions.view'], group: 'Training' },
@@ -21,7 +21,7 @@ const ITEMS: ItemDefinition[] = [
   { segment: 'services', label: 'Services', icon: Dumbbell, permissions: ['gym_setup.services.view'], group: 'Training' },
   { segment: 'plans', label: 'Plans', icon: CreditCard, permissions: ['members.plans.view'], group: 'Members' },
   { segment: 'applications', label: 'Applications', icon: Inbox, permissions: ['members.memberships.view'], group: 'Members' },
-  { segment: 'members', label: 'Members', icon: UserCheck, permissions: ['members.memberships.view'], group: 'Members' },
+  { segment: 'members', label: 'Members', icon: UserCheck, permissions: ['members.memberships.view', 'training.athletes.view'], group: 'Members' },
   { segment: 'announcements', label: 'Announcements', icon: Megaphone, permissions: ['announcements.general.view'], group: 'Members' },
   { segment: 'payments', label: 'Payments', icon: Receipt, permissions: ['finance.payments.view'], group: 'Members' },
   { segment: 'finance', label: 'Finance', icon: Wallet, permissions: ['finance.payments.view', 'finance.expenses.view', 'finance.receivables.view', 'finance.payables.view', 'finance.budgets.view', 'finance.reports.view'], group: 'Business' },

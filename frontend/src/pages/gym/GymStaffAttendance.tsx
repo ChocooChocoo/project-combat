@@ -74,12 +74,24 @@ export default function GymStaffAttendance() {
   const [deciding, setDeciding] = useState<OvertimeRequest | null>(null)
 
   useEffect(() => {
-    if (!gymId || !canView) return
+    if (!gymId || (!canView && !canApprove)) return
     let live = true
     setError('')
     setRecords(null)
     setTodayList(null)
     setOvertime(null)
+
+    // Overtime approvers without attendance access load only the overtime list.
+    if (!canView) {
+      api<{ requests: OvertimeRequest[] }>(`/gyms/${gymId}/overtime-requests`)
+        .then((result) => live && setOvertime(result.requests))
+        .catch((reason) => {
+          if (live) setError(reason instanceof ApiError ? reason.message : 'Overtime requests could not be loaded.')
+        })
+      return () => {
+        live = false
+      }
+    }
 
     const query = new URLSearchParams({ from, to, page: String(recordsPage) })
     if (employeeFilter !== 'all') query.set('user_id', employeeFilter)
@@ -110,7 +122,7 @@ export default function GymStaffAttendance() {
     return () => {
       live = false
     }
-  }, [gymId, canView, canManage, from, to, employeeFilter, recordsPage, version])
+  }, [gymId, canView, canManage, canApprove, from, to, employeeFilter, recordsPage, version])
 
   useEffect(() => {
     if (!historyOf) return
@@ -133,7 +145,7 @@ export default function GymStaffAttendance() {
 
   if (!gym) return null
 
-  if (!canView) {
+  if (!canView && !canApprove) {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader title="Staff attendance" />
@@ -162,6 +174,42 @@ export default function GymStaffAttendance() {
 
   const unavailable = <p className="rounded-xl border px-4 py-3 text-muted-foreground text-sm">Nothing to show until attendance loads. Use Try again above.</p>
 
+  const errorAlert = error ? (
+    <Alert variant="error">
+      <AlertTitle>Attendance could not be loaded</AlertTitle>
+      <AlertDescription>{error}</AlertDescription>
+      <div className="pt-2">
+        <Button size="sm" variant="outline" onClick={refresh}>
+          Try again
+        </Button>
+      </div>
+    </Alert>
+  ) : null
+
+  const decisionDialog = deciding ? (
+    <DecisionDialog
+      gymId={gymId}
+      request={deciding}
+      onClose={() => setDeciding(null)}
+      onSaved={() => {
+        setDeciding(null)
+        refresh()
+      }}
+    />
+  ) : null
+
+  // hr.overtime.approve alone: show only the overtime decisions.
+  if (!canView) {
+    return (
+      <div className="flex flex-col gap-6">
+        <PageHeader title="Staff attendance" description={`${gym.name}: overtime decisions.`} />
+        {errorAlert}
+        {error ? unavailable : <OvertimePanel rows={overtime ?? []} loading={overtime === null} canApprove={canApprove} onDecide={setDeciding} />}
+        {decisionDialog}
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -177,17 +225,7 @@ export default function GymStaffAttendance() {
         }
       />
 
-      {error && (
-        <Alert variant="error">
-          <AlertTitle>Attendance could not be loaded</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-          <div className="pt-2">
-            <Button size="sm" variant="outline" onClick={refresh}>
-              Try again
-            </Button>
-          </div>
-        </Alert>
-      )}
+      {errorAlert}
 
       {!error && <TodayStrip rows={todayList ?? []} loading={todayList === null} />}
 
@@ -357,17 +395,7 @@ export default function GymStaffAttendance() {
         </DialogPopup>
       </Dialog>
 
-      {deciding && (
-        <DecisionDialog
-          gymId={gymId}
-          request={deciding}
-          onClose={() => setDeciding(null)}
-          onSaved={() => {
-            setDeciding(null)
-            refresh()
-          }}
-        />
-      )}
+      {decisionDialog}
     </div>
   )
 }

@@ -40,12 +40,6 @@ class GymSetupController extends Controller
                 ->all();
         }
 
-        // R-61: the owner is always the last step, whatever order was sent.
-        if (array_key_exists('payroll_steps', $data)) {
-            $steps = array_values(array_unique(array_diff($data['payroll_steps'] ?? [], ['owner'])));
-            $data['payroll_steps'] = [...array_slice($steps, 0, 2), 'owner'];
-        }
-
         $gym->update($data);
 
         return response()->json(['setup' => $this->setup($gym->fresh())]);
@@ -140,11 +134,7 @@ class GymSetupController extends Controller
             'late_grace_minutes' => ['sometimes', 'required', 'integer', 'between:0,120'],
             'cancel_cutoff_hours' => ['sometimes', 'required', 'integer', 'between:0,72'],
             'session_reminder_minutes' => ['sometimes', 'required', 'integer', Rule::in([30, 60, 120, 1440])],
-            'payroll_frequency' => ['sometimes', 'required', Rule::in(array_keys(config('payroll.frequencies')))],
-            'payroll_steps' => ['sometimes', 'array', 'max:3'],
-            'payroll_steps.*' => ['distinct', Rule::in(array_keys(config('payroll.steps')))],
-            'staff_grace_minutes' => ['sometimes', 'required', 'integer', 'between:10,120'],
-            'overtime_min_minutes' => ['sometimes', 'required', 'integer', 'between:0,240'],
+            // Payroll and staff attendance settings change only through payroll/settings (owner, R-59, R-61).
         ];
     }
 }
