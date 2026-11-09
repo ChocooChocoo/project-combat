@@ -21,7 +21,8 @@ One domain means no subdomain to set up and no CORS problems (the browser sees o
 |---|---|
 | SSH | `ssh -p 65002 u257225233@147.93.78.135` |
 | Home folder | `/home/u257225233` |
-| PHP (SSH) | 8.3.36 at `/usr/bin/php` |
+| PHP (SSH default) | 8.3.36 at `/usr/bin/php` (too old; the app needs 8.4.1+) |
+| PHP 8.4 (use this) | `/opt/alt/php84/usr/bin/php` |
 | Composer / Git | 2.9.8 / 2.52.0 |
 | Website folder | `/home/u257225233/domains/combatpro.site/public_html` |
 
@@ -59,8 +60,9 @@ server by hand and upload `dist/` yourself.
 
 ## Step 1: Prepare Hostinger (hPanel)
 
-1. **PHP version** — Advanced → PHP Configuration → PHP **8.3 or newer**. The website can use a different
-   PHP version than SSH, so check it here even though SSH shows 8.3.
+1. **PHP version** — Advanced → PHP Configuration → PHP **8.4**. The locked packages need PHP 8.4.1 or newer (8.3 gives a
+   500 error: "Your Composer dependencies require a PHP version >= 8.4.1"). The website and SSH use separate PHP
+   versions. In SSH, `php` is 8.3, so run every PHP command below as `/opt/alt/php84/usr/bin/php`.
 2. **Database** — Databases → MySQL Databases. Create one and write down the database name, username and
    password. Hostinger adds a prefix, like `u257225233_combat`.
 3. **SSL** — turn on free SSL for `combatpro.site`.
@@ -92,7 +94,7 @@ On GitHub: repo → Settings → Deploy keys → Add deploy key. Paste the line.
 cd ~
 git clone git@github.com:ChocooChocoo/project-combat.git combat   # public repo: use the https:// URL
 cd ~/combat/backend
-composer install --no-dev --optimize-autoloader
+/opt/alt/php84/usr/bin/php $(which composer) install --no-dev --optimize-autoloader
 cp .env.example .env
 ```
 
@@ -132,17 +134,17 @@ Why these matter:
 Then create the app secret key:
 
 ```bash
-php artisan key:generate
+/opt/alt/php84/usr/bin/php artisan key:generate
 ```
 
 ## Step 6: Set up the database and app
 
 ```bash
-php artisan migrate --force            # create all tables (--force is required in production)
-php artisan app:sync-permissions       # load the permission catalog
-php artisan app:seed-system-roles      # starter roles
-php artisan config:cache
-php artisan route:cache
+/opt/alt/php84/usr/bin/php artisan migrate --force            # create all tables (--force is required in production)
+/opt/alt/php84/usr/bin/php artisan app:sync-permissions       # load the permission catalog
+/opt/alt/php84/usr/bin/php artisan app:seed-system-roles      # starter roles
+/opt/alt/php84/usr/bin/php artisan config:cache
+/opt/alt/php84/usr/bin/php artisan route:cache
 ```
 
 Do not run `DatabaseSeeder` on the live site unless you want its sample data there.
@@ -188,8 +190,8 @@ Shared hosting cannot keep a program running all the time, so cron runs it every
 hPanel → Advanced → Cron Jobs → add two jobs, both **every minute**:
 
 ```
-/usr/bin/php /home/u257225233/combat/backend/artisan schedule:run
-/usr/bin/php /home/u257225233/combat/backend/artisan queue:work --stop-when-empty --max-time=55
+/opt/alt/php84/usr/bin/php /home/u257225233/combat/backend/artisan schedule:run
+/opt/alt/php84/usr/bin/php /home/u257225233/combat/backend/artisan queue:work --stop-when-empty --max-time=55
 ```
 
 - Job 1 runs the scheduled tasks in `backend/routes/console.php` (membership expiry, reminders,
@@ -264,7 +266,7 @@ Register your account on `https://combatpro.site` first, then on the server:
 
 ```bash
 cd ~/combat/backend
-php artisan app:make-admin your@email.com
+/opt/alt/php84/usr/bin/php artisan app:make-admin your@email.com
 ```
 
 ## Step 11: Test
@@ -283,8 +285,8 @@ Backend (on the server):
 
 ```bash
 cd ~/combat && git pull
-cd backend && composer install --no-dev --optimize-autoloader
-php artisan migrate --force && php artisan config:cache && php artisan route:cache
+cd backend && /opt/alt/php84/usr/bin/php $(which composer) install --no-dev --optimize-autoloader
+/opt/alt/php84/usr/bin/php artisan migrate --force && /opt/alt/php84/usr/bin/php artisan config:cache && /opt/alt/php84/usr/bin/php artisan route:cache
 ```
 
 Frontend (on your PC): `pnpm build`, then the two `scp` lines from Step 9.
@@ -301,7 +303,7 @@ Do these once, the first time you deploy the subscription plans, staff grace min
    08:10 each day. Nothing else needs a new cron; plan limits are worked out on every request.
 4. **Point PayMongo at the live webhook.** PayMongo dashboard → Developers → Webhooks → add
    `https://combatpro.site/api/webhooks/paymongo` for the event `checkout_session.payment.paid`, and put its
-   signing secret in `PAYMONGO_WEBHOOK_SECRET` in the live `.env` (then `php artisan config:cache`). Without it,
+   signing secret in `PAYMONGO_WEBHOOK_SECRET` in the live `.env` (then `/opt/alt/php84/usr/bin/php artisan config:cache`). Without it,
    payments still count when the owner returns from PayMongo, but not if they close the tab first.
 5. **Use live PayMongo keys** (`pk_live_…` / `sk_live_…`) in the live `.env` only when you want real money
    taken. Test keys only accept test payments.
@@ -323,10 +325,19 @@ Paste the output into hPanel → SSH Access → SSH Keys.
 
 ## Troubleshooting
 
-- **`.env` change does nothing** — run `php artisan config:cache` again. The cached settings win over the file.
+- **`.env` change does nothing** — run `/opt/alt/php84/usr/bin/php artisan config:cache` again. The cached settings win over the file.
 - **Every API call returns 401 after login** — the Authorization rule is missing from `public_html/.htaccess`.
 - **API calls return the React page instead of JSON** — the `^(api|up)` rule is missing or `index.php` is
   not in `public_html`.
 - **Emails never arrive, no queue errors** — some hosts block outgoing Gmail SMTP. Try port 465 with
   `MAIL_SCHEME=smtps`, or use a Hostinger email account.
 - **Paths do not match** — Hostinger menu names and folders change sometimes. Use what hPanel shows.
+- **`schedule:run` logs "The Process class relies on proc_open"** — Hostinger disables `proc_open`, which Laravel
+  uses to launch scheduled commands. `backend/routes/console.php` therefore uses `Schedule::call(fn () =>
+  Artisan::call('...'))` (runs in-process) instead of `Schedule::command(...)`. Keep it that way.
+- **Cron job runs but nothing happens** — in hPanel's cron form, pick the **Custom** command type. The default PHP type
+  puts `/usr/bin/php /home/u257225233/` in front of what you type (PHP 8.3, wrong). Use the full
+  `/opt/alt/php84/usr/bin/php ...` command (Step 8).
+- **Sample data on the live site** — `db:seed --force` wipes every app table and loads demo data. All seeded accounts use
+  the password `Password_123`, including the platform admin `admin@combatplatform.ph`. On a public site, change those
+  passwords or remove the seeded users before real use.

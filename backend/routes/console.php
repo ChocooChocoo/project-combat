@@ -74,28 +74,28 @@ Artisan::command('app:expire-memberships', function (MembershipLedger $ledger) {
     $this->info("{$expired} expired, {$unfrozen} unfrozen.");
 })->purpose('Expire memberships past their end date and end finished freezes');
 
-Schedule::command('app:expire-memberships')->dailyAt('00:05');
+Schedule::call(fn () => Artisan::call('app:expire-memberships'))->name('app:expire-memberships')->dailyAt('00:05');
 
 Artisan::command('app:send-session-reminders', function (SessionReminders $reminders) {
     $this->info($reminders->send().' session reminders sent.');
 })->purpose('Remind booked athletes before their sessions');
-Schedule::command('app:send-session-reminders')->everyFiveMinutes()->withoutOverlapping();
+Schedule::call(fn () => Artisan::call('app:send-session-reminders'))->name('app:send-session-reminders')->everyFiveMinutes()->withoutOverlapping();
 
 Artisan::command('app:send-membership-reminders', function (MembershipExpiryReminders $reminders) {
     $this->info($reminders->send().' membership reminders sent.');
 })->purpose('Remind active members before membership expiry');
-Schedule::command('app:send-membership-reminders')->dailyAt('08:00')->withoutOverlapping();
+Schedule::call(fn () => Artisan::call('app:send-membership-reminders'))->name('app:send-membership-reminders')->dailyAt('08:00')->withoutOverlapping();
 
 // R-107: owners hear before the free trial or the paid month ends.
 Artisan::command('app:send-subscription-reminders', function (SubscriptionReminders $reminders) {
     $this->info($reminders->send().' subscription reminders sent.');
 })->purpose('Remind gym owners before their trial or paid month ends');
-Schedule::command('app:send-subscription-reminders')->dailyAt('08:10')->withoutOverlapping();
+Schedule::call(fn () => Artisan::call('app:send-subscription-reminders'))->name('app:send-subscription-reminders')->dailyAt('08:10')->withoutOverlapping();
 
 Artisan::command('app:send-follow-up-reminders', function (FollowUpReminders $reminders) {
     $this->info($reminders->send().' follow-up reminders sent.');
 })->purpose('Remind assignees about due customer follow-ups');
-Schedule::command('app:send-follow-up-reminders')->everyFifteenMinutes()->withoutOverlapping();
+Schedule::call(fn () => Artisan::call('app:send-follow-up-reminders'))->name('app:send-follow-up-reminders')->everyFifteenMinutes()->withoutOverlapping();
 
 // R-54: all gyms, including when no request has selected a CurrentGym.
 Artisan::command('app:mark-no-shows', function () {
@@ -105,7 +105,7 @@ Artisan::command('app:mark-no-shows', function () {
         ->update(['attendance' => 'no_show']);
     $this->info("{$count} no-shows marked.");
 })->purpose('Mark ended, unchecked bookings as no-shows');
-Schedule::command('app:mark-no-shows')->everyFifteenMinutes();
+Schedule::call(fn () => Artisan::call('app:mark-no-shows'))->name('app:mark-no-shows')->everyFifteenMinutes();
 
 // R-56: a working day with no row, no approved leave and no holiday becomes absent.
 Artisan::command('app:mark-staff-absences {--date=} {--from=} {--to=}', function () {
@@ -131,7 +131,7 @@ Artisan::command('app:mark-staff-absences {--date=} {--from=} {--to=}', function
     $count = app(StaffAbsenceMarker::class)->mark($start->copy()->startOfDay(), $end->copy()->startOfDay());
     $this->info("{$count} absences marked.");
 })->purpose('Mark missing staff attendance as absent');
-Schedule::command('app:mark-staff-absences')->dailyAt('00:20');
+Schedule::call(fn () => Artisan::call('app:mark-staff-absences'))->name('app:mark-staff-absences')->dailyAt('00:20');
 
 Artisan::command('app:check-stock-counts', function (StockLedger $ledger) {
     $rows = $ledger->mismatches();
@@ -148,4 +148,4 @@ Artisan::command('app:check-stock-counts', function (StockLedger $ledger) {
 })->purpose('Report stock items whose quantity differs from their movements');
 
 // Expired sign-in passes are removed daily (R-03).
-Schedule::command('sanctum:prune-expired --hours=24')->daily();
+Schedule::call(fn () => Artisan::call('sanctum:prune-expired --hours=24'))->name('sanctum:prune-expired --hours=24')->daily();
