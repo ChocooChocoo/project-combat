@@ -4,6 +4,8 @@ import { dateLabel, gymDate } from '@/lib/membership'
 export type SessionType = 'classes' | 'programs' | 'private_coaching' | 'sparring' | 'open_mat'
 export type SessionLevel = 'beginner' | 'intermediate' | 'advanced' | 'all'
 export type SessionStatus = 'scheduled' | 'cancelled'
+/** Shown status worked out by the server from the Philippine clock. */
+export type SessionPhase = 'scheduled' | 'ongoing' | 'ended' | 'cancelled'
 export type SessionChoice = { id: number; name: string }
 
 /** R-42: timestamps are gym-local wall times, not browser-local UTC conversions. */
@@ -27,6 +29,7 @@ export type TrainingSession = {
   fee: string | null
   needs_approval: boolean | null
   status: SessionStatus
+  phase: SessionPhase
   cancel_reason: string | null
   flagged_at: string | null
   flag_reason: string | null
@@ -45,9 +48,11 @@ export type SessionOptions = {
   levels: Record<SessionLevel, string>
 }
 
-export const SESSION_STATUS_LABELS: Record<SessionStatus, string> = {
-  scheduled: 'Scheduled',
-  cancelled: 'Cancelled',
+export const SESSION_PHASES: Record<SessionPhase, { label: string; variant: 'outline' | 'success' | 'secondary' }> = {
+  scheduled: { label: 'Scheduled', variant: 'outline' },
+  ongoing: { label: 'Ongoing', variant: 'success' },
+  ended: { label: 'Ended', variant: 'secondary' },
+  cancelled: { label: 'Cancelled', variant: 'outline' },
 }
 
 export function sessionFee(fee: string | null): string {

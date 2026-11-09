@@ -75,7 +75,9 @@ The frontend calls the API at `VITE_API_URL` (`frontend/.env`).
   dates inside an in-review or released payroll run (409). Payroll math uses integer centavos
   (`Payroll\Money`); statutory rates live in the `statutory_rates` table, not config.
 - **Time and SQL.** App timezone is `Asia/Manila`; frontend formats dates with `gymDate()` in
-  `src/lib/membership.ts`. Tests run on SQLite but production is MySQL, so SQL that differs between them goes
+  `src/lib/membership.ts`. A session's shown status (`phase`: scheduled, ongoing, ended, cancelled) comes from
+  `TrainingSession::phase()` on the server clock; it is never stored, and business rules check `status` instead.
+  Tests run on SQLite but production is MySQL, so SQL that differs between them goes
   through `App\Support\Sql`.
 - **Notices and live updates.** Notices use database notifications only. The shared notification provider and the
   session/booking screens poll every 15 seconds while the tab is visible; there are no websockets, SSE or push.

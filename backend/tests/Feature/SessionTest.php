@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Models\WorkSchedule;
 use App\Support\CurrentGym;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\Feature\Concerns\MembershipSetup;
 use Tests\TestCase;
 
@@ -269,5 +270,24 @@ class SessionTest extends TestCase
         unset($payload['capacity']);
         $this->actingAs($this->owner)->postJson($this->url('sessions'), $payload)->assertCreated()
             ->assertJsonPath('session.capacity', 1)->assertJsonPath('session.fee', null)->assertJsonPath('session.allowed_plan_ids', []);
+    }
+
+    public function test_phase_follows_philippine_clock_and_cancellation(): void
+    {
+        $id = $this->createSession();
+        $phase = function (string $now) use ($id) {
+            $this->travelTo(Carbon::parse($now, 'Asia/Manila'));
+
+            return $this->getJson($this->url("sessions/{$id}"))->assertOk()->json('session.phase');
+        };
+        $this->assertSame('scheduled', $phase('2026-11-09 09:59:59'));
+        $this->assertSame('ongoing', $phase('2026-11-09 10:00:00'));
+        $this->assertSame('ongoing', $phase('2026-11-09 10:59:59'));
+        $this->assertSame('ended', $phase('2026-11-09 11:00:00'));
+        // 02:30 UTC is 10:30 in Manila, so the session is running.
+        $this->assertSame('ongoing', $phase('2026-11-09T02:30:00Z'));
+        TrainingSession::withoutGlobalScope('gym')->findOrFail($id)->update(['status' => 'cancelled']);
+        $this->assertSame('cancelled', $phase('2026-11-09 10:30:00'));
+        $this->getJson($this->url('sessions?from=2026-11-09&to=2026-11-09'))->assertJsonPath('sessions.0.phase', 'cancelled');
     }
 }

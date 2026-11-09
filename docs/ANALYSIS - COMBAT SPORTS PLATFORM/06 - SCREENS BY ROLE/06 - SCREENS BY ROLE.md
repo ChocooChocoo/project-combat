@@ -87,7 +87,7 @@ The owner holds every active permission for their own gym. Employees see the sam
 | S-20 | Membership plans | List and editor with the fee, inclusions, add-ons and policies | — | D-23, R-29 |
 | S-21 | Membership applications | Applications waiting for a decision; approve or reject with a reason | S-22 | D-41, R-33 |
 | S-22 | Members and athlete records | Member list; each record shows membership history, payments, attendance, progress, rank, competitions and achievements. Health details only with permission. | — | D-43, D-46 and D-47, R-36 to R-41 |
-| S-23 | Schedule | Calendar of sessions; create or edit a session, with clash warnings; reschedule or cancel | S-25, S-26 | D-24 to D-28, R-42, R-43 and R-45 |
+| S-23 | Schedule | Calendar of sessions, each marked Scheduled, Ongoing, Ended or Cancelled (worked out from Philippine time); create or edit a session, with clash warnings; reschedule or cancel | S-25, S-26 | D-24 to D-28, R-42, R-43 and R-45 |
 | S-24 | Coach availability | Each coach's hours, days off, leave and sessions; flagged sessions to reassign | S-23 | D-30 and D-32, R-44 and R-46 |
 | S-25 | Booking requests and waiting lists | Bookings waiting for approval; each session's waiting list | — | D-29 and D-36, R-49 and R-50 |
 | S-26 | Session attendance | A session's roster with check-in times; manual entry; progress notes | — | D-26, D-38 and D-39, R-53 to R-55 |

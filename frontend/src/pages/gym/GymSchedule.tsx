@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils'
 import { usePolling } from '@/hooks/use-polling'
 import { useAuth } from '@/lib/auth'
 import { approvedGym, can } from '@/lib/gym-access'
-import { dateKey, flagReasonLabel, sessionFee, sessionTime, SESSION_STATUS_LABELS, type SessionOptions, type TrainingSession } from '@/lib/sessions'
+import { dateKey, flagReasonLabel, sessionFee, sessionTime, SESSION_PHASES, type SessionOptions, type TrainingSession } from '@/lib/sessions'
 
 function monday(): string {
   const date = new Date()
@@ -216,7 +216,7 @@ export default function GymSchedule() {
                       <Link to={`/gyms/${gymId}/manage/schedule/${session.id}`} className="font-medium text-sm leading-snug wrap-anywhere underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">{session.name}</Link>
                       <div className="flex flex-wrap gap-1.5">
                         <Badge variant="secondary">{options.activity_types[session.type]}</Badge>
-                        {session.status === 'cancelled' && <Badge variant="outline">{SESSION_STATUS_LABELS[session.status]}</Badge>}
+                        <Badge variant={SESSION_PHASES[session.phase].variant}>{SESSION_PHASES[session.phase].label}</Badge>
                       </div>
                     </div>
                     <p className="text-muted-foreground text-sm">

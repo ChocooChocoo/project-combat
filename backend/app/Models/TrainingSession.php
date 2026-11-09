@@ -54,4 +54,15 @@ class TrainingSession extends Model
     {
         return $this->bookings()->whereIn('status', [BookingStatus::Requested, BookingStatus::Booked])->count();
     }
+
+    /** Shown status from the clock (Asia/Manila); the stored status stays scheduled or cancelled. */
+    public function phase(): string
+    {
+        return match (true) {
+            $this->status === SessionStatus::Cancelled => 'cancelled',
+            now()->lt($this->starts_at) => 'scheduled',
+            now()->lt($this->ends_at) => 'ongoing',
+            default => 'ended',
+        };
+    }
 }

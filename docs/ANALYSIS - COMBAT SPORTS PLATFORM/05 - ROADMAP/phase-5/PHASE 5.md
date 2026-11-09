@@ -103,6 +103,15 @@ Sessions can repeat on a pattern.
 
 **Status note (5 November 2026):** Built. `training_sessions` table, `TrainingSession` model, `Gym\SessionController` (routes `gyms/{gym}/sessions`; view needs `training,view`, changes need `training,manage`), Schedule screen (`GymSchedule.tsx`, `session-editor.tsx`). A repeat creates every occurrence with a shared series id; each occurrence is edited on its own. Gym settings added: booking approval, late grace minutes, cancel cut-off hours. Checked: `SessionTest` (19 tests), full suite 172 tests passed; `pnpm build` and `pnpm lint` passed; screens checked in a browser with mocked data.
 
+**Status note (9 November 2026, session status):** Each session now shows one of four statuses: Scheduled, Ongoing, Ended or Cancelled. The status is worked out automatically from the scheduled times; coaches do not press Start or End.
+
+- Before the start time: Scheduled. From the start time until the end time: Ongoing. From the end time: Ended. A cancelled session always shows Cancelled.
+- The server works it out with its own clock in Philippine time (`Asia/Manila`), so a wrong clock on a user's computer cannot change it. Code: `TrainingSession::phase()`, sent as `phase` in session responses (`Gym\SessionController` and `PresentsBookings::sessionSummary`).
+- The stored `status` column still holds only `scheduled` or `cancelled`. Booking, cancelling, editing, payroll and no-show rules still read `status` and are unchanged. `phase` is display only and is never saved.
+- Why automatic and not Start/End buttons: no-shows, attendance, payroll and booking cut-offs already treat the scheduled times as the real times. Buttons would need new columns and a new permission, and a status would stay wrong whenever a coach forgot to press End.
+- Shown as a badge on each session in Schedule (`GymSchedule.tsx`) and in the session page header (`GymSession.tsx`). The status updates when those screens refresh (every 30 and 15 seconds).
+- Checked: `SessionTest` (21 tests, including one for the status boundaries in Philippine time); `pnpm build` and `pnpm lint` passed. Not checked in a browser.
+
 **Still open:** nothing.
 
 **Old system:** `backend/app/Http/Controllers/API/TrainerSessionController.php`, lines 118 to 284 and 579 to 657.

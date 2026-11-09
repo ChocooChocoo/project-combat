@@ -56,7 +56,7 @@ trait PresentsBookings
             'level_label' => config("offer.levels.{$session->level}", $session->level),
             'starts_at' => $session->starts_at->format('Y-m-d H:i:s'),
             'ends_at' => $session->ends_at->format('Y-m-d H:i:s'),
-            'status' => $session->status->value, 'capacity' => $session->capacity, 'fee' => $session->fee,
+            'status' => $session->status->value, 'phase' => $session->phase(), 'capacity' => $session->capacity, 'fee' => $session->fee,
             'flagged_at' => $session->flagged_at?->toIso8601String(), 'flag_reason' => $session->flag_reason,
             'cancel_reason' => $session->cancel_reason,
             'coach' => ['id' => $session->coach_id, 'name' => trim("{$session->coach->first_name} {$session->coach->last_name}")],

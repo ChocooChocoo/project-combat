@@ -15,7 +15,7 @@ import { usePolling } from '@/hooks/use-polling'
 import { useAuth } from '@/lib/auth'
 import type { SessionDetails, StaffBooking } from '@/lib/bookings'
 import { approvedGym, can } from '@/lib/gym-access'
-import { flagReasonLabel } from '@/lib/sessions'
+import { flagReasonLabel, SESSION_PHASES } from '@/lib/sessions'
 
 /** R-47, R-49, R-50: session panel and ordered roster for the training desk. */
 export default function GymSession() {
@@ -59,7 +59,7 @@ export default function GymSession() {
         <BookingLoading />
       ) : (
         <>
-          <PageHeader title={data.session.name} meta={<Badge variant="outline">{data.session.status === 'cancelled' ? 'Cancelled' : 'Scheduled'}</Badge>} actions={can(gym, 'training.sessions.manage') && data.session.status === 'scheduled' && <Button variant="destructive-outline" onClick={() => setCancelling(true)}>Cancel session</Button>} />
+          <PageHeader title={data.session.name} meta={<Badge variant={SESSION_PHASES[data.session.phase].variant}>{SESSION_PHASES[data.session.phase].label}</Badge>} actions={can(gym, 'training.sessions.manage') && data.session.status === 'scheduled' && <Button variant="destructive-outline" onClick={() => setCancelling(true)}>Cancel session</Button>} />
           {data.session.flagged_at && <Alert variant="warning"><AlertTitle>Needs attention</AlertTitle><AlertDescription>{flagReasonLabel(data.session.flag_reason)}. Use Schedule to reassign, move or cancel.</AlertDescription></Alert>}
           {data.session.cancel_reason && <p className="text-sm">Cancellation reason: {data.session.cancel_reason}</p>}
           <SessionFacts session={data.session} />

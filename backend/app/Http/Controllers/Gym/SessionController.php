@@ -258,6 +258,7 @@ class SessionController extends Controller
             // Gym-local wall time, matching work schedules and date inputs.
             'starts_at' => $session->starts_at->format('Y-m-d H:i:s'),
             'ends_at' => $session->ends_at->format('Y-m-d H:i:s'),
+            'phase' => $session->phase(),
             'coach' => ['id' => $session->coach->id, 'name' => trim("{$session->coach->first_name} {$session->coach->last_name}")],
             'room' => ['id' => $session->room->id, 'name' => $session->room->name],
             'service' => $session->service ? ['id' => $session->service->id, 'name' => $session->service->name] : null,

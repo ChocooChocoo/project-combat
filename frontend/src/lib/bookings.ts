@@ -1,4 +1,4 @@
-import type { SessionChoice, SessionLevel, SessionStatus, SessionType } from '@/lib/sessions'
+import type { SessionChoice, SessionLevel, SessionPhase, SessionStatus, SessionType } from '@/lib/sessions'
 import { dateKey } from '@/lib/sessions'
 import { money, type Payment } from '@/lib/membership'
 import type { Attendance } from '@/lib/attendance'
@@ -24,6 +24,7 @@ export type SessionSummary = {
   starts_at: string
   ends_at: string
   status: SessionStatus
+  phase: SessionPhase
   capacity: number
   fee: string | null
   flagged_at: string | null
