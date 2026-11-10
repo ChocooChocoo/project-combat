@@ -29,7 +29,8 @@ node --test                    # node:test checks in frontend/tests/*.test.mjs (
 ```
 
 Scheduled jobs (membership expiry, session reminders, membership-expiry reminders, subscription reminders, follow-up reminders, no-shows, staff absences, token pruning) are defined in
-`backend/routes/console.php`.
+`backend/routes/console.php`. Use `Schedule::call(fn () => Artisan::call('...'))`, never `Schedule::command(...)`:
+Hostinger disables `proc_open`. Deploy steps: `docs/SETUPS/DEPLOY-HOSTINGER.md`.
 
 Emails go out through Gmail SMTP (settings in `backend/.env`). The email worker must be running for codes to be sent.
 Online payments use PayMongo (`App\Support\PayMongo`, keys `PAYMONGO_*` in `backend/.env`). PayMongo confirms payments

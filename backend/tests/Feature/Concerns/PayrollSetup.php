@@ -28,6 +28,8 @@ trait PayrollSetup
 
     protected function setUpPayrollGym(): void
     {
+        $this->travelTo(now()->setDate(2026, 12, 1)->startOfDay());
+
         $this->gym = Gym::factory()->approved()->create([
             'payroll_frequency' => 'semi_monthly',
             'payroll_steps' => ['owner'],

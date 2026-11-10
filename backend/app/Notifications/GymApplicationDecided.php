@@ -25,6 +25,6 @@ class GymApplicationDecided extends Notification
             'returned' => ["{$name} needs corrections", 'Fix these and send it again: '.implode('; ', $this->gym->return_items ?? [])],
         };
 
-        return ['title' => $title, 'message' => $message, 'gym_id' => $this->gym->id, 'status' => $this->gym->status->value];
+        return ['title' => $title, 'message' => $message, 'gym_id' => $this->gym->id, 'status' => $this->gym->status->value, 'url' => "/applications/{$this->gym->id}"];
     }
 }

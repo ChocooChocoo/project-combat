@@ -254,29 +254,11 @@ export function dateTimeForApi(value: string): string | null {
   return spaced.length === 16 ? `${spaced}:00` : spaced
 }
 
-/**
- * Staff choices for an assignment. The attendance list is the primary source; the
- * stock recipient list is a fallback for front-desk roles that cannot read attendance.
- * Both are existing endpoints; neither adds a permission. Callers add the signed-in user.
- */
+/** Owner and employees a CRM record or follow-up can be assigned to. */
 export async function loadStaffChoices(gymId: number): Promise<StaffChoice[]> {
   try {
-    const result = await api<{ employees: StaffChoice[] }>(`/gyms/${gymId}/staff-attendance/employees`)
-    if (result.employees.length > 0) {
-      return [...result.employees].sort((a, b) => a.name.localeCompare(b.name))
-    }
-  } catch {
-    // Fall through to the recipient list.
-  }
-
-  try {
-    const result = await api<{ people: Array<StaffChoice & { role?: string | null }> }>(
-      `/gyms/${gymId}/stock-items/recipients`,
-    )
-    return result.people
-      .filter((person) => person.role === 'owner' || person.role === 'employee')
-      .map(({ id, name }) => ({ id, name }))
-      .sort((a, b) => a.name.localeCompare(b.name))
+    const result = await api<{ employees: StaffChoice[] }>(`/gyms/${gymId}/customers/staff-choices`)
+    return [...result.employees].sort((a, b) => a.name.localeCompare(b.name))
   } catch {
     return []
   }

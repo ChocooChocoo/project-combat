@@ -1,5 +1,7 @@
-import { Navigate, Outlet, Route, Routes, useLocation, useParams } from 'react-router'
+import { Link, Navigate, Outlet, Route, Routes, useLocation, useParams } from 'react-router'
 import { AppShell } from '@/components/app-shell'
+import { Button } from '@/components/ui/button'
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 import { workspaceHome } from '@/components/gym-nav'
 import { GymWorkspaceLayout } from '@/components/gym-workspace-layout'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -134,7 +136,19 @@ function AccountOnly({ type }: { type: 'owner' | 'member' }) {
 function GymMember() {
   const { user } = useAuth()
   const { gymId } = useParams()
-  return approvedGym(user, Number(gymId)) ? <Outlet /> : <Navigate to="/" replace />
+  if (approvedGym(user, Number(gymId))) return <Outlet />
+
+  return (
+    <AppShell>
+      <Empty className="mx-auto max-w-lg rounded-xl border">
+        <EmptyHeader>
+          <EmptyTitle>This page is for members of this gym</EmptyTitle>
+          <EmptyDescription>You are not a member here yet. Open the gym page to see its plans and apply.</EmptyDescription>
+        </EmptyHeader>
+        <Button render={<Link to={`/gyms/${gymId}`} />}>View gym</Button>
+      </Empty>
+    </AppShell>
+  )
 }
 
 /** Opens the first workspace section this person may view. Owners start at Setup. */

@@ -81,7 +81,7 @@ class Calculator
         $items = [];
 
         if ($payBasis === null || $payBasis === '') {
-            $warnings[] = $this->warning('missing_pay_basis', 'No pay basis is set for this employee.', true);
+            $warnings[] = $this->warning('missing_pay_basis', 'No pay basis is set for this employee.', empty($employee['ended_on']));
         }
 
         if ($usesMonthly && $monthlyRate === null) {
@@ -165,7 +165,7 @@ class Calculator
                 continue;
             }
 
-            if ($kind !== 'working') {
+            if ($kind !== 'working' || ($day['future'] ?? false)) {
                 continue;
             }
 

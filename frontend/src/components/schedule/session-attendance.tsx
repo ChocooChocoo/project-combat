@@ -41,6 +41,7 @@ export function SessionAttendance({ booking, canManage, notes, onNote, onSaved }
         {booking.check_in_at && !booking.check_out_at && <Button variant="outline" disabled={busy} onClick={() => void mark()}>Check out</Button>}
       </div>
     </>}
+    {canManage && booking.status === 'requested' && booking.session.starts_at.slice(0, 10) <= today && <p className="text-muted-foreground">Approve this request before marking attendance.</p>}
     {error && <p role="alert">{error}</p>}
     {notes.length > 0 && <ProgressNotes notes={notes} />}
     {booking.status === 'booked' && onNote && <Button variant="outline" className="self-start" onClick={onNote}>Add note for {booking.athlete.name}</Button>}

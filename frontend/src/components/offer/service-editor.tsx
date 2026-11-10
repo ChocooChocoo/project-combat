@@ -700,7 +700,7 @@ export function ServiceEditor({
                     Unpublish service
                   </Button>
                 ) : (
-                  <Button type="button" loading={busy === 'publish'} onClick={publish}>
+                  <Button type="button" loading={busy === 'publish'} disabled={missing.length > 0} onClick={publish}>
                     Publish service
                   </Button>
                 )}

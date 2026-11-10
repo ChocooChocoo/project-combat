@@ -89,6 +89,7 @@ Route::post('webhooks/paymongo', PayMongoWebhookController::class)->middleware('
 // The landing page is for visitors who have no account yet. It reads only approved
 // gyms and what they published, the same information the public gym page shows.
 Route::get('public/landing', PublicLandingController::class)->middleware('throttle:60,1');
+Route::get('gyms/{gym}', [PublicGymController::class, 'show'])->whereNumber('gym')->middleware('throttle:60,1');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
@@ -125,7 +126,6 @@ Route::middleware('auth:sanctum')->group(function () {
             // Discovery (R-30, R-97, R-98). Recommendations must come before the gym id route.
             Route::get('gyms', [PublicGymController::class, 'index']);
             Route::get('gyms/recommendations', [DiscoveryController::class, 'recommendations'])->middleware('account:member');
-            Route::get('gyms/{gym}', [PublicGymController::class, 'show'])->whereNumber('gym');
             Route::get('discovery/options', [DiscoveryController::class, 'options']);
             Route::get('geo/search', [GeoController::class, 'search'])->middleware('throttle:geo');
             Route::get('locations/cavite', fn () => response()->json(CaviteLocations::all()));
@@ -399,6 +399,7 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::post('finance/supplier-payments', [PayableController::class, 'pay'])->middleware('permission:finance.payables.manage');
 
                 // CRM (R-69 to R-71). Records, follow-ups and groups.
+                Route::get('customers/staff-choices', [CustomerController::class, 'staffChoices'])->middleware('permission:customers.records.view');
                 Route::get('customers/linkable-memberships', [CustomerController::class, 'linkableMemberships'])->middleware('permission:customers.records.view');
                 Route::get('customers', [CustomerController::class, 'index'])->middleware('permission:customers.records.view');
                 Route::get('customers/{customer}', [CustomerController::class, 'show'])->whereNumber('customer')->middleware('permission:customers.records.view');

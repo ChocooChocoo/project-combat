@@ -7,7 +7,7 @@ import { PageHeader } from '@/components/page-header'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardDescription, CardHeader, CardPanel, CardTitle } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Dialog, DialogDescription, DialogHeader, DialogPanel, DialogPopup, DialogTitle } from '@/components/ui/dialog'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
@@ -149,7 +149,7 @@ export default function GymPublic() {
   }, [id, userId])
 
   useEffect(() => {
-    if (!userId || !Number.isInteger(id) || id <= 0) {
+    if (!Number.isInteger(id) || id <= 0) {
       setGym(null)
       setError(null)
       setLoading(false)
@@ -197,32 +197,10 @@ export default function GymPublic() {
     )
   }
 
-  if (!user) {
-    return (
-      <main className="mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-8 wrap-anywhere px-4 py-8 md:px-8">
-        <BrandBar signedIn={false} />
-        <Card className="mx-auto w-full max-w-lg">
-          <CardHeader>
-            <CardTitle render={<h1 />}>Sign in to view this gym</CardTitle>
-            <CardDescription>
-              Gym profiles are for people with a platform account. Sign in to see the gym&apos;s services, plans, coaches and location.
-            </CardDescription>
-          </CardHeader>
-          <CardPanel className="flex flex-wrap items-center gap-3">
-            <Button render={<Link to="/sign-in" />}>Sign in</Button>
-            <Link className="text-sm underline underline-offset-4" to="/sign-up">
-              Create an account
-            </Link>
-          </CardPanel>
-        </Card>
-      </main>
-    )
-  }
-
   if (error?.status === 404 || !Number.isInteger(id) || id <= 0) {
     return (
       <main className="mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-8 wrap-anywhere px-4 py-8 md:px-8">
-        <BrandBar signedIn />
+        <BrandBar signedIn={Boolean(user)} />
         <PageHeader title="Gym not found" description="This gym is not on the platform, or it is not approved yet." />
         <Empty className="rounded-xl border">
           <EmptyHeader>
@@ -238,7 +216,7 @@ export default function GymPublic() {
   if (error) {
     return (
       <main className="mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-8 wrap-anywhere px-4 py-8 md:px-8">
-        <BrandBar signedIn />
+        <BrandBar signedIn={Boolean(user)} />
         <PageHeader title="Gym profile" description="This gym could not be loaded." />
         <Alert variant="error">
           <AlertTitle>Gym could not be loaded</AlertTitle>
@@ -261,7 +239,7 @@ export default function GymPublic() {
   if (loading || !gym) {
     return (
       <main className="mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-8 wrap-anywhere px-4 py-8 md:px-8">
-        <BrandBar signedIn />
+        <BrandBar signedIn={Boolean(user)} />
         <div className="flex flex-col gap-6" aria-busy="true">
           <Skeleton className="h-28" />
           <Skeleton className="h-10 w-2/3" />
@@ -290,7 +268,7 @@ export default function GymPublic() {
 
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-8 wrap-anywhere px-4 py-8 md:px-8">
-      <BrandBar signedIn showBack />
+      <BrandBar signedIn={Boolean(user)} showBack />
 
       <section className="flex flex-col gap-6 border-b pt-2 pb-8 lg:flex-row lg:items-end lg:justify-between" aria-labelledby="gym-name">
           <div className="flex min-w-0 flex-1 flex-col items-start">
@@ -583,7 +561,7 @@ export default function GymPublic() {
           </span>
         </div>
 
-        {user.account_type === 'owner' && (
+        {user?.account_type === 'owner' && (
           <p className="text-muted-foreground text-sm">Gym Owner accounts can view gyms but not join them.</p>
         )}
 

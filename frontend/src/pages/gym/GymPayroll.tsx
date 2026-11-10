@@ -272,6 +272,7 @@ export default function GymPayroll() {
         <NewRunDialog
           gymId={gymId}
           frequency={frequency}
+          taken={runs ?? []}
           onClose={() => setNewRunOpen(false)}
           onCreated={(run) => {
             setNewRunOpen(false)
@@ -940,15 +941,18 @@ function RateTable({ rates, currentIds, today }: { rates: StatutoryRate[]; curre
 function NewRunDialog({
   gymId,
   frequency,
+  taken,
   onClose,
   onCreated,
 }: {
   gymId: number
   frequency: PayrollFrequency
+  taken: PayrollRun[]
   onClose: () => void
   onCreated: (run: PayrollRun) => void
 }) {
-  const presets = periodPresets(frequency)
+  const free = () => periodPresets(frequency).filter((item) => !taken.some((run) => run.starts_on <= item.ends_on && run.ends_on >= item.starts_on))
+  const presets = free()
   const [preset, setPreset] = useState(presets[0]?.value ?? 'custom')
   const [startsOn, setStartsOn] = useState(presets[0]?.starts_on ?? '')
   const [endsOn, setEndsOn] = useState(presets[0]?.ends_on ?? '')
@@ -956,7 +960,7 @@ function NewRunDialog({
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    const next = periodPresets(frequency)
+    const next = free()
     setPreset(next[0]?.value ?? 'custom')
     setStartsOn(next[0]?.starts_on ?? '')
     setEndsOn(next[0]?.ends_on ?? '')

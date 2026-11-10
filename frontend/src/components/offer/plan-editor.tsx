@@ -664,7 +664,7 @@ export function PlanEditor({
                     Unpublish plan
                   </Button>
                 ) : (
-                  <Button type="button" loading={busy === 'publish'} onClick={publish}>
+                  <Button type="button" loading={busy === 'publish'} disabled={missing.length > 0} onClick={publish}>
                     Publish plan
                   </Button>
                 )}

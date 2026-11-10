@@ -7,6 +7,7 @@ use App\Enums\CustomerInteractionKind;
 use App\Enums\CustomerSource;
 use App\Enums\CustomerStage;
 use App\Enums\CustomerStatus;
+use App\Enums\GymPersonType;
 use App\Enums\MembershipStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Gym\Concerns\PresentsCustomers;
@@ -28,6 +29,18 @@ use Illuminate\Validation\ValidationException;
 class CustomerController extends Controller
 {
     use PresentsCustomers;
+
+    /** Owner and employees a CRM record or follow-up can be assigned to. */
+    public function staffChoices(Gym $gym): JsonResponse
+    {
+        $employees = $gym->people()
+            ->wherePivotIn('role', [GymPersonType::Owner->value, GymPersonType::Employee->value])
+            ->orderBy('first_name')->get()
+            ->map(fn ($user) => ['id' => $user->id, 'name' => trim("{$user->first_name} {$user->last_name}")])
+            ->values();
+
+        return response()->json(['employees' => $employees]);
+    }
 
     public function index(Request $request, Gym $gym): JsonResponse
     {

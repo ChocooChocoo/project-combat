@@ -144,6 +144,7 @@ class InputLoader
                     'date' => $day->toDateString(),
                     'kind' => $kind,
                     'in_employment' => $inEmployment,
+                    'future' => $day->greaterThan(now()->startOfDay()),
                     'attendance' => $row?->status?->value,
                     'late_minutes' => (int) ($row?->late_minutes ?? 0),
                     'undertime_minutes' => (int) ($row?->undertime_minutes ?? 0),

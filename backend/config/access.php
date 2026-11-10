@@ -21,6 +21,7 @@ return [
             'finance' => 'approve',
             'payroll' => 'approve',
             'procurement' => 'approve',
+            'inventory' => ['inventory.items.view'],
             'decision_support' => 'view',
         ],
         'hr' => [

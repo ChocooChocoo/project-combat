@@ -6,6 +6,7 @@ import { usePolling } from '@/hooks/use-polling'
 import { useAuth } from '@/lib/auth'
 import type { StaffBooking } from '@/lib/bookings'
 import { approvedGym, can } from '@/lib/gym-access'
+import { RecordPaymentDialog } from '@/components/membership/payment-dialogs'
 
 /** R-49: requests are visible to training viewers; decisions require approval access. */
 export default function GymBookings() {
@@ -17,15 +18,19 @@ export default function GymBookings() {
   const [error, setError] = useState('')
   const [version, setVersion] = useState(0)
   const [target, setTarget] = useState<BookingAction | null>(null)
+  const [owing, setOwing] = useState<StaffBooking[]>([])
+  const [paying, setPaying] = useState<StaffBooking | null>(null)
+  const canPay = Boolean(gym && can(gym, 'finance.payments.manage'))
   const load = useCallback(async (silent: boolean, isCurrent: () => boolean) => {
     if (!silent) setError('')
     try {
       const result = await api<{ bookings: StaffBooking[] }>(`/gyms/${gymId}/bookings?status=requested`)
-      if (isCurrent()) { setBookings(result.bookings); setError('') }
+      const booked = canPay ? await api<{ bookings: StaffBooking[] }>(`/gyms/${gymId}/bookings?status=booked`) : null
+      if (isCurrent()) { setBookings(result.bookings); setOwing((booked?.bookings ?? []).filter((b) => Number(b.balance) > 0)); setError('') }
     } catch (failure) {
       if (isCurrent() && !silent) setError(failure instanceof ApiError ? failure.message : 'Booking requests could not be loaded.')
     }
-  }, [gymId])
+  }, [gymId, canPay])
   usePolling(load, 15_000, Boolean(user && canView), version)
   if (!gym) return null
   if (!canView) return <BookingEmpty title="Bookings are not available" description="Your role does not include training access for this gym." />
@@ -57,6 +62,13 @@ export default function GymBookings() {
           onAction={setTarget}
         />
       )}
+      {owing.length > 0 && gym && (
+        <section className="flex flex-col gap-3">
+          <h2 className="font-medium text-lg">Approved, payment owed</h2>
+          <StaffBookingList bookings={owing} canApprove={false} canManage={can(gym, 'training.bookings.manage')} onAction={setTarget} onPayment={setPaying} />
+        </section>
+      )}
+      {paying && <RecordPaymentDialog gymId={Number(gymId)} open memberships={[]} bookings={[paying]} onClose={() => setPaying(null)} onSaved={() => { setPaying(null); setVersion((v) => v + 1) }} />}
       {target && (
         <BookingActionDialog
           key={`${target.booking.id}-${target.action}`}

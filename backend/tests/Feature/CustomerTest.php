@@ -22,6 +22,20 @@ class CustomerTest extends TestCase
         $this->setUpCustomerGym();
     }
 
+    public function test_staff_choices_list_owner_and_employees_for_a_customer_viewer(): void
+    {
+        $viewer = $this->employeeWithRole(['customers.records.view']);
+
+        $this->actingAs($viewer)->getJson($this->url('customers/staff-choices'))->assertOk()
+            ->assertJsonFragment(['id' => $this->employee->id, 'name' => 'Ella Santos'])
+            ->assertJsonFragment(['id' => $this->owner->id]);
+    }
+
+    public function test_a_guest_can_open_an_approved_gym_page(): void
+    {
+        $this->getJson("/api/gyms/{$this->gym->id}")->assertOk()->assertJsonPath('gym.id', $this->gym->id);
+    }
+
     public function test_a_lead_is_added_with_contact_details_and_becomes_a_customer_when_linked_and_started(): void
     {
         $response = $this->actingAs($this->owner)->postJson($this->url('customers'), $this->customerData([

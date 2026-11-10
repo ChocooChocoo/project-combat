@@ -248,10 +248,10 @@ export function HealthQuestions({
                 onValueChange={(next) => onChange({ ...answers, [key]: next === 'yes' })}
               >
                 <label className="flex items-center gap-2 text-sm">
-                  <Radio value="no" aria-invalid={unanswered || undefined} /> No
+                  <Radio value="no" aria-label={`${question}: No`} aria-invalid={unanswered || undefined} /> No
                 </label>
                 <label className="flex items-center gap-2 text-sm">
-                  <Radio value="yes" aria-invalid={unanswered || undefined} /> Yes
+                  <Radio value="yes" aria-label={`${question}: Yes`} aria-invalid={unanswered || undefined} /> Yes
                 </label>
               </RadioGroup>
               <FieldError />
