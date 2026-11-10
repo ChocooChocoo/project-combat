@@ -106,6 +106,7 @@ class DatabaseSeeder extends Seeder
             'finance' => 'approve',
             'payroll' => 'approve',
             'procurement' => 'approve',
+            'inventory' => ['inventory.items.view'],
             'decision_support' => 'view',
         ],
         'Sports Therapist' => [
