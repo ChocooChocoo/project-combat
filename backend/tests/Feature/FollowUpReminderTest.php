@@ -89,7 +89,7 @@ class FollowUpReminderTest extends TestCase
             'app:send-membership-reminders' => '0 8 * * *',
             'app:send-follow-up-reminders' => '*/15 * * * *',
         ] as $command => $expression) {
-            $events = collect(Schedule::events())->filter(fn ($event) => str_contains($event->command ?? '', $command));
+            $events = collect(Schedule::events())->filter(fn ($event) => ($event->description ?? '') === $command);
             $this->assertCount(1, $events);
             $this->assertSame($expression, $events->first()->expression);
             $this->assertTrue($events->first()->withoutOverlapping);

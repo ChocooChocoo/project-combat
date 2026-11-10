@@ -33,6 +33,9 @@ class DatabaseSeederTest extends TestCase
         $this->travelTo(Carbon::parse($date)->setTime(10, 0));
         $this->seed();
 
+        $anthony = DB::table('users')->where('first_name', 'Anthony')->where('last_name', 'Padilla')->value('id');
+        $this->assertSame('applied', DB::table('memberships')->where('gym_id', Gym::orderBy('id')->value('id'))->where('user_id', $anthony)->value('status'));
+
         foreach (DB::table('gyms')->whereNotNull('applicant_id')->pluck('applicant_id')->unique() as $applicantId) {
             $this->assertSame('owner', DB::table('users')->where('id', $applicantId)->value('account_type'));
         }

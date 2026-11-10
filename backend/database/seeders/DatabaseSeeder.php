@@ -1019,6 +1019,19 @@ class DatabaseSeeder extends Seeder
             $memberships->push($membership->refresh());
         }
 
+        // The test sheet (section Q) rejects Anthony's application to the first gym.
+        $anthony = $gym->id === Gym::orderBy('id')->value('id') ? User::where('first_name', 'Anthony')->where('last_name', 'Padilla')->first() : null;
+        if ($anthony && $timePlan) {
+            $applied = today()->subDays(5)->setTime(10, 0);
+            $membership = Membership::create([
+                'user_id' => $anthony->id, 'membership_plan_id' => $timePlan->id, ...$this->memberProfile($gym, $anthony, $members->count()),
+                'status' => 'applied', 'waivers' => array_keys(config('membership.waivers')),
+                'signature_name' => 'Anthony Padilla', 'signed_on' => $applied->toDateString(), 'created_at' => $applied, 'updated_at' => $applied,
+            ]);
+            Carbon::withTestNow($applied, fn () => $ledger->log($membership, 'applied', $anthony));
+            $memberships->push($membership);
+        }
+
         return $memberships;
     }
 
