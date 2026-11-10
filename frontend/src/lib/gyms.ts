@@ -28,6 +28,7 @@ export type Application = {
   barangay: string | null
   city: string | null
   province: string | null
+  zip_code: string | null
   latitude: number | null
   longitude: number | null
   contact_phone: string | null

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Gym;
 
 use App\Http\Controllers\Controller;
 use App\Models\Gym;
+use App\Support\CaviteLocations;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -30,7 +31,7 @@ class GymSetupController extends Controller
 
     public function update(Request $request, Gym $gym): JsonResponse
     {
-        $data = $request->validate($this->rules(), self::MESSAGES);
+        $data = CaviteLocations::apply($request->validate($this->rules(), self::MESSAGES));
 
         if (array_key_exists('operating_hours', $data) && is_array($data['operating_hours'])) {
             $data['operating_hours'] = collect($data['operating_hours'])
@@ -62,7 +63,7 @@ class GymSetupController extends Controller
                 ? config("verification.tiers.{$gym->approved_tier}.badge")
                 : null,
             'profile' => $gym->only([
-                'address_line', 'barangay', 'city', 'province', 'latitude', 'longitude',
+                'address_line', 'barangay', 'city', 'province', 'zip_code', 'latitude', 'longitude',
                 'contact_phone', 'contact_email',
             ]),
             'disciplines' => $gym->disciplines ?? [],
@@ -112,9 +113,8 @@ class GymSetupController extends Controller
         return [
             'name' => ['sometimes', 'required', 'string', 'max:120'],
             'address_line' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'barangay' => ['sometimes', 'nullable', 'string', 'max:120'],
-            'city' => ['sometimes', 'nullable', 'string', 'max:120'],
-            'province' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'barangay' => ['sometimes', 'nullable', 'string', 'max:120', CaviteLocations::barangayRule()],
+            'city' => ['sometimes', 'nullable', 'string', Rule::in(CaviteLocations::municipalityNames())],
             'latitude' => ['sometimes', 'nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['sometimes', 'nullable', 'numeric', 'between:-180,180'],
             'contact_phone' => ['sometimes', 'nullable', 'string', 'max:30'],

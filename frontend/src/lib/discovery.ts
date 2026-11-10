@@ -183,6 +183,7 @@ export type GymAddress = {
   barangay: string | null
   city: string | null
   province: string | null
+  zip_code: string | null
   latitude: number | null
   longitude: number | null
   contact_phone: string | null
@@ -257,6 +258,7 @@ export function readGymDetail(payload: GymDetailPayload): PublicGymDetail {
     barangay: payload.barangay ?? profile.barangay ?? null,
     city: payload.city ?? profile.city ?? null,
     province: payload.province ?? profile.province ?? null,
+    zip_code: payload.zip_code ?? profile.zip_code ?? null,
     latitude: payload.latitude ?? profile.latitude ?? null,
     longitude: payload.longitude ?? profile.longitude ?? null,
     contact_phone: payload.contact_phone ?? profile.contact_phone ?? null,

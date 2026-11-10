@@ -275,7 +275,7 @@ export default function GymPublic() {
     )
   }
 
-  const address = [gym.address_line, gym.barangay, gym.city, gym.province].filter(Boolean).join(', ')
+  const address = [gym.address_line, gym.barangay, gym.city, gym.province, gym.zip_code].filter(Boolean).join(', ')
   const services = gym.services
   const plans = gym.plans
   const coaches = gym.coaches

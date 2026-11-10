@@ -6,6 +6,7 @@ use App\Enums\GymStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Gym;
 use App\Support\Verification;
+use App\Support\CaviteLocations;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -48,7 +49,7 @@ class GymApplicationController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $gym = new Gym($request->validate($this->rules(), self::MESSAGES));
+        $gym = new Gym(CaviteLocations::apply($request->validate($this->rules(), self::MESSAGES)));
         $gym->applicant_id = $request->user()->id;
         $gym->status = GymStatus::Draft;
         $gym->save();
@@ -67,7 +68,7 @@ class GymApplicationController extends Controller
     public function update(Request $request, Gym $gym): JsonResponse
     {
         Gate::authorize('update', $gym);
-        $gym->update($request->validate($this->rules(updating: true), self::MESSAGES));
+        $gym->update(CaviteLocations::apply($request->validate($this->rules(updating: true), self::MESSAGES)));
 
         return response()->json(['application' => $gym->load('documents')]);
     }
@@ -123,9 +124,8 @@ class GymApplicationController extends Controller
             'name' => [...($updating ? ['sometimes'] : []), 'required', 'string', 'max:120'],
             'tier' => ['nullable', 'integer', Rule::in(array_keys(config('verification.tiers')))],
             'address_line' => ['nullable', 'string', 'max:255'],
-            'barangay' => ['nullable', 'string', 'max:120'],
-            'city' => ['nullable', 'string', 'max:120'],
-            'province' => ['nullable', 'string', 'max:120'],
+            'barangay' => ['nullable', 'string', 'max:120', CaviteLocations::barangayRule()],
+            'city' => ['nullable', 'string', Rule::in(CaviteLocations::municipalityNames())],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'contact_phone' => ['nullable', 'string', 'max:30'],

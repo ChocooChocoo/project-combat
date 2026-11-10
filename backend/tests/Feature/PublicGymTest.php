@@ -155,7 +155,7 @@ class PublicGymTest extends TestCase
         $payload = $response->json('gym');
 
         $this->assertEqualsCanonicalizing([
-            'id', 'name', 'badge', 'tier', 'address_line', 'barangay', 'city', 'province',
+            'id', 'name', 'badge', 'tier', 'address_line', 'barangay', 'city', 'province', 'zip_code',
             'latitude', 'longitude', 'contact_phone', 'contact_email', 'disciplines',
             'activity_types', 'operating_hours', 'working_days', 'policies', 'facilities',
             'services', 'plans', 'coaches',

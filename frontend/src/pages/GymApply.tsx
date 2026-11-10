@@ -2,6 +2,7 @@ import { ArrowLeft, Check, Upload } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { DocumentSummary, FileTile, ProfileSummary, StatusBadge } from '@/components/application-summary'
+import { CaviteLocationFields } from '@/components/cavite-location-fields'
 import { LocationPicker } from '@/components/location-picker'
 import { PageHeader } from '@/components/page-header'
 import { TextField } from '@/components/text-field'
@@ -103,7 +104,7 @@ function toBody(form: FormState) {
     address_line: form.address_line || null,
     barangay: form.barangay || null,
     city: form.city || null,
-    province: form.province || null,
+    province: 'Cavite',
     latitude: form.location?.lat ?? null,
     longitude: form.location?.lng ?? null,
     contact_phone: form.contact_phone || null,
@@ -124,7 +125,7 @@ function missingFor(step: StepKey, form: FormState, app: Application | null, req
     case 'details':
       return [
         ...need(form.name.trim(), 'Add the gym name.'),
-        ...need(form.address_line.trim() && form.barangay.trim() && form.city.trim() && form.province.trim(), 'Complete the address.'),
+        ...need(form.address_line.trim() && form.barangay.trim() && form.city.trim(), 'Complete the address.'),
         ...need(form.location, 'Place the gym on the map.'),
         ...need(form.contact_phone.trim() && form.contact_email.trim(), 'Add a contact number and email.'),
       ]
@@ -362,11 +363,7 @@ export default function GymApply() {
                       <Fieldset className="flex flex-col gap-4">
                         <FieldsetLegend className="font-medium text-sm">Address</FieldsetLegend>
                         <TextField name="address_line" label="Street address" maxLength={255} required value={form.address_line} onChange={(e) => set('address_line', e.target.value)} />
-                        <div className="grid gap-4 sm:grid-cols-3">
-                          <TextField name="barangay" label="Barangay" maxLength={120} required value={form.barangay} onChange={(e) => set('barangay', e.target.value)} />
-                          <TextField name="city" label="City or municipality" maxLength={120} required value={form.city} onChange={(e) => set('city', e.target.value)} />
-                          <TextField name="province" label="Province" maxLength={120} required value={form.province} onChange={(e) => set('province', e.target.value)} />
-                        </div>
+                        <CaviteLocationFields city={form.city} barangay={form.barangay} onChange={(place) => setForm((f) => ({ ...f, ...place }))} />
                       </Fieldset>
                       <Fieldset className="flex flex-col gap-3">
                         <FieldsetLegend className="font-medium text-sm">Map location</FieldsetLegend>

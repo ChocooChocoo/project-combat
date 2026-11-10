@@ -5,8 +5,6 @@ import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import { useState } from 'react'
 import { MapContainer, Marker, TileLayer, useMapEvents } from 'react-leaflet'
 import { Button } from '@/components/ui/button'
-import { Field, FieldLabel } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
 
 export type LatLng = { lat: number; lng: number }
 
@@ -19,7 +17,7 @@ const pin = L.icon({
   iconAnchor: [12, 41],
 })
 
-const MANILA: LatLng = { lat: 14.5995, lng: 120.9842 }
+const MANILA: LatLng = { lat: 14.3294, lng: 120.9367 } // Dasmariñas, Cavite (system scope)
 
 function ClickToPlace({ onChange }: { onChange: (value: LatLng) => void }) {
   useMapEvents({ click: (event) => onChange(event.latlng) })
@@ -75,10 +73,6 @@ export function LocationPicker({ value, onChange }: { value: LatLng | null; onCh
     )
   }
 
-  const typed = (key: 'lat' | 'lng', text: string) => {
-    const number = Number(text)
-    if (text !== '' && Number.isFinite(number)) onChange({ ...(value ?? MANILA), [key]: number })
-  }
 
   const start = value ?? MANILA
 
@@ -102,14 +96,6 @@ export function LocationPicker({ value, onChange }: { value: LatLng | null; onCh
         </MapContainer>
       </div>
       <div className="flex flex-wrap items-end gap-3">
-        <Field name="latitude" className="w-36">
-          <FieldLabel>Latitude</FieldLabel>
-          <Input type="number" step="any" value={value?.lat ?? ''} onChange={(e) => typed('lat', e.target.value)} />
-        </Field>
-        <Field name="longitude" className="w-36">
-          <FieldLabel>Longitude</FieldLabel>
-          <Input type="number" step="any" value={value?.lng ?? ''} onChange={(e) => typed('lng', e.target.value)} />
-        </Field>
         <Button type="button" variant="outline" loading={locating} onClick={useMyLocation}>Use my location</Button>
       </div>
       <p className="text-muted-foreground text-sm">

@@ -16,7 +16,7 @@ use Illuminate\Support\Collection;
 
 /** A gym. Until approved, the same row is its owner application (R-11 to R-18). */
 #[Fillable([
-    'name', 'tier', 'address_line', 'barangay', 'city', 'province', 'latitude', 'longitude',
+    'name', 'tier', 'address_line', 'barangay', 'city', 'province', 'zip_code', 'latitude', 'longitude',
     'contact_phone', 'contact_email', 'operating_hours', 'disciplines', 'services', 'facilities',
     'activity_types', 'working_days', 'policies',
     'booking_approval', 'late_grace_minutes', 'cancel_cutoff_hours', 'session_reminder_minutes',

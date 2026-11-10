@@ -1,6 +1,7 @@
 import { ExternalLink } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
+import { CaviteLocationFields } from '@/components/cavite-location-fields'
 import { LocationPicker, type LatLng } from '@/components/location-picker'
 import { PageHeader } from '@/components/page-header'
 import { TextField } from '@/components/text-field'
@@ -144,7 +145,7 @@ export default function GymSettings() {
           address_line: form.address_line || null,
           barangay: form.barangay || null,
           city: form.city || null,
-          province: form.province || null,
+          province: 'Cavite',
           latitude: form.location?.lat ?? null,
           longitude: form.location?.lng ?? null,
           contact_phone: form.contact_phone || null,
@@ -252,29 +253,11 @@ export default function GymSettings() {
                     value={form.address_line}
                     onChange={(e) => set('address_line', e.target.value)}
                   />
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    <TextField
-                      name="barangay"
-                      label="Barangay"
-                      maxLength={120}
-                      value={form.barangay}
-                      onChange={(e) => set('barangay', e.target.value)}
-                    />
-                    <TextField
-                      name="city"
-                      label="City or municipality"
-                      maxLength={120}
-                      value={form.city}
-                      onChange={(e) => set('city', e.target.value)}
-                    />
-                    <TextField
-                      name="province"
-                      label="Province"
-                      maxLength={120}
-                      value={form.province}
-                      onChange={(e) => set('province', e.target.value)}
-                    />
-                  </div>
+                  <CaviteLocationFields
+                    city={form.city}
+                    barangay={form.barangay}
+                    onChange={(place) => setForm((f) => (f ? { ...f, ...place } : f))}
+                  />
                 </Fieldset>
 
                 <Fieldset className="flex flex-col gap-3">

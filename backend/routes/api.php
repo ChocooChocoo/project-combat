@@ -69,6 +69,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicGymController;
 use App\Http\Controllers\PublicLandingController;
 use App\Http\Controllers\ReceivableController;
+use App\Support\CaviteLocations;
 use Illuminate\Support\Facades\Route;
 
 // Public sign-up and sign-in. 'auth-public' limits requests per address (see AppServiceProvider).
@@ -127,6 +128,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('gyms/{gym}', [PublicGymController::class, 'show'])->whereNumber('gym');
             Route::get('discovery/options', [DiscoveryController::class, 'options']);
             Route::get('geo/search', [GeoController::class, 'search'])->middleware('throttle:geo');
+            Route::get('locations/cavite', fn () => response()->json(CaviteLocations::all()));
             Route::get('gym-preferences', [GymPreferenceController::class, 'show'])->middleware('account:member');
             Route::put('gym-preferences', [GymPreferenceController::class, 'update'])->middleware('account:member');
 

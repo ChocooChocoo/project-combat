@@ -71,7 +71,7 @@ export function ProfileSummary({ app, requirements }: { app: Application; requir
   return (
     <dl className="@container divide-y">
       {row('Gym name', app.name)}
-      {row('Address', [app.address_line, app.barangay, app.city, app.province].filter(Boolean).join(', '))}
+      {row('Address', [app.address_line, app.barangay, app.city, app.province, app.zip_code].filter(Boolean).join(', '))}
       {row(
         'Map location',
         app.latitude != null && app.longitude != null && (

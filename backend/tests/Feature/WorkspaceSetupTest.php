@@ -53,9 +53,9 @@ class WorkspaceSetupTest extends TestCase
         $this->actingAs($this->owner)->putJson($this->url('setup'), [
             'name' => 'Iron Works',
             'address_line' => '1 Main Street',
-            'barangay' => 'Poblacion',
-            'city' => 'Makati',
-            'province' => 'Metro Manila',
+            'barangay' => 'Burol',
+            'city' => 'Dasmariñas',
+            'province' => 'Cavite',
             'latitude' => 14.5547,
             'longitude' => 121.0244,
             'contact_phone' => '09171234567',
@@ -80,7 +80,7 @@ class WorkspaceSetupTest extends TestCase
             ->assertJsonPath('setup.operating_hours.sun', null)
             ->assertJsonPath('setup.working_days', ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'])
             ->assertJsonPath('setup.policies', 'No shoes on the mat.')
-            ->assertJsonPath('setup.profile.city', 'Makati')
+            ->assertJsonPath('setup.profile.city', 'Dasmariñas')
             ->assertJsonPath('setup.options.disciplines.boxing', 'Boxing');
 
         $fresh = $this->gym->fresh();
@@ -154,5 +154,33 @@ class WorkspaceSetupTest extends TestCase
                 'working_days.0',
                 'operating_hours.mon.close',
             ]);
+    }
+
+    public function test_location_is_limited_to_cavite_with_server_side_zip(): void
+    {
+        $this->actingAs($this->owner)->putJson($this->url('setup'), [
+            'city' => 'Makati', 'barangay' => 'Poblacion', 'province' => 'Metro Manila',
+        ])->assertUnprocessable()->assertJsonValidationErrors(['city']);
+
+        $this->actingAs($this->owner)->putJson($this->url('setup'), [
+            'city' => 'Dasmariñas', 'barangay' => 'Alima',
+        ])->assertUnprocessable()->assertJsonValidationErrors(['barangay']);
+
+        $this->actingAs($this->owner)->putJson($this->url('setup'), [
+            'city' => 'Dasmariñas', 'barangay' => 'Burol', 'province' => 'Cebu', 'zip_code' => '9999',
+        ])->assertOk()
+            ->assertJsonPath('setup.profile.province', 'Cavite')
+            ->assertJsonPath('setup.profile.zip_code', '4114');
+    }
+
+    public function test_cavite_locations_endpoint_lists_all_municipalities(): void
+    {
+        $r = $this->actingAs($this->owner)->getJson('/api/locations/cavite')->assertOk()
+            ->assertJsonPath('province', 'Cavite')
+            ->assertJsonCount(23, 'municipalities');
+
+        $dasma = collect($r->json('municipalities'))->firstWhere('name', 'Dasmariñas');
+        $this->assertCount(75, $dasma['barangays']);
+        $this->assertSame('4114', $dasma['zip']);
     }
 }

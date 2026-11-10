@@ -2,23 +2,24 @@
 
 > **Development-only credentials.** Every account below uses a known password. Do not ship this file, commit it to a public repository, or reuse these accounts in production. Add `ACCOUNTS.md` to `.gitignore` or delete it before deployment.
 
-Verified against the local MySQL database `combat_platform` on 2026-11-06. 119 accounts total: 118 seeded accounts and 1 test account.
+Verified against the local MySQL database `combat_platform` and the live site `https://combatpro.site` on 2026-11-10. 118 seeded accounts (the live database is a copy of the local one).
 
 - **Password for every account:** `Password_123`
-- All seeded accounts are already email-verified and do not need a password change at first sign-in.
+- Every account is already email-verified and does not need a password change at first sign-in.
+- Member accounts use `@demo.combatplatform.ph` emails. Older `@gmail.com` and `@example.test` member emails no longer exist.
 - Recreate this data with `php artisan db:seed` from `backend/` (this wipes the database).
-- Login page: `http://localhost:5173/sign-in`
+- Login page: `http://localhost:5173/sign-in` (local) or `https://combatpro.site/sign-in` (live)
 - Centers are isolated. A person can belong to more than one center; those accounts appear in each center below and are also listed in **Cross-gym accounts**.
 
 ## Gym directory
 
-| # | Training center | Location | Owner | Staff | Linked members | Status |
+| # | Training center | Location | Owner | Staff | Member accounts | Status |
 |---|---|---|---|---|---|---|
 | 1 | Iron Will Boxing Gym | Quezon City, Metro Manila | Ramon Villanueva | 6 | 19 | Approved |
-| 2 | Kalaw Combat Academy | Makati City, Metro Manila | Andrea Lim | 6 | 17 | Approved |
-| 3 | Bakunawa Martial Arts Center | Cebu City, Cebu | Carlo Mendoza | 5 | 15 | Approved |
-| 4 | Cordillera Fight Camp | Baguio City, Benguet | Maria Bautista | 4 | 15 | Approved |
-| 5 | Davao Grappling Club | Davao City, Davao del Sur | Paolo Reyes | 5 | 16 | Approved |
+| 2 | Kalaw Combat Academy | Makati City, Metro Manila | Andrea Lim | 6 | 19 | Approved |
+| 3 | Bakunawa Martial Arts Center | Cebu City, Cebu | Carlo Mendoza | 5 | 17 | Approved |
+| 4 | Cordillera Fight Camp | Baguio City, Benguet | Maria Bautista | 4 | 17 | Approved |
+| 5 | Davao Grappling Club | Davao City, Davao del Sur | Paolo Reyes | 5 | 18 | Approved |
 
 Five more centers exist only as owner applications: Southside Muay Thai, Visayas Fight Lab, Tagum Boxing Club, Mindoro Combat Sports, and Northside Boxing Studio. See **Pending centers**.
 
@@ -35,10 +36,10 @@ Five more centers exist only as owner applications: Southside Muay Thai, Visayas
 | HR Officer | Iron Will Boxing Gym | `liza.fernandez@ironwillboxing.ph` | `Password_123` |
 | Finance Officer | Iron Will Boxing Gym | `mark.cruz@ironwillboxing.ph` | `Password_123` |
 | Sports Therapist | Davao Grappling Club | `elena.vasquez@davaograppling.ph` | `Password_123` |
-| Athlete / Member | Iron Will Boxing Gym + Kalaw Combat Academy | `sofia.ramirez@gmail.com` | `Password_123` |
-| Owner applicant (submitted) | Southside Muay Thai | `jomar.aquino@southsidemuaythai.ph` | `Password_123` |
+| Athlete / Member | Iron Will Boxing Gym + Kalaw Combat Academy | `sofia.ramirez@demo.combatplatform.ph` | `Password_123` |
 | Owner applicant (under review) | Visayas Fight Lab | `grace.fuentes@visayasfightlab.ph` | `Password_123` |
-| Membership applicant (pending) | Kalaw Combat Academy | `clara.domingo.gym2@example.test` | `Password_123` |
+| Owner applicant (returned) | Tagum Boxing Club | `nestor.cabral@tagumboxing.ph` | `Password_123` |
+| Membership applicant (pending) | Kalaw Combat Academy | `mara.soriano@demo.combatplatform.ph` | `Password_123` |
 
 ## What each role can access
 
@@ -82,11 +83,11 @@ An account is created with one fixed type, chosen at sign-up; it cannot change l
 
 | Name | Email | Center | Location | Application status | Password |
 |---|---|---|---|---|---|
-| Jomar Aquino | `jomar.aquino@southsidemuaythai.ph` | Southside Muay Thai | Las Piñas City, Metro Manila | Submitted (Tier 1) | `Password_123` |
+| Jomar Aquino | `jomar.aquino@southsidemuaythai.ph` | Southside Muay Thai | Las Piñas City, Metro Manila | Rejected (Tier 1) | `Password_123` |
 | Grace Fuentes | `grace.fuentes@visayasfightlab.ph` | Visayas Fight Lab | Iloilo City, Iloilo | Under review (Tier 2) | `Password_123` |
 | Nestor Cabral | `nestor.cabral@tagumboxing.ph` | Tagum Boxing Club | Tagum City, Davao del Norte | Returned for correction (Tier 1) | `Password_123` |
 | Rebecca Marasigan | `rebecca.marasigan@mindorocombat.ph` | Mindoro Combat Sports | Calapan City, Oriental Mindoro | Rejected (Tier 1) | `Password_123` |
-| Luis Herrera | `luis.herrera@gmail.com` | Northside Boxing Studio | Valenzuela City, Metro Manila | Draft (Tier 1) | `Password_123` |
+| Luis Herrera | `luis.herrera@demo.combatplatform.ph` | Northside Boxing Studio | Valenzuela City, Metro Manila | Draft (Tier 1) | `Password_123` |
 
 ---
 
@@ -94,7 +95,7 @@ An account is created with one fixed type, chosen at sign-up; it cannot change l
 
 **Location:** Quezon City, Metro Manila  
 **Owner:** Ramon Villanueva — `ramon.villanueva@ironwillboxing.ph` — `Password_123`  
-**Counts:** 6 staff, 19 linked members, 1 rejected membership applicant
+**Counts:** 6 staff, 13 active members, 6 inactive or pending
 
 ### Owner
 
@@ -117,31 +118,30 @@ An account is created with one fixed type, chosen at sign-up; it cannot change l
 
 | Name | Email | Membership status | Password |
 |---|---|---|---|
-| Sofia Ramirez | `sofia.ramirez@gmail.com` | Active | `Password_123` |
-| Patricia Gomez | `patricia.gomez@gmail.com` | Active | `Password_123` |
-| Miguel Soriano | `miguel.soriano@gmail.com` | Active | `Password_123` |
-| Christian Roxas | `christian.roxas@gmail.com` | Active | `Password_123` |
-| Alyssa Mercado | `alyssa.mercado@gmail.com` | Active | `Password_123` |
-| Elena Dela Cruz | `elena.dela.cruz.gym1@example.test` | Active | `Password_123` |
-| Rafael Santos | `rafael.santos.gym1@example.test` | Active | `Password_123` |
-| Isabel Garcia | `isabel.garcia.gym1@example.test` | Active | `Password_123` |
-| Marco Torres | `marco.torres.gym1@example.test` | Active | `Password_123` |
-| Diana Flores | `diana.flores.gym1@example.test` | Active | `Password_123` |
-| Adrian Castillo | `adrian.castillo.gym1@example.test` | Active | `Password_123` |
-| Beatriz Ramos | `beatriz.ramos.gym1@example.test` | Active | `Password_123` |
-| Nico Rivera | `nico.rivera.gym1@example.test` | Active | `Password_123` |
-| Clara Domingo | `clara.domingo.gym1@example.test` | Active | `Password_123` |
+| Sofia Ramirez | `sofia.ramirez@demo.combatplatform.ph` | Active | `Password_123` |
+| Patricia Gomez | `patricia.gomez@demo.combatplatform.ph` | Active | `Password_123` |
+| Miguel Soriano | `miguel.soriano@demo.combatplatform.ph` | Active | `Password_123` |
+| Christian Roxas | `christian.roxas@demo.combatplatform.ph` | Active | `Password_123` |
+| Alyssa Mercado | `alyssa.mercado@demo.combatplatform.ph` | Active | `Password_123` |
+| Elena Dela Cruz | `elena.dela.cruz@demo.combatplatform.ph` | Active | `Password_123` |
+| Rafael Santos | `rafael.santos@demo.combatplatform.ph` | Active | `Password_123` |
+| Isabel Garcia | `isabel.garcia@demo.combatplatform.ph` | Active | `Password_123` |
+| Marco Torres | `marco.torres@demo.combatplatform.ph` | Active | `Password_123` |
+| Diana Flores | `diana.flores@demo.combatplatform.ph` | Active | `Password_123` |
+| Adrian Castillo | `adrian.castillo@demo.combatplatform.ph` | Active | `Password_123` |
+| Beatriz Ramos | `beatriz.ramos@demo.combatplatform.ph` | Active | `Password_123` |
+| Nico Rivera | `nico.rivera@demo.combatplatform.ph` | Active | `Password_123` |
 
 ### Athletes — inactive or pending
 
 | Name | Email | Membership status | Password |
 |---|---|---|---|
-| Mika Salcedo | `mika.salcedo.gym1@example.test` | Awaiting payment | `Password_123` |
-| Leo Valdez | `leo.valdez.gym1@example.test` | Frozen | `Password_123` |
-| Julia Pascual | `julia.pascual.gym1@example.test` | Expired | `Password_123` |
-| Tomas Estrada | `tomas.estrada.gym1@example.test` | Cancelled | `Password_123` |
-| Case Check | `CaseCheck.20261106@Example.com` | Awaiting payment — test account, not part of the seeder | `Password_123` |
-| Enzo Aguilar | `enzo.aguilar.gym1@example.test` | Application rejected (no active gym link) | `Password_123` |
+| Clara Domingo | `clara.domingo@demo.combatplatform.ph` | Application pending (no active gym link) | `Password_123` |
+| Enzo Aguilar | `enzo.aguilar@demo.combatplatform.ph` | Application rejected (no active gym link) | `Password_123` |
+| Mika Salcedo | `mika.salcedo@demo.combatplatform.ph` | Awaiting payment | `Password_123` |
+| Leo Valdez | `leo.valdez@demo.combatplatform.ph` | Frozen | `Password_123` |
+| Julia Pascual | `julia.pascual@demo.combatplatform.ph` | Expired | `Password_123` |
+| Tomas Estrada | `tomas.estrada@demo.combatplatform.ph` | Cancelled | `Password_123` |
 
 ---
 
@@ -149,7 +149,7 @@ An account is created with one fixed type, chosen at sign-up; it cannot change l
 
 **Location:** Makati City, Metro Manila  
 **Owner:** Andrea Lim — `andrea.lim@kalawcombat.ph` — `Password_123`  
-**Counts:** 6 staff, 17 linked members, 1 pending application, 1 rejected application
+**Counts:** 6 staff, 13 active members, 6 inactive or pending
 
 ### Owner
 
@@ -172,30 +172,30 @@ An account is created with one fixed type, chosen at sign-up; it cannot change l
 
 | Name | Email | Membership status | Password |
 |---|---|---|---|
-| Sofia Ramirez | `sofia.ramirez@gmail.com` | Active | `Password_123` |
-| Gabriel Tan | `gabriel.tan@gmail.com` | Active | `Password_123` |
-| Daniel Villamor | `daniel.villamor@gmail.com` | Active | `Password_123` |
-| Jasmine Co | `jasmine.co@gmail.com` | Active | `Password_123` |
-| Alyssa Mercado | `alyssa.mercado@gmail.com` | Active | `Password_123` |
-| Elena Dela Cruz | `elena.dela.cruz.gym2@example.test` | Active | `Password_123` |
-| Rafael Santos | `rafael.santos.gym2@example.test` | Active | `Password_123` |
-| Isabel Garcia | `isabel.garcia.gym2@example.test` | Active | `Password_123` |
-| Marco Torres | `marco.torres.gym2@example.test` | Active | `Password_123` |
-| Diana Flores | `diana.flores.gym2@example.test` | Active | `Password_123` |
-| Adrian Castillo | `adrian.castillo.gym2@example.test` | Active | `Password_123` |
-| Beatriz Ramos | `beatriz.ramos.gym2@example.test` | Active | `Password_123` |
-| Nico Rivera | `nico.rivera.gym2@example.test` | Active | `Password_123` |
+| Sofia Ramirez | `sofia.ramirez@demo.combatplatform.ph` | Active | `Password_123` |
+| Gabriel Tan | `gabriel.tan@demo.combatplatform.ph` | Active | `Password_123` |
+| Daniel Villamor | `daniel.villamor@demo.combatplatform.ph` | Active | `Password_123` |
+| Jasmine Co | `jasmine.co@demo.combatplatform.ph` | Active | `Password_123` |
+| Alyssa Mercado | `alyssa.mercado@demo.combatplatform.ph` | Active | `Password_123` |
+| Nico Valdez | `nico.valdez@demo.combatplatform.ph` | Active | `Password_123` |
+| Clara Pascual | `clara.pascual@demo.combatplatform.ph` | Active | `Password_123` |
+| Enzo Estrada | `enzo.estrada@demo.combatplatform.ph` | Active | `Password_123` |
+| Mika Dizon | `mika.dizon@demo.combatplatform.ph` | Active | `Password_123` |
+| Leo Velasco | `leo.velasco@demo.combatplatform.ph` | Active | `Password_123` |
+| Julia Fontanilla | `julia.fontanilla@demo.combatplatform.ph` | Active | `Password_123` |
+| Tomas Ocampo | `tomas.ocampo@demo.combatplatform.ph` | Active | `Password_123` |
+| Rico Villaflor | `rico.villaflor@demo.combatplatform.ph` | Active | `Password_123` |
 
 ### Athletes — inactive or pending
 
 | Name | Email | Membership status | Password |
 |---|---|---|---|
-| Mika Salcedo | `mika.salcedo.gym2@example.test` | Awaiting payment | `Password_123` |
-| Leo Valdez | `leo.valdez.gym2@example.test` | Frozen | `Password_123` |
-| Julia Pascual | `julia.pascual.gym2@example.test` | Expired | `Password_123` |
-| Tomas Estrada | `tomas.estrada.gym2@example.test` | Cancelled | `Password_123` |
-| Clara Domingo | `clara.domingo.gym2@example.test` | Application pending (no active gym link) | `Password_123` |
-| Enzo Aguilar | `enzo.aguilar.gym2@example.test` | Application rejected (no active gym link) | `Password_123` |
+| Mara Soriano | `mara.soriano@demo.combatplatform.ph` | Application pending (no active gym link) | `Password_123` |
+| Celina Malabanan | `celina.malabanan@demo.combatplatform.ph` | Application rejected (no active gym link) | `Password_123` |
+| Francis Manalo | `francis.manalo@demo.combatplatform.ph` | Awaiting payment | `Password_123` |
+| Rochelle Alcantara | `rochelle.alcantara@demo.combatplatform.ph` | Frozen | `Password_123` |
+| Jose Pineda | `jose.pineda@demo.combatplatform.ph` | Expired | `Password_123` |
+| Teresa De Leon | `teresa.de.leon@demo.combatplatform.ph` | Cancelled | `Password_123` |
 
 ---
 
@@ -203,7 +203,7 @@ An account is created with one fixed type, chosen at sign-up; it cannot change l
 
 **Location:** Cebu City, Cebu  
 **Owner:** Carlo Mendoza — `carlo.mendoza@bakunawama.ph` — `Password_123`  
-**Counts:** 5 staff, 15 linked members, 1 pending application, 1 rejected application
+**Counts:** 5 staff, 11 active members, 6 inactive or pending
 
 ### Owner
 
@@ -225,28 +225,28 @@ An account is created with one fixed type, chosen at sign-up; it cannot change l
 
 | Name | Email | Membership status | Password |
 |---|---|---|---|
-| Camille Navarro | `camille.navarro@gmail.com` | Active | `Password_123` |
-| Jasmine Co | `jasmine.co@gmail.com` | Active | `Password_123` |
-| Nicole Enriquez | `nicole.enriquez@gmail.com` | Active | `Password_123` |
-| Elena Dela Cruz | `elena.dela.cruz.gym3@example.test` | Active | `Password_123` |
-| Rafael Santos | `rafael.santos.gym3@example.test` | Active | `Password_123` |
-| Isabel Garcia | `isabel.garcia.gym3@example.test` | Active | `Password_123` |
-| Marco Torres | `marco.torres.gym3@example.test` | Active | `Password_123` |
-| Diana Flores | `diana.flores.gym3@example.test` | Active | `Password_123` |
-| Adrian Castillo | `adrian.castillo.gym3@example.test` | Active | `Password_123` |
-| Beatriz Ramos | `beatriz.ramos.gym3@example.test` | Active | `Password_123` |
-| Nico Rivera | `nico.rivera.gym3@example.test` | Active | `Password_123` |
+| Camille Navarro | `camille.navarro@demo.combatplatform.ph` | Active | `Password_123` |
+| Jasmine Co | `jasmine.co@demo.combatplatform.ph` | Active | `Password_123` |
+| Nicole Enriquez | `nicole.enriquez@demo.combatplatform.ph` | Active | `Password_123` |
+| Rico Alcantara | `rico.alcantara@demo.combatplatform.ph` | Active | `Password_123` |
+| Mara Pineda | `mara.pineda@demo.combatplatform.ph` | Active | `Password_123` |
+| Celina De Leon | `celina.de.leon@demo.combatplatform.ph` | Active | `Password_123` |
+| Francis Rosales | `francis.rosales@demo.combatplatform.ph` | Active | `Password_123` |
+| Rochelle Vergara | `rochelle.vergara@demo.combatplatform.ph` | Active | `Password_123` |
+| Jose Evangelista | `jose.evangelista@demo.combatplatform.ph` | Active | `Password_123` |
+| Teresa Bautista | `teresa.bautista@demo.combatplatform.ph` | Active | `Password_123` |
+| Vincent Tolentino | `vincent.tolentino@demo.combatplatform.ph` | Active | `Password_123` |
 
 ### Athletes — inactive or pending
 
 | Name | Email | Membership status | Password |
 |---|---|---|---|
-| Mika Salcedo | `mika.salcedo.gym3@example.test` | Awaiting payment | `Password_123` |
-| Leo Valdez | `leo.valdez.gym3@example.test` | Frozen | `Password_123` |
-| Julia Pascual | `julia.pascual.gym3@example.test` | Expired | `Password_123` |
-| Tomas Estrada | `tomas.estrada.gym3@example.test` | Cancelled | `Password_123` |
-| Clara Domingo | `clara.domingo.gym3@example.test` | Application pending (no active gym link) | `Password_123` |
-| Enzo Aguilar | `enzo.aguilar.gym3@example.test` | Application rejected (no active gym link) | `Password_123` |
+| Marielle David | `marielle.david@demo.combatplatform.ph` | Application pending (no active gym link) | `Password_123` |
+| Dennis Dela Cruz | `dennis.dela.cruz@demo.combatplatform.ph` | Application rejected (no active gym link) | `Password_123` |
+| Carmela Santos | `carmela.santos@demo.combatplatform.ph` | Awaiting payment | `Password_123` |
+| Joshua Garcia | `joshua.garcia@demo.combatplatform.ph` | Frozen | `Password_123` |
+| Danica Torres | `danica.torres@demo.combatplatform.ph` | Expired | `Password_123` |
+| Lorenzo Flores | `lorenzo.flores@demo.combatplatform.ph` | Cancelled | `Password_123` |
 
 ---
 
@@ -254,7 +254,7 @@ An account is created with one fixed type, chosen at sign-up; it cannot change l
 
 **Location:** Baguio City, Benguet  
 **Owner:** Maria Bautista — `maria.bautista@cordillerafightcamp.ph` — `Password_123`  
-**Counts:** 4 staff, 15 linked members, 1 pending application, 1 rejected application
+**Counts:** 4 staff, 11 active members, 6 inactive or pending
 
 ### Owner
 
@@ -275,28 +275,28 @@ An account is created with one fixed type, chosen at sign-up; it cannot change l
 
 | Name | Email | Membership status | Password |
 |---|---|---|---|
-| Patricia Gomez | `patricia.gomez@gmail.com` | Active | `Password_123` |
-| Miguel Soriano | `miguel.soriano@gmail.com` | Active | `Password_123` |
-| Anthony Padilla | `anthony.padilla@gmail.com` | Active | `Password_123` |
-| Elena Dela Cruz | `elena.dela.cruz.gym4@example.test` | Active | `Password_123` |
-| Rafael Santos | `rafael.santos.gym4@example.test` | Active | `Password_123` |
-| Isabel Garcia | `isabel.garcia.gym4@example.test` | Active | `Password_123` |
-| Marco Torres | `marco.torres.gym4@example.test` | Active | `Password_123` |
-| Diana Flores | `diana.flores.gym4@example.test` | Active | `Password_123` |
-| Adrian Castillo | `adrian.castillo.gym4@example.test` | Active | `Password_123` |
-| Beatriz Ramos | `beatriz.ramos.gym4@example.test` | Active | `Password_123` |
-| Nico Rivera | `nico.rivera.gym4@example.test` | Active | `Password_123` |
+| Patricia Gomez | `patricia.gomez@demo.combatplatform.ph` | Active | `Password_123` |
+| Miguel Soriano | `miguel.soriano@demo.combatplatform.ph` | Active | `Password_123` |
+| Anthony Padilla | `anthony.padilla@demo.combatplatform.ph` | Active | `Password_123` |
+| Vincent Garcia | `vincent.garcia@demo.combatplatform.ph` | Active | `Password_123` |
+| Marielle Torres | `marielle.torres@demo.combatplatform.ph` | Active | `Password_123` |
+| Dennis Flores | `dennis.flores@demo.combatplatform.ph` | Active | `Password_123` |
+| Carmela Castillo | `carmela.castillo@demo.combatplatform.ph` | Active | `Password_123` |
+| Joshua Ramos | `joshua.ramos@demo.combatplatform.ph` | Active | `Password_123` |
+| Danica Rivera | `danica.rivera@demo.combatplatform.ph` | Active | `Password_123` |
+| Lorenzo Domingo | `lorenzo.domingo@demo.combatplatform.ph` | Active | `Password_123` |
+| Rowena Aguilar | `rowena.aguilar@demo.combatplatform.ph` | Active | `Password_123` |
 
 ### Athletes — inactive or pending
 
 | Name | Email | Membership status | Password |
 |---|---|---|---|
-| Mika Salcedo | `mika.salcedo.gym4@example.test` | Awaiting payment | `Password_123` |
-| Leo Valdez | `leo.valdez.gym4@example.test` | Frozen | `Password_123` |
-| Julia Pascual | `julia.pascual.gym4@example.test` | Expired | `Password_123` |
-| Tomas Estrada | `tomas.estrada.gym4@example.test` | Cancelled | `Password_123` |
-| Clara Domingo | `clara.domingo.gym4@example.test` | Application pending (no active gym link) | `Password_123` |
-| Enzo Aguilar | `enzo.aguilar.gym4@example.test` | Application rejected (no active gym link) | `Password_123` |
+| Angelo Salcedo | `angelo.salcedo@demo.combatplatform.ph` | Application pending (no active gym link) | `Password_123` |
+| Luisa Valdez | `luisa.valdez@demo.combatplatform.ph` | Application rejected (no active gym link) | `Password_123` |
+| Elena Pascual | `elena.pascual@demo.combatplatform.ph` | Awaiting payment | `Password_123` |
+| Rafael Estrada | `rafael.estrada@demo.combatplatform.ph` | Frozen | `Password_123` |
+| Isabel Dizon | `isabel.dizon@demo.combatplatform.ph` | Expired | `Password_123` |
+| Marco Velasco | `marco.velasco@demo.combatplatform.ph` | Cancelled | `Password_123` |
 
 ---
 
@@ -304,7 +304,7 @@ An account is created with one fixed type, chosen at sign-up; it cannot change l
 
 **Location:** Davao City, Davao del Sur  
 **Owner:** Paolo Reyes — `paolo.reyes@davaograppling.ph` — `Password_123`  
-**Counts:** 5 staff, 16 linked members, 1 pending application, 1 rejected application
+**Counts:** 5 staff, 12 active members, 6 inactive or pending
 
 ### Owner
 
@@ -326,29 +326,29 @@ An account is created with one fixed type, chosen at sign-up; it cannot change l
 
 | Name | Email | Membership status | Password |
 |---|---|---|---|
-| Gabriel Tan | `gabriel.tan@gmail.com` | Active | `Password_123` |
-| Daniel Villamor | `daniel.villamor@gmail.com` | Active | `Password_123` |
-| Jasmine Co | `jasmine.co@gmail.com` | Active | `Password_123` |
-| Anthony Padilla | `anthony.padilla@gmail.com` | Active | `Password_123` |
-| Elena Dela Cruz | `elena.dela.cruz.gym5@example.test` | Active | `Password_123` |
-| Rafael Santos | `rafael.santos.gym5@example.test` | Active | `Password_123` |
-| Isabel Garcia | `isabel.garcia.gym5@example.test` | Active | `Password_123` |
-| Marco Torres | `marco.torres.gym5@example.test` | Active | `Password_123` |
-| Diana Flores | `diana.flores.gym5@example.test` | Active | `Password_123` |
-| Adrian Castillo | `adrian.castillo.gym5@example.test` | Active | `Password_123` |
-| Beatriz Ramos | `beatriz.ramos.gym5@example.test` | Active | `Password_123` |
-| Nico Rivera | `nico.rivera.gym5@example.test` | Active | `Password_123` |
+| Gabriel Tan | `gabriel.tan@demo.combatplatform.ph` | Active | `Password_123` |
+| Daniel Villamor | `daniel.villamor@demo.combatplatform.ph` | Active | `Password_123` |
+| Jasmine Co | `jasmine.co@demo.combatplatform.ph` | Active | `Password_123` |
+| Anthony Padilla | `anthony.padilla@demo.combatplatform.ph` | Active | `Password_123` |
+| Rowena Estrada | `rowena.estrada@demo.combatplatform.ph` | Active | `Password_123` |
+| Angelo Dizon | `angelo.dizon@demo.combatplatform.ph` | Active | `Password_123` |
+| Luisa Velasco | `luisa.velasco@demo.combatplatform.ph` | Active | `Password_123` |
+| Elena Fontanilla | `elena.fontanilla@demo.combatplatform.ph` | Active | `Password_123` |
+| Rafael Ocampo | `rafael.ocampo@demo.combatplatform.ph` | Active | `Password_123` |
+| Isabel Villaflor | `isabel.villaflor@demo.combatplatform.ph` | Active | `Password_123` |
+| Marco Soriano | `marco.soriano@demo.combatplatform.ph` | Active | `Password_123` |
+| Diana Malabanan | `diana.malabanan@demo.combatplatform.ph` | Active | `Password_123` |
 
 ### Athletes — inactive or pending
 
 | Name | Email | Membership status | Password |
 |---|---|---|---|
-| Mika Salcedo | `mika.salcedo.gym5@example.test` | Awaiting payment | `Password_123` |
-| Leo Valdez | `leo.valdez.gym5@example.test` | Frozen | `Password_123` |
-| Julia Pascual | `julia.pascual.gym5@example.test` | Expired | `Password_123` |
-| Tomas Estrada | `tomas.estrada.gym5@example.test` | Cancelled | `Password_123` |
-| Clara Domingo | `clara.domingo.gym5@example.test` | Application pending (no active gym link) | `Password_123` |
-| Enzo Aguilar | `enzo.aguilar.gym5@example.test` | Application rejected (no active gym link) | `Password_123` |
+| Adrian Manalo | `adrian.manalo@demo.combatplatform.ph` | Application pending (no active gym link) | `Password_123` |
+| Beatriz Alcantara | `beatriz.alcantara@demo.combatplatform.ph` | Application rejected (no active gym link) | `Password_123` |
+| Nico Pineda | `nico.pineda@demo.combatplatform.ph` | Awaiting payment | `Password_123` |
+| Clara De Leon | `clara.de.leon@demo.combatplatform.ph` | Frozen | `Password_123` |
+| Enzo Rosales | `enzo.rosales@demo.combatplatform.ph` | Expired | `Password_123` |
+| Mika Vergara | `mika.vergara@demo.combatplatform.ph` | Cancelled | `Password_123` |
 
 ---
 
@@ -358,14 +358,14 @@ These members belong to more than one center. Signing in once gives access to al
 
 | Name | Email | Centers | Role | Password |
 |---|---|---|---|---|
-| Sofia Ramirez | `sofia.ramirez@gmail.com` | Iron Will Boxing Gym + Kalaw Combat Academy | Athlete / Member | `Password_123` |
-| Patricia Gomez | `patricia.gomez@gmail.com` | Iron Will Boxing Gym + Cordillera Fight Camp | Athlete / Member | `Password_123` |
-| Miguel Soriano | `miguel.soriano@gmail.com` | Iron Will Boxing Gym + Cordillera Fight Camp | Athlete / Member | `Password_123` |
-| Alyssa Mercado | `alyssa.mercado@gmail.com` | Iron Will Boxing Gym + Kalaw Combat Academy | Athlete / Member | `Password_123` |
-| Gabriel Tan | `gabriel.tan@gmail.com` | Kalaw Combat Academy + Davao Grappling Club | Athlete / Member | `Password_123` |
-| Daniel Villamor | `daniel.villamor@gmail.com` | Kalaw Combat Academy + Davao Grappling Club | Athlete / Member | `Password_123` |
-| Anthony Padilla | `anthony.padilla@gmail.com` | Cordillera Fight Camp + Davao Grappling Club | Athlete / Member | `Password_123` |
-| Jasmine Co | `jasmine.co@gmail.com` | Kalaw Combat Academy + Bakunawa Martial Arts Center + Davao Grappling Club | Athlete / Member | `Password_123` |
+| Sofia Ramirez | `sofia.ramirez@demo.combatplatform.ph` | Iron Will Boxing Gym + Kalaw Combat Academy | Athlete / Member | `Password_123` |
+| Patricia Gomez | `patricia.gomez@demo.combatplatform.ph` | Iron Will Boxing Gym + Cordillera Fight Camp | Athlete / Member | `Password_123` |
+| Miguel Soriano | `miguel.soriano@demo.combatplatform.ph` | Iron Will Boxing Gym + Cordillera Fight Camp | Athlete / Member | `Password_123` |
+| Alyssa Mercado | `alyssa.mercado@demo.combatplatform.ph` | Iron Will Boxing Gym + Kalaw Combat Academy | Athlete / Member | `Password_123` |
+| Gabriel Tan | `gabriel.tan@demo.combatplatform.ph` | Kalaw Combat Academy + Davao Grappling Club | Athlete / Member | `Password_123` |
+| Daniel Villamor | `daniel.villamor@demo.combatplatform.ph` | Kalaw Combat Academy + Davao Grappling Club | Athlete / Member | `Password_123` |
+| Jasmine Co | `jasmine.co@demo.combatplatform.ph` | Kalaw Combat Academy + Bakunawa Martial Arts Center + Davao Grappling Club | Athlete / Member | `Password_123` |
+| Anthony Padilla | `anthony.padilla@demo.combatplatform.ph` | Cordillera Fight Camp + Davao Grappling Club | Athlete / Member | `Password_123` |
 
 ## Account counts
 
@@ -374,16 +374,15 @@ These members belong to more than one center. Signing in once gives access to al
 | Platform Administrator | 1 |
 | Training Center Owners | 5 |
 | Staff / employees | 26 |
-| Member accounts (73 linked + 9 pending/rejected) | 82 |
+| Member accounts (71 linked + 10 pending/rejected only) | 81 |
 | Pending center owner applicants | 5 |
-| **Total** | **119** |
+| **Total** | **118** |
 
-Staff by gym: Iron Will 6, Kalaw 6, Bakunawa 5, Cordillera 4, Davao 5.
+Staff by gym: Iron 6, Kalaw 6, Bakunawa 5, Cordillera 4, Davao 5.
 
 ## Notes
 
-- All passwords were checked against the current database hashes; every account matches `Password_123`.
+- All passwords were checked against the current database hashes on local and live; every account matches `Password_123`.
 - "Active", "Awaiting payment", "Frozen", "Expired", and "Cancelled" are membership statuses, not account statuses.
-- Clara Domingo and Enzo Aguilar have no active center link because their membership applications are still pending or were rejected. They can still sign in and view their application.
-- `CaseCheck.20261106@Example.com` was created during testing, not by `DatabaseSeeder`. Reseeding removes it.
+- Members with only a pending or rejected application have no active center link. They can still sign in and view their application.
 - Staff accounts are created by the owner through the app in normal use; these demo staff accounts are already verified and active.
