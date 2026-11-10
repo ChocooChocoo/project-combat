@@ -157,7 +157,7 @@ export const ENTRY_LABELS: Record<AthleteEntry['type'], string> = {
 
 /** Only real desk payments can be corrected, once (R-34). */
 export function correctable(payment: Payment, all: Payment[]): boolean {
-  return Number(payment.amount) > 0 && payment.method !== 'paymongo' && !all.some((other) => other.corrects_id === payment.id)
+  return (payment.membership_id !== null || payment.session_booking_id !== null) && Number(payment.amount) > 0 && payment.method !== 'paymongo' && !all.some((other) => other.corrects_id === payment.id)
 }
 
 export function money(value: string | number | null | undefined): string {

@@ -114,6 +114,7 @@ class PaymentController extends Controller
         $original = $gym->payments()->findOrFail($payment);
 
         abort_if($original->corrects_id !== null || (float) $original->amount <= 0, 409, 'Only a payment can be corrected, not a correction or refund.');
+        abort_if($original->membership_id === null && $original->session_booking_id === null, 409, 'Desk sales cannot be corrected here.');
         abort_if($original->method === PaymentMethod::Paymongo, 409, 'Online payments are corrected through PayMongo refunds.');
         abort_if($gym->payments()->where('corrects_id', $original->id)->exists(), 409, 'This payment was already corrected.');
 
