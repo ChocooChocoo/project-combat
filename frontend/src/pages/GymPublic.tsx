@@ -1,6 +1,7 @@
 import { ArrowLeft, Check, ChevronDown, Clock, Dumbbell, Mail, MapPin, Phone } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
+import { BrandLogo } from '@/components/brand-logo'
 import { NotificationsMenu } from '@/components/notifications-menu'
 import { PageHeader } from '@/components/page-header'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -108,8 +109,7 @@ function BrandBar({ signedIn, showBack = false }: { signedIn: boolean; showBack?
   return (
     <header className="safe-area-top flex flex-wrap items-center gap-3 border-b pb-5">
       <Link className="flex min-h-11 items-center gap-2.5 font-medium text-sm" to="/">
-        <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm">CP</span>
-        Combat Platform
+        <BrandLogo className="h-7" />
       </Link>
       <div className="ms-auto flex items-center gap-2">
         {signedIn && <NotificationsMenu />}

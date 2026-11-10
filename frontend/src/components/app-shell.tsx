@@ -1,5 +1,6 @@
 import { Building2, CalendarDays, ChartColumn, Check, CreditCard, ChevronsUpDown, ClipboardCheck, FilePlus2, FileText, House, IdCard, LogOut, Medal, UserRound } from 'lucide-react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
+import { BrandLogo } from '@/components/brand-logo'
 import { myDashboardNav, myWorkNav, workspaceNavGroups } from '@/components/gym-nav'
 import { NotificationsMenu } from '@/components/notifications-menu'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -214,13 +215,12 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
         <SidebarHeader className="safe-area-top [--safe-area-top-padding:0.5rem]">
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton size="lg" tooltip="Combat Platform" render={<Link to="/" />}>
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary font-semibold text-primary-foreground text-sm">
-                  CP
+              <SidebarMenuButton size="lg" tooltip="CombatPro" render={<Link to="/" />}>
+                <span className="contents group-data-[collapsible=icon]:hidden">
+                  <BrandLogo className="h-6" />
                 </span>
-                <span className="grid text-left leading-tight">
-                  <span className="font-semibold">Combat Platform</span>
-                  <span className="text-muted-foreground text-xs">Training centers</span>
+                <span className="hidden group-data-[collapsible=icon]:contents">
+                  <BrandLogo compact className="h-4" />
                 </span>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -247,7 +247,6 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
       <SidebarInset className="min-w-0" id="main-content" tabIndex={-1}>
         <header className="safe-area-top sticky top-0 z-20 flex h-[calc(3.5rem+env(safe-area-inset-top,0px))] shrink-0 items-center gap-2 border-b bg-background px-3 md:px-4">
           <SidebarTrigger className="size-11 md:size-7" aria-label="Toggle navigation" />
-          <span className="font-semibold text-sm md:hidden">Combat Platform</span>
           <div className="ms-auto flex items-center gap-1">
             <ThemeToggle />
             <span className="contents" title={unread ? `${unread} unread notifications` : 'Notifications'}>

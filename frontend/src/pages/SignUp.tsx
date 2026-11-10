@@ -42,7 +42,7 @@ export default function SignUp() {
     <AuthCard
       wide
       title="Create your account"
-      description="Choose how you will use Combat Platform, then add your details."
+      description="Choose how you will use CombatPro, then add your details."
       footer={<>Already have an account? <Button variant="link" size="sm" className="px-1" render={<Link to="/sign-in" />}>Sign in</Button></>}
     >
       <Form className="flex flex-col gap-6" errors={errors} onSubmit={submit}>

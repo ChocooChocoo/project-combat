@@ -1,5 +1,6 @@
 import { ArrowLeft, Building2, CalendarCheck, MapPin } from 'lucide-react'
 import { Link } from 'react-router'
+import { BrandLogo } from '@/components/brand-logo'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardFooter, CardHeader, CardPanel, CardTitle } from '@/components/ui/card'
@@ -16,11 +17,7 @@ const highlights = [
 function Brand({ className }: { className?: string }) {
   return (
     <Link to="/" className={cn('flex items-center gap-2 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring', className)}>
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary font-semibold text-primary-foreground text-sm">CP</span>
-      <span className="grid leading-tight">
-        <span className="font-semibold text-sm">Combat Platform</span>
-        <span className="text-muted-foreground text-xs">Training centers</span>
-      </span>
+      <BrandLogo className="h-7" />
     </Link>
   )
 }
@@ -35,7 +32,7 @@ export function AuthCard({ title, description, children, footer, wide = false }:
 }) {
   return (
     <main className="grid min-h-svh lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-      <aside aria-label="Combat Platform" className="hidden flex-col justify-between gap-10 border-e bg-muted/40 p-10 lg:flex">
+      <aside aria-label="CombatPro" className="hidden flex-col justify-between gap-10 border-e bg-muted/40 p-10 lg:flex">
         <Brand className="self-start" />
         <div className="flex max-w-md flex-col gap-6">
           <Badge variant="outline" size="lg" className="self-start">Combat sports training</Badge>
@@ -59,7 +56,7 @@ export function AuthCard({ title, description, children, footer, wide = false }:
             ))}
           </Frame>
         </div>
-        <p className="text-muted-foreground text-xs">© {new Date().getFullYear()} Combat Platform</p>
+        <p className="text-muted-foreground text-xs">© {new Date().getFullYear()} CombatPro</p>
       </aside>
 
       <div className="flex min-w-0 flex-col gap-6 p-4 sm:p-6 lg:p-10">

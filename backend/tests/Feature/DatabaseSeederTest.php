@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Gym;
 use App\Models\TrainingSession;
+use App\Notifications\AnnouncementPublished;
+use App\Notifications\PlatformNoticeSent;
 use App\Support\CurrentGym;
 use App\Support\SessionScheduler;
 use App\Support\StockLedger;
@@ -42,13 +44,14 @@ class DatabaseSeederTest extends TestCase
         }
         $this->assertSame('owner', DB::table('users')->where('email', 'ramon.villanueva@ironwillboxing.ph')->value('account_type'));
         $this->assertSame('owner', DB::table('users')->where('email', 'jomar.aquino@southsidemuaythai.ph')->value('account_type'));
-        $this->assertSame('member', DB::table('users')->where('email', 'sofia.ramirez@gmail.com')->value('account_type'));
+        $this->assertSame('member', DB::table('users')->where('email', 'sofia.ramirez@demo.combatplatform.ph')->value('account_type'));
 
-        $this->assertDatabaseCount('platform_notices', 1);
-        $notice = DB::table('platform_notices')->first();
+        $this->assertDatabaseCount('platform_notices', 2);
+        $notice = DB::table('platform_notices')->where('audience', 'owners')->first();
         $this->assertSame('owners', $notice->audience);
         $this->assertSame(5, $notice->recipients_count);
-        $notifications = DB::table('notifications')->where('type', \App\Notifications\PlatformNoticeSent::class)->get();
+        $notifications = DB::table('notifications')->where('type', PlatformNoticeSent::class)->get()
+            ->filter(fn ($notification) => json_decode($notification->data, true)['notice_id'] === $notice->id);
         $this->assertCount(5, $notifications);
         foreach ($notifications as $notification) {
             $payload = json_decode($notification->data, true);
@@ -59,19 +62,19 @@ class DatabaseSeederTest extends TestCase
         foreach (Gym::where('status', 'approved')->get() as $gym) {
             app(CurrentGym::class)->set($gym);
             $announcements = DB::table('announcements')->where('gym_id', $gym->id)->get();
-            $this->assertCount(2, $announcements);
-            $this->assertSame(['all_members', 'customer_group'], $announcements->pluck('audience_type')->sort()->values()->all());
-            $this->assertSame(['announcement', 'event'], $announcements->pluck('kind')->sort()->values()->all());
+            $this->assertCount(3, $announcements);
+            $this->assertSame(['all_members', 'customer_group', 'session'], $announcements->pluck('audience_type')->sort()->values()->all());
+            $this->assertSame(['announcement', 'announcement', 'event'], $announcements->pluck('kind')->sort()->values()->all());
             foreach ($announcements as $announcement) {
                 $this->assertGreaterThan(0, $announcement->recipients_count);
                 $this->assertGreaterThanOrEqual(0, $announcement->skipped_count);
                 $this->assertSame($announcement->recipients_count, DB::table('notifications')
-                    ->where('type', \App\Notifications\AnnouncementPublished::class)->get()
+                    ->where('type', AnnouncementPublished::class)->get()
                     ->filter(fn ($notification) => json_decode($notification->data, true)['announcement_id'] === $announcement->id)->count());
             }
             $this->assertGreaterThan(0, DB::table('stock_items')->where('gym_id', $gym->id)->count());
             $this->assertGreaterThan(0, DB::table('stock_movements')->where('gym_id', $gym->id)->count());
-            $this->assertSame(2, DB::table('suppliers')->where('gym_id', $gym->id)->count());
+            $this->assertSame(3, DB::table('suppliers')->where('gym_id', $gym->id)->count());
             $this->assertGreaterThan(0, DB::table('purchase_requests')->where('gym_id', $gym->id)->where('status', 'approved')->count());
             $this->assertGreaterThan(0, DB::table('purchase_orders')->where('gym_id', $gym->id)->where('status', 'partly_received')->count());
             $this->assertGreaterThan(0, DB::table('goods_receipts')->where('gym_id', $gym->id)->count());

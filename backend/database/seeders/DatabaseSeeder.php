@@ -2,15 +2,16 @@
 
 namespace Database\Seeders;
 
-use App\Enums\GymPersonType;
 use App\Enums\AnnouncementAudience as AudienceType;
+use App\Enums\GymPersonType;
 use App\Enums\GymStatus;
 use App\Enums\LeaveRequestStatus;
 use App\Enums\MembershipStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PlanBilling;
-use App\Models\AthleteProfile;
+use App\Enums\PlatformNoticeAudience;
 use App\Models\Announcement;
+use App\Models\AthleteProfile;
 use App\Models\Budget;
 use App\Models\Gym;
 use App\Models\GymRole;
@@ -21,13 +22,13 @@ use App\Models\PlatformNotice;
 use App\Models\SessionBooking;
 use App\Models\TrainingSession;
 use App\Models\User;
-use App\Notifications\GymApplicationDecided;
 use App\Notifications\AnnouncementPublished;
+use App\Notifications\GymApplicationDecided;
 use App\Notifications\LeaveRequestDecided;
 use App\Notifications\LeaveRequestSubmitted;
 use App\Notifications\PlatformNoticeSent;
-use App\Support\AttendanceLedger;
 use App\Support\Announcements\AnnouncementAudience;
+use App\Support\AttendanceLedger;
 use App\Support\BookingLedger;
 use App\Support\CurrentGym;
 use App\Support\MembershipLedger;
@@ -57,6 +58,8 @@ use Illuminate\Support\Str;
  */
 class DatabaseSeeder extends Seeder
 {
+    use DemoScenarios;
+
     private const PASSWORD = 'Password_123';
 
     /** Roles every approved gym has, with the access levels the owner gave them. */
@@ -96,7 +99,7 @@ class DatabaseSeeder extends Seeder
         ],
         'HR Officer' => [
             'hr' => 'approve',
-            'payroll' => 'manage',
+            'payroll' => 'approve',
             'announcements' => 'view',
         ],
         'Finance Officer' => [
@@ -129,22 +132,25 @@ class DatabaseSeeder extends Seeder
         $this->seedApprovedGyms($people, $admin, $year);
         $this->seedApplications($people, $admin);
         $this->seedPlatformNotice($admin);
+        $this->seedSubscriptionStates();
     }
 
     private function seedPlatformNotice(User $admin): void
     {
-        DB::transaction(function () use ($admin) {
-            $recipients = app(\App\Support\PlatformNotices\PlatformNoticeAudience::class)
-                ->resolve(\App\Enums\PlatformNoticeAudience::Owners, $admin);
-            $notice = PlatformNotice::create([
-                'title' => 'Welcome to the platform',
-                'body' => 'Platform updates will appear in your inbox. Please keep your account contact details current.',
-                'audience' => 'owners', 'created_by' => $admin->id, 'recipients_count' => $recipients->count(),
-            ]);
-            foreach ($recipients->chunk(200) as $users) {
-                Notification::sendNow($users, new PlatformNoticeSent($notice));
-            }
-        });
+        foreach (['owners', 'all_users'] as $audience) {
+            DB::transaction(function () use ($admin, $audience) {
+                $recipients = app(\App\Support\PlatformNotices\PlatformNoticeAudience::class)
+                    ->resolve(PlatformNoticeAudience::from($audience), $admin);
+                $notice = PlatformNotice::create([
+                    'title' => $audience === 'owners' ? 'Review your gym contact details' : 'Keep your emergency contact up to date',
+                    'body' => $audience === 'owners' ? 'Please check your published opening hours and front desk contact details before the next billing period.' : 'Before your next session, check the emergency contact number in your profile and tell your coach about any new training restrictions.',
+                    'audience' => $audience, 'created_by' => $admin->id, 'recipients_count' => $recipients->count(),
+                ]);
+                foreach ($recipients->chunk(200) as $users) {
+                    Notification::sendNow($users, new PlatformNoticeSent($notice));
+                }
+            });
+        }
     }
 
     /** Removes every record this platform created, and the files that belong to it. */
@@ -153,6 +159,7 @@ class DatabaseSeeder extends Seeder
         Schema::disableForeignKeyConstraints();
 
         $tables = [
+            'subscription_payments',
             'platform_notices',
             'announcements',
             'notifications',
@@ -279,6 +286,8 @@ class DatabaseSeeder extends Seeder
         bool $platformAdmin = false,
         bool $ownerAccount = false,
     ): User {
+        $email = $this->contactEmail($email);
+        $phone = $this->phone($phone);
         $user = User::create([
             'first_name' => $firstName,
             'last_name' => $lastName,
@@ -331,6 +340,7 @@ class DatabaseSeeder extends Seeder
         foreach ($this->approvedGymSpecs() as $spec) {
             $owner = $people[$spec['owner']];
             $gym = $this->createGym($spec, $owner, $admin);
+            $gym->update(['payroll_steps' => $gym->id === 1 ? ['hr_review', 'finance_review', 'owner'] : ($gym->id === 2 ? ['finance_review', 'owner'] : ['owner'])]);
 
             $this->seedGymDocuments($gym, $owner, $spec);
 
@@ -347,7 +357,7 @@ class DatabaseSeeder extends Seeder
 
             $employees = [];
 
-            foreach ($spec['staff'] as $staff) {
+            foreach ($spec['staff'] as $staffIndex => $staff) {
                 $employee = $this->user(
                     $staff['first'],
                     $staff['last'],
@@ -366,6 +376,7 @@ class DatabaseSeeder extends Seeder
                     'job_title' => $staff['job_title'],
                     'started_on' => $staff['started_on'],
                     'pay_basis' => $staff['pay_basis'],
+                    'employment_type' => $staffIndex === 2 ? 'contractor' : 'employee',
                     'monthly_rate' => $staff['monthly_rate'] ?? null,
                     'per_session_rate' => $staff['per_session_rate'] ?? null,
                     'coach_experience' => $staff['coach_experience'] ?? null,
@@ -420,10 +431,11 @@ class DatabaseSeeder extends Seeder
             }
 
             foreach ($spec['holidays'] as $holiday) {
+                $holiday['date'] = today()->year.'-'.substr($holiday['date'], 5);
                 $gym->holidays()->create($holiday);
             }
 
-            foreach ($spec['leaves'] as $leave) {
+            foreach ($this->currentLeaves($spec['leaves']) as $leave) {
                 $this->seedLeave($gym, $owner, $employees[$leave['email']], $leave);
             }
 
@@ -432,6 +444,7 @@ class DatabaseSeeder extends Seeder
             }
 
             $this->seedSessions($gym, $owner, $spec, $employees, $services);
+            $this->seedWorkshop($gym, $owner);
             $this->seedStock($gym, $owner, array_values($employees));
             $this->seedExpenses($gym, $owner);
             $this->seedBudgets($gym, $owner);
@@ -439,6 +452,7 @@ class DatabaseSeeder extends Seeder
             $this->seedAnnouncements($gym, $owner);
             $this->seedProcurement($gym, $owner, array_values($employees));
             $this->seedPayroll($gym, $owner, array_values($employees));
+            $this->seedHrScenarios($gym, $owner, array_values($employees));
 
             $owner->notify(new GymApplicationDecided($gym));
         }
@@ -448,17 +462,20 @@ class DatabaseSeeder extends Seeder
     {
         $group = $gym->customerGroups()->orderBy('id')->firstOrFail();
         foreach ([
-            ['title' => 'Welcome to training', 'body' => 'Please bring water and wraps to each session.',
+            ['title' => $gym->name.': training reminders', 'body' => 'Please bring water and clean training gear. Ask the front desk which protective equipment is required for your class.',
                 'kind' => 'announcement', 'audience_type' => AudienceType::AllMembers->value],
-            ['title' => 'Beginners training meetup', 'body' => 'Meet the coaches and practise the basics together.',
+            ['title' => $gym->city.' beginner orientation', 'body' => 'Meet the coaches, tour the training floor and practise stance and movement with the beginner group.',
                 'kind' => 'event', 'audience_type' => AudienceType::CustomerGroup->value,
                 'customer_group_id' => $group->id, 'event_starts_at' => now()->addWeek()->setTime(10, 0),
                 'event_place' => $gym->rooms()->orderBy('id')->firstOrFail()->name],
+            ['title' => 'Equipment check before class', 'body' => 'Please arrive ten minutes early so the coach can check protective gear and pair training partners.',
+                'kind' => 'announcement', 'audience_type' => AudienceType::Session->value,
+                'training_session_id' => TrainingSession::where('status', 'scheduled')->orderByDesc('starts_at')->firstOrFail()->id],
         ] as $data) {
             DB::transaction(function () use ($gym, $owner, $data) {
                 Gym::whereKey($gym->id)->lockForUpdate()->firstOrFail();
                 $audience = app(AnnouncementAudience::class)->resolve(
-                    $gym, AudienceType::from($data['audience_type']), null, $data['customer_group_id'] ?? null,
+                    $gym, AudienceType::from($data['audience_type']), $data['training_session_id'] ?? null, $data['customer_group_id'] ?? null,
                 );
                 $announcement = Announcement::create([
                     ...$data, 'created_by' => $owner->id,
@@ -503,6 +520,7 @@ class DatabaseSeeder extends Seeder
         Carbon::withTestNow(now()->subDays(5)->setTime(9, 0), fn () => $ledger->move($items[3], 'damaged', 1, $owner, ['note' => 'Torn padding']));
         Carbon::withTestNow(now()->subDays(3)->setTime(9, 0), fn () => $ledger->move($items[4], 'adjustment', -1, $owner, ['note' => 'Monthly count check']));
         Carbon::withTestNow(now()->subDays(2)->setTime(9, 0), fn () => $ledger->move($items[2], 'issue', 3, $owner, ['note' => 'For the front desk']));
+        $this->seedStockScenarios($gym, $owner, $items);
     }
 
     /** R-75 to R-79, R-66: two suppliers and one part-received purchase per demo gym. */
@@ -516,21 +534,21 @@ class DatabaseSeeder extends Seeder
 
         $suppliers = [
             $gym->suppliers()->create([
-                'name' => 'Manila Fight Gear Supply',
+                'name' => $gym->city.' Fight Gear Supply',
                 'contact_person' => 'Cesar Lim',
-                'phone' => '0917 555 0301',
-                'email' => 'orders@manilafightgear.test',
-                'address' => '18 Quezon Avenue, Quezon City',
+                'phone' => $this->mobile('supplier-gear-'.$gym->id),
+                'email' => 'gear.orders.'.Str::slug($gym->city).'@demo.combatplatform.ph',
+                'address' => '18 Rizal Avenue, '.$gym->city,
                 'payment_terms' => '50% deposit, balance on delivery',
                 'notes' => 'Gloves, wraps and protective gear. Delivers every Tuesday.',
                 'status' => 'active',
             ]),
             $gym->suppliers()->create([
-                'name' => 'Quezon Sports Medical Trading',
+                'name' => $gym->city.' Sports Medical Trading',
                 'contact_person' => 'Nina Perez',
-                'phone' => '0917 555 0302',
-                'email' => 'sales@quezonmedical.test',
-                'address' => '7 Banawe Street, Quezon City',
+                'phone' => $this->mobile('supplier-medical-'.$gym->id),
+                'email' => 'medical.sales.'.Str::slug($gym->city).'@demo.combatplatform.ph',
+                'address' => '7 Mabini Street, '.$gym->city,
                 'payment_terms' => 'Net 15',
                 'notes' => 'First aid, disinfectant and recovery supplies.',
                 'status' => 'active',
@@ -645,6 +663,7 @@ class DatabaseSeeder extends Seeder
             'status' => 'open',
             'created_by' => $owner->id,
         ]);
+        $this->seedProcurementScenarios($gym, $owner, $requester, $suppliers[1], $primary, $secondary);
     }
 
     /** R-69 to R-71: realistic leads, history, follow-ups and one audience group per demo gym. */
@@ -714,9 +733,9 @@ class DatabaseSeeder extends Seeder
         }
 
         $lead = Carbon::withTestNow(now()->subDays(3)->setTime(18, 0), fn () => $gym->customers()->create([
-            'name' => 'Rico Dizon',
-            'email' => "rico.dizon.gym{$gym->id}@example.test",
-            'phone' => sprintf('0917 555 %04d', $gym->id * 100 + 71),
+            'name' => $this->personName($gym->id, 20),
+            'email' => $this->personEmail($gym->id, 20),
+            'phone' => $this->mobile('lead-'.$gym->id.'-20'),
             'source' => 'social',
             'inquiry' => 'Messaged about a free trial class for a group of three friends.',
             'assigned_to' => $staff->id,
@@ -726,9 +745,9 @@ class DatabaseSeeder extends Seeder
         $customers[] = $lead;
 
         $customers[] = Carbon::withTestNow(now()->subDays(12)->setTime(9, 30), fn () => $gym->customers()->create([
-            'name' => 'Mara Velasco',
-            'email' => "mara.velasco.gym{$gym->id}@example.test",
-            'phone' => sprintf('0917 555 %04d', $gym->id * 100 + 72),
+            'name' => $this->personName($gym->id, 21),
+            'email' => $this->personEmail($gym->id, 21),
+            'phone' => $this->mobile('lead-'.$gym->id.'-21'),
             'source' => 'event',
             'inquiry' => 'Signed up at the mall booth but did not attend the trial.',
             'assigned_to' => $owner->id,
@@ -809,6 +828,7 @@ class DatabaseSeeder extends Seeder
         ]));
 
         $group->members()->attach(collect($customers)->take(3)->pluck('id')->all());
+        $this->seedCustomerScenarios($gym, $owner, $lead);
     }
 
     /** R-42: sample classes use the same holiday, leave and clash checks as staff scheduling. */
@@ -900,8 +920,9 @@ class DatabaseSeeder extends Seeder
         ];
         $members = $gym->people()->wherePivot('role', 'member')->get();
         $existing = $members->count();
-        foreach ($names as $index => [$first, $last]) {
-            $email = Str::slug("{$first} {$last}", '.').".gym{$gym->id}@example.test";
+        foreach ($names as $index => $_) {
+            [$first, $last] = explode(' ', $this->personName($gym->id, $index), 2);
+            $email = $this->personEmail($gym->id, $index);
             $members->push($this->user($first, $last, $email,
                 sprintf('0917 555 %04d', $gym->id * 100 + $index)));
         }
@@ -916,14 +937,7 @@ class DatabaseSeeder extends Seeder
             $plan = $scenario === 1 && $pack ? $pack : $timePlan;
             $applied = today()->subDays($status === 'expired' ? 100 : 28)->setTime(9, 0);
             $approved = $applied->copy()->addDay();
-            $profile = [
-                'emergency_contacts' => [['name' => 'Alex '.$member->last_name, 'relationship' => 'Sibling', 'phone' => '0917 555 0999']],
-                'background' => $index % 2 ? 'Returning to regular training after recreational classes.' : 'New to structured combat sports training.',
-                'current_rank' => $plan === $pack ? 'Beginner' : 'Recreational athlete',
-                'training_history' => 'Training twice weekly with a focus on technique and conditioning.',
-                'health_answers' => array_fill_keys(array_keys(config('membership.health_questions')), false),
-                'health_notes' => 'No current training restrictions reported in this fictional demo profile.',
-            ];
+            $profile = $this->memberProfile($gym, $member, $index);
             $membership = Membership::create([
                 'user_id' => $member->id, 'membership_plan_id' => $plan->id, ...$profile,
                 'status' => 'applied', 'waivers' => array_keys(config('membership.waivers')),
@@ -1051,11 +1065,11 @@ class DatabaseSeeder extends Seeder
                 'created_at' => $at, 'updated_at' => $at,
             ]);
             if ($past) {
-                $attendance = ['present', 'present', 'late', 'present', 'absent'][$index % 5];
+                $attendance = ['present', 'present', 'late', 'no_show', 'absent'][$index % 5];
                 $checkIn = $session->starts_at->copy()->addMinutes($attendance === 'late' ? 15 : -5);
                 Carbon::withTestNow($session->ends_at, function () use ($booking, $attendance, $owner, $checkIn, $session) {
-                    app(AttendanceLedger::class)->mark($booking, $attendance, $owner, 'account', $checkIn);
-                    if ($attendance !== 'absent') {
+                    app(AttendanceLedger::class)->mark($booking, $attendance, $owner, $booking->id % 2 ? 'account' : 'qr', $checkIn);
+                    if (in_array($attendance, ['present', 'late'], true)) {
                         $booking->forceFill(['check_out_at' => $session->ends_at->copy()->addMinutes(5)])->save();
                     }
                 });
@@ -1113,7 +1127,7 @@ class DatabaseSeeder extends Seeder
         foreach ($entries as [$category, $amount, $date, $method, $note]) {
             $expenses[] = Carbon::withTestNow($date->copy()->setTime(10, 0), fn () => $gym->expenses()->create([
                 'category' => $category,
-                'amount' => $amount,
+                'amount' => number_format((float) $amount * (0.75 + $gym->id * 0.13), 2, '.', ''),
                 'incurred_on' => $date->toDateString(),
                 'method' => $method,
                 'note' => $note,
@@ -1123,13 +1137,14 @@ class DatabaseSeeder extends Seeder
 
         Carbon::withTestNow(now()->subDays(4)->setTime(11, 0), fn () => $gym->expenses()->create([
             'category' => 'supplies',
-            'amount' => '-850.00',
+            'amount' => number_format(-850 * (0.75 + $gym->id * 0.13), 2, '.', ''),
             'incurred_on' => today()->subDays(4)->toDateString(),
             'method' => 'card',
             'note' => "Corrects #{$expenses[2]->id}: duplicate supplier charge.",
             'corrects_id' => $expenses[2]->id,
             'recorded_by' => $owner->id,
         ]));
+        $this->seedFinanceScenarios($gym, $owner);
     }
 
     /** R-67: three months of budgets per demo gym, one row per category. */
@@ -1162,7 +1177,7 @@ class DatabaseSeeder extends Seeder
 
         foreach (range(0, 2) as $back) {
             $month = today()->startOfMonth()->subMonthsNoOverflow($back);
-            $scale = 1 - ($back * 0.04);
+            $scale = (1 - ($back * 0.04)) * (0.75 + $gym->id * 0.13);
 
             foreach ($base as $kind => $categories) {
                 foreach ($categories as $category => $amount) {
@@ -1204,7 +1219,7 @@ class DatabaseSeeder extends Seeder
 
         $this->seedStaffAttendance($gym, $owner, $employees, $releasedStart, $releasedEnd);
 
-        Carbon::withTestNow($releasedEnd->copy()->addDay()->setTime(10, 0), function () use ($gym, $owner, $preparer, $releasedStart, $releasedEnd) {
+        Carbon::withTestNow($releasedEnd->copy()->addDay()->setTime(9, 0), function () use ($gym, $owner, $employees, $preparer, $releasedStart, $releasedEnd) {
             $run = $gym->payrollRuns()->create([
                 'starts_on' => $releasedStart->toDateString(),
                 'ends_on' => $releasedEnd->toDateString(),
@@ -1219,10 +1234,14 @@ class DatabaseSeeder extends Seeder
             $run = $run->fresh();
             $workflow->submit($gym, $run, $preparer);
             $run = $run->fresh();
-            $workflow->decide($gym, $run, $owner, ['decision' => 'approve']);
+            $approvers = collect($employees)->reject(fn ($person) => $person->id === $preparer->id)
+                ->filter(fn ($person) => $person->hasPermission($gym, 'payroll.runs.approve'))->values();
+            foreach ($gym->payrollSteps() as $index => $step) {
+                $workflow->decide($gym, $run->fresh(), $step === 'owner' ? $owner : $approvers[$index], ['decision' => 'approve']);
+            }
         });
 
-        $gym->payrollRuns()->create([
+        $draft = $gym->payrollRuns()->create([
             'starts_on' => $draftStart->toDateString(),
             'ends_on' => $draftEnd->toDateString(),
             'status' => 'draft',
@@ -1230,6 +1249,19 @@ class DatabaseSeeder extends Seeder
             'current_step' => 0,
             'prepared_by' => $preparer->id,
         ]);
+        $workflow = app(PayrollWorkflow::class);
+        $workflow->compute($gym, $draft, $preparer);
+        $workflow->submit($gym, $draft->fresh(), $preparer);
+        $workflow->decide($gym, $draft->fresh(), $owner, ['decision' => 'reject', 'reason' => 'Please reconcile the recorded overtime minutes against the signed attendance sheet.']);
+        $reviewStart = $releasedStart->copy()->subMonthNoOverflow()->startOfMonth();
+        $reviewEnd = $reviewStart->copy()->endOfMonth();
+        $this->seedStaffAttendance($gym, $owner, $employees, $reviewStart, $reviewEnd);
+        $review = $gym->payrollRuns()->create([
+            'starts_on' => $reviewStart->toDateString(), 'ends_on' => $reviewEnd->toDateString(),
+            'status' => 'draft', 'round' => 1, 'current_step' => 0, 'prepared_by' => $preparer->id,
+        ]);
+        $workflow->compute($gym, $review, $preparer);
+        $workflow->submit($gym, $review->fresh(), $preparer);
     }
 
     /** Stored attendance for the released period, so the demo payroll is not all absences. */
@@ -1304,8 +1336,8 @@ class DatabaseSeeder extends Seeder
             'province' => $spec['province'],
             'latitude' => $spec['latitude'],
             'longitude' => $spec['longitude'],
-            'contact_phone' => $spec['contact_phone'],
-            'contact_email' => $spec['contact_email'],
+            'contact_phone' => $this->phone($spec['contact_phone']),
+            'contact_email' => $this->contactEmail($spec['contact_email']),
             'operating_hours' => $spec['operating_hours'],
             'disciplines' => $spec['disciplines'],
             'services' => $spec['services'],
@@ -1478,7 +1510,7 @@ class DatabaseSeeder extends Seeder
   <text x="72" y="96" fill="{$accent}" font-family="Arial, Helvetica, sans-serif" font-size="24" letter-spacing="4">COMBAT PLATFORM</text>
   <text x="72" y="300" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="700">{$serviceName}</text>
   <text x="72" y="364" fill="#ffffff" opacity="0.78" font-family="Arial, Helvetica, sans-serif" font-size="28">{$gymName}</text>
-  <text x="72" y="624" fill="#ffffff" opacity="0.62" font-family="Arial, Helvetica, sans-serif" font-size="22">Demo training image</text>
+  <text x="72" y="624" fill="#ffffff" opacity="0.62" font-family="Arial, Helvetica, sans-serif" font-size="22">Training session preview</text>
 </svg>
 SVG;
     }
@@ -1521,6 +1553,8 @@ SVG;
         $slug = Str::slug($gym->name);
         $ownerName = "{$owner->first_name} {$owner->last_name}";
         $address = "{$gym->address_line}, {$gym->barangay}, {$gym->city}, {$gym->province}";
+        $year = now()->year;
+        $billMonth = now()->subMonthNoOverflow();
 
         return match ($type) {
             'dti' => [
@@ -1531,35 +1565,35 @@ SVG;
                     "Business name: {$gym->name}",
                     "Registered owner: {$ownerName}",
                     "Business address: {$address}",
-                    'Certificate number: DTI-'.str_pad((string) $gym->id, 6, '0', STR_PAD_LEFT).'-2026',
-                    'Validity: 31 December 2026',
-                    'Demo copy generated for the Combat Platform seed data.',
+                    'Certificate number: DTI-'.str_pad((string) $gym->id, 6, '0', STR_PAD_LEFT).'-'.$year,
+                    'Validity: 31 December '.$year,
+                    'Sample document prepared for platform demonstration. Not valid for official use.',
                 ]),
             ],
             'mayors_permit' => [
                 "{$base}/mayors-permit.pdf",
-                "Mayors-Permit-2026-{$slug}.pdf",
+                "Mayors-Permit-{$year}-{$slug}.pdf",
                 'application/pdf',
                 $this->pdf("Mayor's Business Permit", [
                     'Permit holder: '.$gym->name,
                     "Owner: {$ownerName}",
                     "Business address: {$address}",
-                    'Permit number: MP-'.str_pad((string) $gym->id, 6, '0', STR_PAD_LEFT).'-2026',
-                    'Valid until: 31 December 2026',
-                    'Demo copy generated for the Combat Platform seed data.',
+                    'Permit number: MP-'.str_pad((string) $gym->id, 6, '0', STR_PAD_LEFT).'-'.$year,
+                    'Valid until: 31 December '.$year,
+                    'Sample document prepared for platform demonstration. Not valid for official use.',
                 ]),
             ],
             'barangay_clearance' => [
                 "{$base}/barangay-clearance.pdf",
-                "Barangay-Clearance-2026-{$slug}.pdf",
+                "Barangay-Clearance-{$year}-{$slug}.pdf",
                 'application/pdf',
                 $this->pdf('Barangay Business Clearance', [
                     "Business name: {$gym->name}",
                     "Owner: {$ownerName}",
                     "Address: {$address}",
-                    'Clearance number: BC-'.str_pad((string) $gym->id, 6, '0', STR_PAD_LEFT).'-2026',
-                    'Valid until: 31 December 2026',
-                    'Demo copy generated for the Combat Platform seed data.',
+                    'Clearance number: BC-'.str_pad((string) $gym->id, 6, '0', STR_PAD_LEFT).'-'.$year,
+                    'Valid until: 31 December '.$year,
+                    'Sample document prepared for platform demonstration. Not valid for official use.',
                 ]),
             ],
             'facility_photo' => [
@@ -1584,10 +1618,10 @@ SVG;
                 'application/pdf',
                 $this->pdf('Owner Valid ID', [
                     "Name: {$ownerName}",
-                    'ID number: PH-'.str_pad((string) $owner->id, 8, '0', STR_PAD_LEFT).'-2026',
+                    'ID number: PH-'.str_pad((string) $owner->id, 8, '0', STR_PAD_LEFT).'-'.$year,
                     'Date of birth: 14 June 1988',
                     'Address: '.$gym->city.', '.$gym->province,
-                    'Demo copy generated for the Combat Platform seed data.',
+                    'Sample document prepared for platform demonstration. Not valid for official use.',
                 ]),
             ],
             'owner_selfie' => [
@@ -1598,14 +1632,14 @@ SVG;
             ],
             'utility_bill' => [
                 "{$base}/utility-bill.pdf",
-                "Utility-Bill-October-2026-{$slug}.pdf",
+                "Utility-Bill-{$billMonth->format('F-Y')}-{$slug}.pdf",
                 'application/pdf',
                 $this->pdf('Utility Bill', [
                     'Account name: '.$gym->name,
                     "Service address: {$address}",
-                    'Billing period: 1 to 31 October 2026',
+                    'Billing period: '.$billMonth->copy()->startOfMonth()->format('j').' to '.$billMonth->copy()->endOfMonth()->format('j F Y'),
                     'Amount due: PHP 18,742.65',
-                    'Demo copy generated for the Combat Platform seed data.',
+                    'Sample document prepared for platform demonstration. Not valid for official use.',
                 ]),
             ],
             default => [
@@ -1615,7 +1649,7 @@ SVG;
                 $this->pdf(Str::title(str_replace('_', ' ', $type)), [
                     "Gym: {$gym->name}",
                     "Owner: {$ownerName}",
-                    'Demo copy generated for the Combat Platform seed data.',
+                    'Sample document prepared for platform demonstration. Not valid for official use.',
                 ]),
             ],
         };
@@ -1643,7 +1677,7 @@ SVG;
     {
         $header = hex2bin('00000018667479706d703432000000006d70343269736f6d') ?: '';
 
-        return $header."\nCombat Platform demo video tour for {$gymName}.\n";
+        return $header."\nFacility tour preview for {$gymName}.\n";
     }
 
     /** Builds a small valid one-page PDF, so seeded documents open in a PDF viewer. */
@@ -3212,7 +3246,7 @@ SVG;
                 'submitted_days_ago' => 8,
                 'reviewed_days_ago' => 2,
                 'return_items' => [
-                    'Upload a current Mayor\'s permit. The one on file expired on 30 September 2026.',
+                    'Upload a current Mayor\'s permit. The one on file expired on '.today()->subMonthsNoOverflow(2)->endOfMonth()->format('j F Y').'.',
                     'The barangay clearance shows a different street address.',
                 ],
                 'decision_reason' => 'Please fix the two items and send the application again.',

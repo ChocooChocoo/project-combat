@@ -1,6 +1,7 @@
 import { Menu, Minus, Plus, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
+import { BrandLogo } from '@/components/brand-logo'
 import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { api, ApiError } from '@/lib/api'
@@ -132,8 +133,8 @@ export default function Landing() {
 
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0A0A0B]">
         <div className={cn(SHELL, 'flex h-16 items-center gap-4 md:h-20 md:gap-8')}>
-          <Link to="/" className="font-display text-[21px] uppercase leading-none tracking-[-0.01em]">
-            Combat Platform
+          <Link to="/" aria-label="CombatPro">
+            <BrandLogo className="h-7 md:h-8" />
           </Link>
 
           <nav className="hidden items-center gap-6 md:flex" aria-label="Landing page">
@@ -957,7 +958,7 @@ function ClosingSection() {
               starts with a <span className="text-[#C63C26]">gym.</span>
             </h2>
             <p className={cn('mt-5 max-w-xl text-[15px] leading-7', MUTED)}>
-              Find a place to train, or apply to bring your gym onto Combat Platform.
+              Find a place to train, or apply to bring your gym onto CombatPro.
             </p>
           </div>
           <div className="flex flex-col gap-3 lg:col-span-4 lg:items-end">
@@ -990,7 +991,7 @@ function Footer() {
       <div className={cn(SHELL, 'py-10')}>
         <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="font-display text-[26px] uppercase leading-none tracking-[-0.01em]">Combat Platform</p>
+            <BrandLogo className="h-9" />
             <p className={cn('mt-3 max-w-xs text-sm leading-6', MUTED)}>Combat-sports training centers in the Philippines.</p>
           </div>
           <nav className="flex flex-wrap gap-x-6 gap-y-3" aria-label="Footer">
@@ -1037,7 +1038,7 @@ function Footer() {
           </ul>
         </details>
 
-        <p className={cn('mt-8 text-sm', MUTED)}>© {YEAR} Combat Platform</p>
+        <p className={cn('mt-8 text-sm', MUTED)}>© {YEAR} CombatPro</p>
       </div>
     </footer>
   )
