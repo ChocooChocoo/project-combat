@@ -139,15 +139,13 @@ function GymMember() {
   if (approvedGym(user, Number(gymId))) return <Outlet />
 
   return (
-    <AppShell>
-      <Empty className="mx-auto max-w-lg rounded-xl border">
-        <EmptyHeader>
-          <EmptyTitle>This page is for members of this gym</EmptyTitle>
-          <EmptyDescription>You are not a member here yet. Open the gym page to see its plans and apply.</EmptyDescription>
-        </EmptyHeader>
-        <Button render={<Link to={`/gyms/${gymId}`} />}>View gym</Button>
-      </Empty>
-    </AppShell>
+    <Empty className="mx-auto mt-10 max-w-lg rounded-xl border">
+      <EmptyHeader>
+        <EmptyTitle>This page is for members of this gym</EmptyTitle>
+        <EmptyDescription>You are not a member here yet. Open the gym page to see its plans and apply.</EmptyDescription>
+      </EmptyHeader>
+      <Button render={<Link to={`/gyms/${gymId}`} />}>View gym</Button>
+    </Empty>
   )
 }
 
