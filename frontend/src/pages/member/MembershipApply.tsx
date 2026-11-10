@@ -1,4 +1,4 @@
-import { ArrowLeft, FileUp } from 'lucide-react'
+import { ArrowLeft, Check, FileUp } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { ContactsEditor, HealthQuestions } from '@/components/membership/membership-parts'
@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { toastManager } from '@/components/ui/toast'
 import { api, ApiError, type FieldErrors } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
-import { type GymDetailPayload, type PublicGymDetail, readGymDetail } from '@/lib/discovery'
+import { type GymDetailPayload, planLength, type PublicGymDetail, readGymDetail } from '@/lib/discovery'
 import { appendForm, money, type EmergencyContact, type Membership, type MembershipForm } from '@/lib/membership'
 import { fileProblem } from '@/lib/validation'
 
@@ -168,24 +168,51 @@ export default function MembershipApply() {
           </CardHeader>
           <CardPanel>
             <Field name="plan_id" className="w-full">
-              <RadioGroup aria-label="Membership plan" value={planId} onValueChange={(value) => setPlanId(String(value))} className="grid gap-3 sm:grid-cols-2">
-                {gym.plans.map((plan) => (
-                  <label
-                    key={plan.id}
-                    className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 has-data-checked:border-primary has-data-checked:bg-accent/40"
-                  >
-                    <Radio value={String(plan.id)} className="mt-0.5" />
-                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <span className="font-medium">{plan.name}</span>
-                      <span className="text-muted-foreground text-sm">
-                        {plan.billing_type === 'sessions'
-                          ? `${plan.session_count ?? 0} ${plan.session_count === 1 ? 'session' : 'sessions'}`
-                          : `${plan.duration_months ?? 0} ${plan.duration_months === 1 ? 'month' : 'months'}`}
+              <RadioGroup aria-label="Membership plan" value={planId} onValueChange={(value) => setPlanId(String(value))} className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                {gym.plans.map((plan) => {
+                  const inclusions = [...(plan.registration_included ? ['Registration included'] : []), ...(plan.inclusions ?? [])]
+                  const addons = plan.addons ?? []
+                  return (
+                    <label
+                      key={plan.id}
+                      className="flex min-w-0 cursor-pointer flex-col overflow-hidden rounded-xl border bg-card transition-shadow has-focus-visible:ring-2 has-focus-visible:ring-ring has-data-checked:border-primary has-data-checked:ring-1 has-data-checked:ring-primary"
+                    >
+                      <span className="flex flex-col gap-4 p-5">
+                        <span className="flex items-start justify-between gap-3">
+                          <span className="font-semibold text-lg tracking-tight wrap-anywhere">{plan.name}</span>
+                          <Radio value={String(plan.id)} aria-label={`Choose ${plan.name}`} className="mt-1" />
+                        </span>
+                        <span className="-mt-2 text-muted-foreground text-sm">
+                          {plan.billing_type === 'sessions' ? 'Priced by sessions' : 'Priced by time'} · {planLength(plan)}
+                        </span>
+                        <span>
+                          <span className="block font-semibold text-3xl tracking-tight tabular-nums wrap-anywhere">{money(plan.total_fee) || 'Not set'}</span>
+                          <span className="mt-1 block text-muted-foreground text-sm">Total for {planLength(plan)}</span>
+                        </span>
                       </span>
-                    </span>
-                    <span className="font-semibold tabular-nums">{money(plan.total_fee)}</span>
-                  </label>
-                ))}
+                      <span className="flex flex-1 flex-col gap-3 border-t p-5">
+                        {inclusions.length > 0 ? (
+                          <span className="flex flex-col gap-2">
+                            {inclusions.slice(0, 4).map((item, index) => (
+                              <span key={`${index}-${item}`} className="flex items-start gap-3 text-sm leading-6">
+                                <Check className="mt-1 size-4 shrink-0 text-success-foreground" aria-hidden />
+                                <span className="min-w-0 wrap-anywhere">{item}</span>
+                              </span>
+                            ))}
+                            {inclusions.length > 4 && <span className="ps-7 text-muted-foreground text-xs">+{inclusions.length - 4} more included</span>}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">No inclusions listed.</span>
+                        )}
+                        {addons.length > 0 && (
+                          <span className="mt-auto border-t pt-3 text-muted-foreground text-xs">
+                            {addons.length} optional {addons.length === 1 ? 'add-on' : 'add-ons'}, priced separately
+                          </span>
+                        )}
+                      </span>
+                    </label>
+                  )
+                })}
               </RadioGroup>
               <FieldError />
             </Field>

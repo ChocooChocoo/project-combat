@@ -273,3 +273,10 @@ export function readGymDetail(payload: GymDetailPayload): PublicGymDetail {
     coaches: coaches.map(readCoach),
   }
 }
+
+export function planLength(plan: PublicPlan): string {
+  if (plan.billing_type === 'sessions') {
+    return `${plan.session_count ?? 0} ${plan.session_count === 1 ? 'session' : 'sessions'}`
+  }
+  return `${plan.duration_months ?? 0} ${plan.duration_months === 1 ? 'month' : 'months'}`
+}

@@ -14,7 +14,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/u
 import { Skeleton } from '@/components/ui/skeleton'
 import { api, ApiError } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
-import { type GymDetailPayload, labelKey, type PublicCoach, type PublicGymDetail, type PublicPlan, type PublicService, readGymDetail } from '@/lib/discovery'
+import { planLength, type GymDetailPayload, labelKey, type PublicCoach, type PublicGymDetail, type PublicPlan, type PublicService, readGymDetail } from '@/lib/discovery'
 import { approvedGym, canOpenWorkspace } from '@/lib/gym-access'
 import { LIVE_STATUSES, STATUS_LABELS, type Membership } from '@/lib/membership'
 import { DAYS } from '@/lib/gyms'
@@ -96,13 +96,6 @@ function initials(name: string): string {
 function serviceImages(service: PublicService): string[] {
   const gallery = service.photos?.map((photo) => photo.url) ?? service.photo_urls ?? []
   return [...new Set([service.cover_photo_url, ...gallery].filter((url): url is string => Boolean(url)))]
-}
-
-function planLength(plan: PublicPlan): string {
-  if (plan.billing_type === 'sessions') {
-    return `${plan.session_count ?? 0} ${plan.session_count === 1 ? 'session' : 'sessions'}`
-  }
-  return `${plan.duration_months ?? 0} ${plan.duration_months === 1 ? 'month' : 'months'}`
 }
 
 function BrandBar({ signedIn, showBack = false }: { signedIn: boolean; showBack?: boolean }) {
