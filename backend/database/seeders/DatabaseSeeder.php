@@ -341,7 +341,7 @@ class DatabaseSeeder extends Seeder
         foreach ($this->approvedGymSpecs() as $spec) {
             $owner = $people[$spec['owner']];
             $gym = $this->createGym($spec, $owner, $admin);
-            $gym->update(['payroll_steps' => $gym->id === 1 ? ['hr_review', 'finance_review', 'owner'] : ($gym->id === 2 ? ['finance_review', 'owner'] : ['owner'])]);
+            $gym->update(['payroll_steps' => match ($gym->id) { 1 => ['finance_review', 'owner'], 2 => ['hr_review', 'owner'], default => ['owner'] }]);
 
             $this->seedGymDocuments($gym, $owner, $spec);
 

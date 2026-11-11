@@ -35,10 +35,12 @@ final class PayrollLock
             ->orderBy('id')
             ->first();
 
-        abort_if(
-            $run !== null,
-            409,
-            "This date is locked by payroll run #{$run?->id} ({$run?->status?->value}).",
-        );
+        if ($run === null) {
+            return;
+        }
+
+        $state = $run->status === PayrollStatus::Released ? 'has been released' : 'is waiting for approval';
+
+        abort(409, "This date is in payroll run #{$run->id}, which {$state}.");
     }
 }

@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, ChevronDown, ChevronRight, Play, Printer, Send, X } from 'lucide-react'
+import { ArrowLeft, Check, ChevronDown, ChevronRight, CircleCheck, Info, Lock, OctagonAlert, Play, Printer, Send, TriangleAlert, X } from 'lucide-react'
 import { Fragment, useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router'
 import { PayslipSheet } from '@/components/payroll/payslip-sheet'
@@ -37,6 +37,7 @@ import {
   type PayrollLine,
   type PayrollRun,
   type PayrollRunDetail,
+  type PayrollWarning,
   type Payslip,
 } from '@/lib/payroll'
 
@@ -154,6 +155,9 @@ export default function GymPayrollRun() {
   if (actedThisRound) canDecide = false
   if (selfPrepared && !ownerFinalRelease) canDecide = false
   if (run.explicit_can_decide !== null) canDecide = canApprove && run.explicit_can_decide
+  // The owner approves only the last step, but can always send a run back.
+  const canApproveStep = canDecide && (final || !isOwner)
+  const canReject = canDecide || (run.status === 'in_review' && isOwner && !selfPrepared)
 
   const canCompute = run.status === 'draft' && canManage && run.explicit_can_compute !== false
   const canSubmit =
@@ -197,7 +201,7 @@ export default function GymPayrollRun() {
   }
 
   const actions =
-    canCompute || canSubmit || canDecide ? (
+    canCompute || canSubmit || canApproveStep || canReject ? (
       <div className="flex flex-wrap items-center gap-2">
         {canCompute && (
           <Button size="sm" variant="outline" loading={busy === 'compute'} disabled={busy !== ''} onClick={compute}>
@@ -211,26 +215,26 @@ export default function GymPayrollRun() {
             Submit for approval
           </Button>
         )}
-        {canDecide && (
-          <>
-            <Button
-              size="sm"
-              onClick={() => setDecision({ decision: 'approve', release: final })}
-              disabled={busy !== ''}
-            >
-              <Check aria-hidden />
-              {final ? 'Release payroll' : 'Approve'}
-            </Button>
-            <Button
-              size="sm"
-              variant="destructive-outline"
-              onClick={() => setDecision({ decision: 'reject', release: false })}
-              disabled={busy !== ''}
-            >
-              <X aria-hidden />
-              Reject
-            </Button>
-          </>
+        {canApproveStep && (
+          <Button
+            size="sm"
+            onClick={() => setDecision({ decision: 'approve', release: final })}
+            disabled={busy !== ''}
+          >
+            <Check aria-hidden />
+            {final ? 'Release payroll' : 'Approve'}
+          </Button>
+        )}
+        {canReject && (
+          <Button
+            size="sm"
+            variant="destructive-outline"
+            onClick={() => setDecision({ decision: 'reject', release: false })}
+            disabled={busy !== ''}
+          >
+            <X aria-hidden />
+            Reject
+          </Button>
         )}
       </div>
     ) : undefined
@@ -262,6 +266,7 @@ export default function GymPayrollRun() {
 
       {run.status === 'draft' && (
         <Alert variant={blocking.length > 0 ? 'warning' : 'info'}>
+          {blocking.length > 0 ? <TriangleAlert aria-hidden /> : <Info aria-hidden />}
           <AlertTitle>
             {blocking.length > 0
               ? `${blocking.length} blocking ${blocking.length === 1 ? 'warning' : 'warnings'}`
@@ -281,6 +286,7 @@ export default function GymPayrollRun() {
 
       {run.status === 'in_review' && (
         <Alert variant="warning">
+          <Lock aria-hidden />
           <AlertTitle>In review at {current?.label ?? 'the next step'}</AlertTitle>
           <AlertDescription>
             Round {run.round}. {currentStepLabel(run)} must decide. Rejection returns the run to draft with a new round. The period is locked while in review.
@@ -290,38 +296,26 @@ export default function GymPayrollRun() {
 
       {run.status === 'released' && (
         <Alert variant="success">
+          <CircleCheck aria-hidden />
           <AlertTitle>Released</AlertTitle>
           <AlertDescription>
-            {run.released_at ? `Released ${dateTimeLabel(run.released_at)}` : 'Released'}
-            {run.released_by_name ? ` by ${run.released_by_name}` : ''}. Gross pay and the employer statutory share were posted as expenses. Payslips are below.
-            {run.self_released ? ' The owner prepared and released this run; every earlier approval step is recorded in the history.' : ''}
+            <p className="text-foreground">
+              {run.released_at ? `Released ${dateTimeLabel(run.released_at)}` : 'Released'}
+              {run.released_by_name ? ` by ${run.released_by_name}` : ''}
+            </p>
+            <p>Gross pay and the employer statutory share were posted as expenses. Payslips are below.</p>
+            {run.self_released && (
+              <p>The owner prepared and released this run; every earlier approval step is recorded in the history.</p>
+            )}
           </AlertDescription>
         </Alert>
       )}
 
-      {warnings.length > 0 && (
-        <Alert variant={blocking.length > 0 ? 'error' : 'warning'}>
-          <AlertTitle>
-            {blocking.length > 0
-              ? 'Blocking warnings'
-              : 'Warnings'}
-          </AlertTitle>
-          <AlertDescription>
-            <ul className="flex list-disc flex-col gap-1 ps-4">
-              {warnings.map((warning, index) => (
-                <li key={`${warning.message}-${index}`} className="break-words">
-                  {warning.employee ? `${warning.employee}: ` : ''}
-                  {warning.message}
-                  {!warning.blocking && <span className="text-muted-foreground"> (not blocking)</span>}
-                </li>
-              ))}
-            </ul>
-          </AlertDescription>
-        </Alert>
-      )}
+      {warnings.length > 0 && <RunWarnings warnings={warnings} blockingCount={blocking.length} />}
 
       {lineWarnings > 0 && (
         <Alert variant="warning">
+          <TriangleAlert aria-hidden />
           <AlertTitle>{countLabel(lineWarnings, 'line warning', 'line warnings')}</AlertTitle>
           <AlertDescription>
             Open a line below to see what was left out, such as a session that did not meet the pay rule. These do not stop submission on their own.
@@ -1064,5 +1058,52 @@ function DecisionDialog({
         </Form>
       </DialogPopup>
     </Dialog>
+  )
+}
+
+/** Run warnings grouped by employee, so a long list reads as a short one. */
+function RunWarnings({ warnings, blockingCount }: { warnings: PayrollWarning[]; blockingCount: number }) {
+  const groups = new Map<string, PayrollWarning[]>()
+  for (const warning of warnings) {
+    const key = warning.employee ?? 'Whole run'
+    groups.set(key, [...(groups.get(key) ?? []), warning])
+  }
+  const blockingRun = blockingCount > 0
+
+  return (
+    <Alert variant={blockingRun ? 'error' : 'warning'}>
+      {blockingRun ? <OctagonAlert aria-hidden /> : <TriangleAlert aria-hidden />}
+      <AlertTitle>
+        {blockingRun
+          ? countLabel(blockingCount, 'blocking warning', 'blocking warnings')
+          : `${countLabel(warnings.length, 'warning', 'warnings')} for ${countLabel(groups.size, 'person', 'people')}`}
+      </AlertTitle>
+      <AlertDescription>
+        <details className="group" open={blockingRun}>
+          <summary className="flex w-fit cursor-pointer list-none items-center gap-1 text-foreground/80 hover:text-foreground [&::-webkit-details-marker]:hidden">
+            <ChevronRight aria-hidden className="size-3.5 transition-transform group-open:rotate-90" />
+            <span className="group-open:hidden">Show details</span>
+            <span className="hidden group-open:inline">Hide details</span>
+          </summary>
+          <ul className="mt-2 divide-y rounded-lg border bg-background/40">
+            {[...groups].map(([name, items]) => (
+              <li key={name} className="grid gap-1 px-3 py-2.5 sm:grid-cols-[11rem_1fr] sm:gap-4">
+                <span className="font-medium text-foreground">{name}</span>
+                <ul className="flex flex-col gap-2">
+                  {items.map((warning, index) => (
+                    <li key={`${warning.message}-${index}`} className="flex items-start gap-2">
+                      <Badge size="sm" variant={warning.blocking ? 'error' : 'warning'} className="mt-0.5 shrink-0">
+                        {warning.blocking ? 'Blocking' : 'Note'}
+                      </Badge>
+                      <span className="break-words">{warning.message}</span>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        </details>
+      </AlertDescription>
+    </Alert>
   )
 }

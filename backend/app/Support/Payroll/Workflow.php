@@ -202,8 +202,18 @@ class Workflow
                 'The preparer cannot approve their own payroll run.',
             );
 
+            // The owner keeps their approval for the last step. Approving a middle
+            // step would leave nobody able to release the run.
             abort_if(
-                PayrollApproval::where('payroll_run_id', $run->id)
+                $owner && $decision === 'approve' && ! $final,
+                403,
+                'The owner approves only the last step. This run is waiting at '.PayrollStep::from($step)->label().'.',
+            );
+
+            // The owner can always send a run back, so a run can never get stuck.
+            abort_if(
+                ! ($owner && $decision === 'reject')
+                && PayrollApproval::where('payroll_run_id', $run->id)
                     ->where('round', $run->round)
                     ->where('user_id', $actor->id)
                     ->exists(),

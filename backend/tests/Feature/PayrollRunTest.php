@@ -9,10 +9,12 @@ use App\Models\SessionBooking;
 use App\Models\TrainingSession;
 use App\Models\User;
 use App\Notifications\PayslipReleased;
+use App\Support\PayrollLock;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\Feature\Concerns\PayrollSetup;
 use Tests\TestCase;
 
@@ -175,19 +177,74 @@ class PayrollRunTest extends TestCase
         $this->actingAs($this->hr)->postJson($this->url("payroll/runs/{$run->id}/compute"))->assertOk();
         $this->actingAs($this->hr)->postJson($this->url("payroll/runs/{$run->id}/submit"))->assertOk();
 
-        $this->actingAs($this->owner)->postJson($this->url("payroll/runs/{$run->id}/decision"), [
+        $finance = User::factory()->create();
+        $this->gym->addPerson($finance, GymPersonType::Employee);
+        $this->givePayrollRole($finance, ['payroll.runs.view', 'payroll.runs.approve'], 'Finance approver');
+
+        $this->actingAs($finance)->postJson($this->url("payroll/runs/{$run->id}/decision"), [
             'decision' => 'approve',
         ])->assertOk()
             ->assertJsonPath('run.status', 'in_review')
             ->assertJsonPath('run.current_step', 1);
 
-        $this->actingAs($this->owner)->postJson($this->url("payroll/runs/{$run->id}/decision"), [
+        // The last step belongs to the owner, and nobody acts twice in a round.
+        $this->actingAs($finance)->postJson($this->url("payroll/runs/{$run->id}/decision"), [
             'decision' => 'approve',
         ])->assertForbidden();
 
         $run->refresh();
         $this->assertSame('in_review', $run->status->value);
         $this->assertSame(1, DB::table('payroll_approvals')->where('payroll_run_id', $run->id)->count());
+    }
+
+    public function test_the_owner_cannot_approve_a_middle_step(): void
+    {
+        $this->gym->update(['payroll_steps' => ['finance_review', 'owner']]);
+        $this->payrollProfile($this->employee);
+        $run = $this->payrollRun();
+
+        $this->actingAs($this->hr)->postJson($this->url("payroll/runs/{$run->id}/compute"))->assertOk();
+        $this->actingAs($this->hr)->postJson($this->url("payroll/runs/{$run->id}/submit"))->assertOk();
+
+        $this->actingAs($this->owner)->postJson($this->url("payroll/runs/{$run->id}/decision"), [
+            'decision' => 'approve',
+        ])->assertForbidden()
+            ->assertJsonPath('message', 'The owner approves only the last step. This run is waiting at Finance review.');
+
+        $this->assertSame(0, $run->refresh()->current_step);
+        $this->assertSame(0, DB::table('payroll_approvals')->where('payroll_run_id', $run->id)->count());
+    }
+
+    public function test_the_owner_can_reject_a_run_they_already_acted_on_and_its_dates_open(): void
+    {
+        $this->gym->update(['payroll_steps' => ['finance_review', 'owner']]);
+        $this->payrollProfile($this->employee);
+        $run = $this->payrollRun();
+
+        $this->actingAs($this->hr)->postJson($this->url("payroll/runs/{$run->id}/compute"))->assertOk();
+        $this->actingAs($this->hr)->postJson($this->url("payroll/runs/{$run->id}/submit"))->assertOk();
+
+        // A run stuck before this rule: the owner already approved the middle step.
+        $run->approvals()->create([
+            'round' => $run->refresh()->round, 'step_index' => 0, 'step_key' => 'finance_review',
+            'user_id' => $this->owner->id, 'decision' => 'approve', 'decided_at' => now(),
+        ]);
+        $run->forceFill(['current_step' => 1])->save();
+
+        try {
+            PayrollLock::assertOpen($this->gym, $run->starts_on->copy());
+            $this->fail('An in-review run should lock its dates.');
+        } catch (HttpException $locked) {
+            $this->assertSame("This date is in payroll run #{$run->id}, which is waiting for approval.", $locked->getMessage());
+        }
+
+        $this->actingAs($this->owner)->postJson($this->url("payroll/runs/{$run->id}/decision"), [
+            'decision' => 'reject',
+            'reason' => 'Stuck run, send it back.',
+        ])->assertOk()
+            ->assertJsonPath('run.status', 'draft');
+
+        PayrollLock::assertOpen($this->gym, $run->starts_on->copy());
     }
 
     public function test_the_preparer_cannot_approve_their_own_run(): void
