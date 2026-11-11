@@ -2,6 +2,7 @@ import { Menu, Minus, Plus, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { BrandLogo } from '@/components/brand-logo'
+import { ThemeSwitch } from '@/components/theme-switch'
 import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { api, ApiError } from '@/lib/api'
@@ -25,9 +26,9 @@ import {
 import { cn } from '@/lib/utils'
 
 const SHELL = 'mx-auto w-full max-w-[1320px] px-5 md:px-8 lg:px-12'
-const SECTION = 'scroll-mt-24 border-t border-white/10 py-16 md:py-20 lg:py-28'
-const MUTED = 'text-[#A6A096]'
-const RULE = 'border-white/10'
+const SECTION = 'scroll-mt-24 border-t border-landing-line py-16 md:py-20 lg:py-28'
+const MUTED = 'text-landing-muted'
+const RULE = 'border-landing-line'
 const YEAR = new Date().getFullYear()
 
 const NAV = [
@@ -123,26 +124,26 @@ export default function Landing() {
   const stats = payload?.stats ?? null
 
   return (
-    <div className="dark min-h-svh bg-[#0A0A0B] text-[#F2EFE7] [color-scheme:dark]">
+    <div className="min-h-svh bg-landing-bg text-landing-fg">
       <a
         href="#main"
-        className="sr-only z-50 focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:bg-[#F2EFE7] focus:px-4 focus:py-3 focus:font-semibold focus:text-sm focus:text-[#0A0A0B]"
+        className="sr-only z-50 focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:bg-landing-invert focus:px-4 focus:py-3 focus:font-semibold focus:text-sm focus:text-landing-invert-fg"
       >
         Skip to content
       </a>
 
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0A0A0B]">
+      <header className="sticky top-0 z-40 border-b border-landing-line bg-landing-bg">
         <div className={cn(SHELL, 'flex h-16 items-center gap-4 md:h-20 md:gap-8')}>
           <Link to="/" aria-label="CombatPro">
             <BrandLogo className="h-7 md:h-8" />
           </Link>
 
-          <nav className="hidden items-center gap-6 md:flex" aria-label="Landing page">
+          <nav className="hidden items-center gap-6 lg:flex" aria-label="Landing page">
             {NAV.map((item) => (
               <a
                 key={item.href}
                 href={item.href}
-                className="text-sm text-[#C9C3B7] underline-offset-4 transition-colors hover:text-[#F2EFE7] hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F2EFE7]"
+                className="text-sm text-landing-soft underline-offset-4 transition-colors hover:text-landing-fg hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-landing-fg"
               >
                 {item.label}
               </a>
@@ -150,14 +151,15 @@ export default function Landing() {
           </nav>
 
           <div className="ms-auto flex items-center gap-3">
+            <div className="hidden lg:block"><ThemeSwitch /></div>
             <Link
               to="/sign-in"
-              className="hidden min-h-11 items-center text-sm text-[#C9C3B7] underline-offset-4 transition-colors hover:text-[#F2EFE7] hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F2EFE7] sm:inline-flex"
+              className="hidden min-h-11 items-center text-sm text-landing-soft underline-offset-4 transition-colors hover:text-landing-fg hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-landing-fg sm:inline-flex"
             >
               Sign in
             </Link>
             <Button
-              className="hidden h-11 rounded-none border-[#F2EFE7] bg-[#F2EFE7] px-4 text-[#0A0A0B] hover:bg-[#E2DDD1] sm:inline-flex"
+              className="hidden h-11 rounded-none border-landing-invert bg-landing-invert px-4 text-landing-invert-fg hover:bg-landing-invert-hover sm:inline-flex"
               render={<Link to="/sign-up?type=member" />}
             >
               Find a gym
@@ -165,7 +167,7 @@ export default function Landing() {
             <button
               ref={menuButton}
               type="button"
-              className="inline-flex size-11 items-center justify-center border border-white/15 text-[#F2EFE7] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F2EFE7] md:hidden"
+              className="inline-flex size-11 items-center justify-center border border-landing-line-soft text-landing-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-landing-fg lg:hidden"
               aria-expanded={menuOpen}
               aria-controls="landing-menu"
               onClick={() => setMenuOpen((open) => !open)}
@@ -177,13 +179,13 @@ export default function Landing() {
         </div>
 
         {menuOpen && (
-          <div id="landing-menu" className="border-t border-white/10 md:hidden">
+          <div id="landing-menu" className="border-t border-landing-line lg:hidden">
             <nav className={cn(SHELL, 'flex flex-col py-3')} aria-label="Landing page">
               {NAV.map((item) => (
                 <a
                   key={item.href}
                   href={item.href}
-                  className="flex min-h-12 items-center border-b border-white/10 text-base text-[#F2EFE7]"
+                  className="flex min-h-12 items-center border-b border-landing-line text-base text-landing-fg"
                   onClick={() => setMenuOpen(false)}
                 >
                   {item.label}
@@ -191,48 +193,53 @@ export default function Landing() {
               ))}
               <Link
                 to="/sign-in"
-                className="flex min-h-12 items-center border-b border-white/10 text-base text-[#F2EFE7]"
+                className="flex min-h-12 items-center border-b border-landing-line text-base text-landing-fg"
                 onClick={() => setMenuOpen(false)}
               >
                 Sign in
               </Link>
               <Link
                 to="/sign-up?type=member"
-                className="mt-4 flex min-h-12 items-center justify-center bg-[#F2EFE7] px-4 font-semibold text-[#0A0A0B]"
+                className="mt-4 flex min-h-12 items-center justify-center bg-landing-invert px-4 font-semibold text-landing-invert-fg"
                 onClick={() => setMenuOpen(false)}
               >
                 Find a gym
               </Link>
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <span className="text-sm text-landing-muted">Color theme</span>
+                <ThemeSwitch />
+              </div>
             </nav>
           </div>
         )}
       </header>
 
       <main id="main">
-        <section aria-labelledby="hero-title" className="border-b border-white/10">
+        <section aria-labelledby="hero-title" className="border-b border-landing-line">
           <div className={cn(SHELL, 'grid grid-cols-1 gap-10 py-12 md:py-16 lg:grid-cols-12 lg:gap-12 lg:py-20')}>
             <div className="lg:col-span-7">
-              <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#9A958B]">01 / Philippine combat sports</p>
+              <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-landing-faint">01 / Philippine combat sports</p>
               <h1
                 id="hero-title"
                 className="mt-5 font-display text-[54px] uppercase leading-[0.94] tracking-[-0.02em] sm:text-[72px] lg:text-[88px] xl:text-[102px]"
               >
                 Find your gym.
                 <br />
-                Put in the <span className="text-[#C63C26]">work.</span>
-              </h1>              <p className="mt-6 max-w-[440px] text-[17px] leading-7 text-[#C9C3B7]">
+                Put in the <span className="text-landing-accent">work.</span>
+              </h1>
+              <p className="mt-6 max-w-[440px] text-[17px] leading-7 text-landing-soft">
                 Find verified gyms, apply for membership, book sessions, and track your progress.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Button
-                  className="h-12 rounded-none border-[#F2EFE7] bg-[#F2EFE7] px-5 text-[#0A0A0B] hover:bg-[#E2DDD1]"
+                  className="h-12 rounded-none border-landing-invert bg-landing-invert px-5 text-landing-invert-fg hover:bg-landing-invert-hover"
                   render={<Link to="/sign-up?type=member" />}
                 >
                   Find a gym
                 </Button>
                 <Button
                   variant="outline"
-                  className="h-12 rounded-none border-white/25 bg-transparent px-5 text-[#F2EFE7] hover:bg-white/5 dark:bg-transparent dark:hover:bg-white/5"
+                  className="h-12 rounded-none border-landing-line-strong bg-transparent px-5 text-landing-fg hover:bg-landing-wash dark:bg-transparent dark:hover:bg-landing-wash"
                   render={<Link to="/sign-up?type=owner" />}
                 >
                   Apply to list your gym
@@ -241,7 +248,7 @@ export default function Landing() {
             </div>
 
             <figure className="lg:col-span-5">
-              <div className="aspect-[16/10] w-full overflow-hidden bg-[#141416] lg:aspect-[4/5]">
+              <div className="aspect-[16/10] w-full overflow-hidden bg-landing-surface lg:aspect-[4/5]">
                 <img
                   className="h-full w-full object-cover object-[center_25%] grayscale contrast-[1.05]"
                   src={photoUrl(PHOTOS.hero.id, PHOTOS.hero.width, PHOTOS.hero.height)}
@@ -255,7 +262,7 @@ export default function Landing() {
               <figcaption className={cn('mt-2 font-mono text-[10px] uppercase tracking-[0.12em]', MUTED)}>
                 Editorial training image ·{' '}
                 <a
-                  className="underline underline-offset-2 hover:text-[#F2EFE7]"
+                  className="underline underline-offset-2 hover:text-landing-fg"
                   href={`https://www.pexels.com/photo/${PHOTOS.hero.id}/`}
                   target="_blank"
                   rel="noreferrer"
@@ -267,7 +274,7 @@ export default function Landing() {
           </div>
 
           <div className={SHELL}>
-            <dl className="grid grid-cols-2 border-t border-white/10 lg:grid-cols-4" aria-label="Platform totals" aria-busy={loading}>
+            <dl className="grid grid-cols-2 border-t border-landing-line lg:grid-cols-4" aria-label="Platform totals" aria-busy={loading}>
               <Stat loading={loading} value={stats ? String(stats.gyms) : null} label="Verified gyms" />
               <Stat loading={loading} value={stats ? String(stats.cities) : null} label="Cities" />
               <Stat loading={loading} value={stats ? String(stats.disciplines) : null} label="Disciplines" />
@@ -284,12 +291,12 @@ export default function Landing() {
           <div className={cn(SHELL, 'pt-6')}>
             <div
               role="alert"
-              className="flex flex-wrap items-center gap-x-4 gap-y-2 border border-[#C63C26]/40 px-4 py-3 text-sm text-[#F2EFE7]"
+              className="flex flex-wrap items-center gap-x-4 gap-y-2 border border-landing-accent/40 px-4 py-3 text-sm text-landing-fg"
             >
               <span>{error} The page still shows what it can.</span>
               <button
                 type="button"
-                className="min-h-11 font-semibold underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F2EFE7]"
+                className="min-h-11 font-semibold underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-landing-fg"
                 onClick={retry}
               >
                 Try again
@@ -315,11 +322,11 @@ export default function Landing() {
 
 function Stat({ value, label, loading }: { value: string | null; label: string; loading: boolean }) {
   return (
-    <div className="flex flex-col-reverse border-b border-white/10 py-5 pe-4 last:border-b-0 lg:border-e lg:border-b-0 lg:px-6 lg:first:ps-0 lg:last:border-e-0 lg:last:pe-0">
+    <div className="flex flex-col-reverse border-b border-landing-line py-5 pe-4 last:border-b-0 lg:border-e lg:border-b-0 lg:px-6 lg:first:ps-0 lg:last:border-e-0 lg:last:pe-0">
       <dt className={cn('mt-2 text-[13px] leading-5', MUTED)}>{value === null && loading ? 'Loading platform totals' : label}</dt>
       <dd className="font-mono text-[32px] leading-none tracking-[-0.02em] tabular-nums lg:text-[40px]">
         {value ?? (loading ? (
-          <span className="inline-block h-8 w-12 bg-[#141416]" aria-hidden>
+          <span className="inline-block h-8 w-12 bg-landing-surface" aria-hidden>
             <span className="sr-only">Loading</span>
           </span>
         ) : (
@@ -357,7 +364,7 @@ function GymsSection({
           </p>
           <a
             href="#verification"
-            className="mt-6 inline-flex min-h-11 items-center text-sm text-[#F2EFE7] underline underline-offset-4 hover:text-[#D8D2C6] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F2EFE7]"
+            className="mt-6 inline-flex min-h-11 items-center text-sm text-landing-fg underline underline-offset-4 hover:text-landing-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-landing-fg"
           >
             What verification checks
           </a>
@@ -371,7 +378,7 @@ function GymsSection({
           ) : gyms.length === 0 ? (
             <StateLine>No verified gyms are listed right now.</StateLine>
           ) : (
-            <ul className={cn('divide-y border-y', RULE, 'divide-white/10')}>
+            <ul className={cn('divide-y border-y', RULE, 'divide-landing-line')}>
               {gyms.map((gym, index) => (
                 <GymRow key={gym.id} gym={gym} index={index} />
               ))}
@@ -385,7 +392,7 @@ function GymsSection({
 
 function GymRow({ gym, index }: { gym: LandingGym; index: number }) {
   return (
-    <li className="group flex flex-col gap-3 py-5 transition-colors hover:bg-[#141416] md:flex-row md:items-center md:gap-6 md:px-4">
+    <li className="group flex flex-col gap-3 py-5 transition-colors hover:bg-landing-surface md:flex-row md:items-center md:gap-6 md:px-4">
       <span className={cn('font-mono text-[11px] tabular-nums', MUTED)}>{String(index + 1).padStart(2, '0')}</span>
       <div className="min-w-0 flex-1">
         <h3 className="text-[19px] font-semibold leading-7 tracking-[-0.01em]">{gym.name}</h3>
@@ -396,7 +403,7 @@ function GymRow({ gym, index }: { gym: LandingGym; index: number }) {
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {gym.badge && (
-          <span className="border border-white/15 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-[#C9C3B7]">
+          <span className="border border-landing-line-soft px-2 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-landing-soft">
             {gym.badge}
           </span>
         )}
@@ -408,7 +415,7 @@ function GymRow({ gym, index }: { gym: LandingGym; index: number }) {
       </div>
       <Link
         to={`/gyms/${gym.id}`}
-        className="inline-flex min-h-11 shrink-0 items-center text-sm font-semibold underline underline-offset-4 hover:text-[#D8D2C6] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F2EFE7]"
+        className="inline-flex min-h-11 shrink-0 items-center text-sm font-semibold underline underline-offset-4 hover:text-landing-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-landing-fg"
       >
         View gym
       </Link>
@@ -447,7 +454,7 @@ function DisciplinesSection({
 
         <div className="mt-8 grid grid-cols-1 gap-2 sm:grid-cols-12">
           <figure className="sm:col-span-6">
-            <div className="h-[240px] w-full overflow-hidden bg-[#141416] sm:h-[340px] lg:h-[380px]">
+            <div className="h-[240px] w-full overflow-hidden bg-landing-surface sm:h-[340px] lg:h-[380px]">
               <img
                 className="h-full w-full object-cover grayscale contrast-[1.05]"
                 src={photoUrl(PHOTOS.muayThai.id, PHOTOS.muayThai.width, PHOTOS.muayThai.height)}
@@ -460,7 +467,7 @@ function DisciplinesSection({
             <figcaption className={cn('mt-2 font-mono text-[10px] uppercase tracking-[0.1em]', MUTED)}>Muay Thai · Pexels</figcaption>
           </figure>
           <figure className="hidden sm:col-span-4 sm:block">
-            <div className="h-[240px] w-full overflow-hidden bg-[#141416] sm:h-[340px] lg:h-[380px]">
+            <div className="h-[240px] w-full overflow-hidden bg-landing-surface sm:h-[340px] lg:h-[380px]">
               <img
                 className="h-full w-full object-cover grayscale contrast-[1.05]"
                 src={photoUrl(PHOTOS.bjj.id, PHOTOS.bjj.width, PHOTOS.bjj.height)}
@@ -473,7 +480,7 @@ function DisciplinesSection({
             <figcaption className={cn('mt-2 font-mono text-[10px] uppercase tracking-[0.1em]', MUTED)}>Brazilian jiu-jitsu · Pexels</figcaption>
           </figure>
           <figure className="hidden sm:col-span-2 sm:block">
-            <div className="h-[240px] w-full overflow-hidden bg-[#141416] sm:h-[340px] lg:h-[380px]">
+            <div className="h-[240px] w-full overflow-hidden bg-landing-surface sm:h-[340px] lg:h-[380px]">
               <img
                 className="h-full w-full object-cover grayscale contrast-[1.05]"
                 src={photoUrl(PHOTOS.karate.id, PHOTOS.karate.width, PHOTOS.karate.height)}
@@ -496,14 +503,14 @@ function DisciplinesSection({
             <StateLine>No published disciplines are available right now.</StateLine>
           ) : (
             <>
-              <ul className="grid border-t border-white/10 sm:grid-cols-2 sm:gap-x-12">
+              <ul className="grid border-t border-landing-line sm:grid-cols-2 sm:gap-x-12">
                 {disciplines.map((discipline) => (
                   <DisciplineRow key={discipline.key} discipline={discipline} />
                 ))}
               </ul>
 
               {data && data.sessions.length > 0 && (
-                <div className="mt-10 border-t border-white/10 pt-6">
+                <div className="mt-10 border-t border-landing-line pt-6">
                   <p className={cn('font-mono text-[11px] uppercase tracking-[0.12em]', MUTED)}>Next scheduled sessions</p>
                   <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     {data.sessions.map((session) => (
@@ -515,7 +522,7 @@ function DisciplinesSection({
 
               <Link
                 to="/sign-up?type=member"
-                className="mt-8 inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4 hover:text-[#D8D2C6] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F2EFE7]"
+                className="mt-8 inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4 hover:text-landing-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-landing-fg"
               >
                 Browse gyms by discipline
               </Link>
@@ -529,7 +536,7 @@ function DisciplinesSection({
 
 function DisciplineRow({ discipline }: { discipline: LandingDiscipline }) {
   return (
-    <li className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-white/10 py-3">
+    <li className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-landing-line py-3">
       <span className="text-[17px] font-medium">{discipline.label}</span>
       <span className={cn('font-mono text-[11px] tabular-nums', MUTED)}>
         {discipline.gyms} {discipline.gyms === 1 ? 'gym' : 'gyms'} ·{' '}
@@ -544,7 +551,7 @@ function DisciplineRow({ discipline }: { discipline: LandingDiscipline }) {
 
 function SessionCell({ session }: { session: LandingSession }) {
   return (
-    <li className="border-s border-white/10 ps-3">
+    <li className="border-s border-landing-line ps-3">
       <p className={cn('font-mono text-[10px] uppercase tracking-[0.08em]', MUTED)}>{sessionTime(session.starts_at)}</p>
       <p className="mt-1 text-sm font-semibold leading-5">{session.name}</p>
       <p className={cn('mt-1 text-xs leading-5', MUTED)}>{session.gym_name}</p>
@@ -600,7 +607,7 @@ function PlansSection({
           <StateLine>No published membership plans are available right now.</StateLine>
         ) : (
           <>
-            <ul className="border-y border-white/10">
+            <ul className="border-y border-landing-line">
               {plans.map((plan) => (
                 <PlanRow key={plan.id} plan={plan} />
               ))}
@@ -613,8 +620,8 @@ function PlansSection({
                 </h3>
                 <ul className="mt-4 grid gap-2 sm:grid-cols-2">
                   {data.plan_inclusions.map((item) => (
-                    <li key={item} className="flex gap-2 text-sm leading-6 text-[#C9C3B7]">
-                      <span className="mt-2 size-1 shrink-0 bg-[#C63C26]" aria-hidden />
+                    <li key={item} className="flex gap-2 text-sm leading-6 text-landing-soft">
+                      <span className="mt-2 size-1 shrink-0 bg-landing-accent" aria-hidden />
                       {item}
                     </li>
                   ))}
@@ -633,7 +640,7 @@ function PlansSection({
 
 function PlanRow({ plan }: { plan: LandingPlan }) {
   return (
-    <li className="flex flex-col gap-2 border-b border-white/10 py-5 last:border-b-0 md:flex-row md:items-center md:gap-6">
+    <li className="flex flex-col gap-2 border-b border-landing-line py-5 last:border-b-0 md:flex-row md:items-center md:gap-6">
       <div className="min-w-0 flex-1">
         <h3 className="text-[18px] font-semibold leading-7 tracking-[-0.01em]">{plan.name}</h3>
         <p className={cn('mt-1 text-sm', MUTED)}>
@@ -645,7 +652,7 @@ function PlanRow({ plan }: { plan: LandingPlan }) {
       </p>
       <Link
         to={`/gyms/${plan.gym_id}`}
-        className="inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4 hover:text-[#D8D2C6] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F2EFE7]"
+        className="inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4 hover:text-landing-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-landing-fg"
       >
         View plan
       </Link>
@@ -682,7 +689,7 @@ function CoachesSection({
           )}
 
           <figure className="mt-8">
-            <div className="aspect-[4/5] w-full overflow-hidden bg-[#141416]">
+            <div className="aspect-[4/5] w-full overflow-hidden bg-landing-surface">
               <img
                 className="h-full w-full object-cover grayscale contrast-[1.05]"
                 src={photoUrl(PHOTOS.coach.id, PHOTOS.coach.width, PHOTOS.coach.height)}
@@ -709,7 +716,7 @@ function CoachesSection({
           ) : coaches.length === 0 ? (
             <StateLine>No public coaches are listed right now.</StateLine>
           ) : (
-            <ul className="mt-4 border-t border-white/10">
+            <ul className="mt-4 border-t border-landing-line">
               {coaches.slice(0, 6).map((coach) => (
                 <CoachRow key={`${coach.gym_id}-${coach.id}`} coach={coach} />
               ))}
@@ -723,7 +730,7 @@ function CoachesSection({
 
 function CoachRow({ coach }: { coach: LandingCoach }) {
   return (
-    <li className="flex flex-col gap-1 border-b border-white/10 py-5 md:flex-row md:items-baseline md:justify-between md:gap-6">
+    <li className="flex flex-col gap-1 border-b border-landing-line py-5 md:flex-row md:items-baseline md:justify-between md:gap-6">
       <div className="min-w-0">
         <h3 className="text-[19px] font-semibold leading-7 tracking-[-0.01em]">{coach.name}</h3>
         <p className={cn('mt-1 text-sm leading-6', MUTED)}>
@@ -732,7 +739,7 @@ function CoachRow({ coach }: { coach: LandingCoach }) {
       </div>
       <Link
         to={`/gyms/${coach.gym_id}`}
-        className="inline-flex min-h-11 shrink-0 items-center text-sm text-[#C9C3B7] underline underline-offset-4 hover:text-[#F2EFE7] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F2EFE7]"
+        className="inline-flex min-h-11 shrink-0 items-center text-sm text-landing-soft underline underline-offset-4 hover:text-landing-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-landing-fg"
       >
         {coach.gym_name}
       </Link>
@@ -759,13 +766,13 @@ function OwnerSection() {
         <div className="mt-10 grid gap-12 lg:grid-cols-12 lg:gap-16">
           <div className="lg:col-span-5">
             <h3 className="font-display text-[28px] uppercase leading-tight tracking-[-0.01em] md:text-[32px]">For members</h3>
-            <ul className="mt-6 border-t border-white/10">
+            <ul className="mt-6 border-t border-landing-line">
               {MEMBER_MODULES.map((module) => (
                 <ModuleRow key={module.title} title={module.title} body={module.body} />
               ))}
             </ul>
             <Button
-              className="mt-6 h-12 rounded-none border-[#F2EFE7] bg-[#F2EFE7] px-5 text-[#0A0A0B] hover:bg-[#E2DDD1]"
+              className="mt-6 h-12 rounded-none border-landing-invert bg-landing-invert px-5 text-landing-invert-fg hover:bg-landing-invert-hover"
               render={<Link to="/sign-up?type=member" />}
             >
               Find a gym
@@ -774,14 +781,14 @@ function OwnerSection() {
 
           <div className="lg:col-span-6 lg:col-start-7">
             <h3 className="font-display text-[28px] uppercase leading-tight tracking-[-0.01em] md:text-[32px]">For gym owners</h3>
-            <ul className="mt-6 border-t border-white/10">
+            <ul className="mt-6 border-t border-landing-line">
               {OWNER_MODULES.map((module) => (
                 <ModuleRow key={module.title} title={module.title} body={module.body} />
               ))}
             </ul>
             <Button
               variant="outline"
-              className="mt-6 h-12 rounded-none border-white/25 bg-transparent px-5 text-[#F2EFE7] hover:bg-white/5 dark:bg-transparent dark:hover:bg-white/5"
+              className="mt-6 h-12 rounded-none border-landing-line-strong bg-transparent px-5 text-landing-fg hover:bg-landing-wash dark:bg-transparent dark:hover:bg-landing-wash"
               render={<Link to="/sign-up?type=owner" />}
             >
               Apply to list your gym
@@ -795,7 +802,7 @@ function OwnerSection() {
 
 function ModuleRow({ title, body }: { title: string; body: string }) {
   return (
-    <li className="border-b border-white/10 py-4">
+    <li className="border-b border-landing-line py-4">
       <h4 className="text-[17px] font-semibold leading-6">{title}</h4>
       <p className={cn('mt-1 text-[15px] leading-6', MUTED)}>{body}</p>
     </li>
@@ -830,7 +837,7 @@ function VerificationSection() {
               ].map((step, index) => (
                 <li key={step} className="flex gap-4">
                   <span className={cn('mt-1 font-mono text-[13px] tabular-nums', MUTED)}>{String(index + 1).padStart(2, '0')}</span>
-                  <span className="max-w-[38ch] text-[15px] leading-7 text-[#C9C3B7]">{step}</span>
+                  <span className="max-w-[38ch] text-[15px] leading-7 text-landing-soft">{step}</span>
                 </li>
               ))}
             </ol>
@@ -845,25 +852,25 @@ function VerificationSection() {
               Submit your verification documents. An administrator reviews every application.
             </p>
 
-            <div className="mt-6 border-t border-white/10 pt-5">
+            <div className="mt-6 border-t border-landing-line pt-5">
               <h4 className="font-mono text-[12px] uppercase tracking-[0.12em]">Tier 1</h4>
               <ul className="mt-3 grid gap-2 sm:grid-cols-2">
                 {['DTI or SEC certificate', 'Mayor’s or business permit', 'Barangay clearance'].map((item) => (
-                  <li key={item} className="flex gap-2 text-sm leading-6 text-[#C9C3B7]">
-                    <span className="mt-2 size-1 shrink-0 bg-[#C63C26]" aria-hidden />
+                  <li key={item} className="flex gap-2 text-sm leading-6 text-landing-soft">
+                    <span className="mt-2 size-1 shrink-0 bg-landing-accent" aria-hidden />
                     {item}
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="mt-6 border-t border-white/10 pt-5">
+            <div className="mt-6 border-t border-landing-line pt-5">
               <h4 className="font-mono text-[12px] uppercase tracking-[0.12em]">Tier 2</h4>
               <p className={cn('mt-2 text-sm', MUTED)}>All Tier 1 requirements, plus:</p>
               <ul className="mt-3 grid gap-2 sm:grid-cols-2">
                 {['10+ facility photos', 'Video tour', 'Owner’s valid ID', 'Owner selfie', 'Recent utility bill'].map((item) => (
-                  <li key={item} className="flex gap-2 text-sm leading-6 text-[#C9C3B7]">
-                    <span className="mt-2 size-1 shrink-0 bg-[#C63C26]" aria-hidden />
+                  <li key={item} className="flex gap-2 text-sm leading-6 text-landing-soft">
+                    <span className="mt-2 size-1 shrink-0 bg-landing-accent" aria-hidden />
                     {item}
                   </li>
                 ))}
@@ -875,7 +882,7 @@ function VerificationSection() {
             </p>
 
             <Button
-              className="mt-6 h-12 rounded-none border-[#F2EFE7] bg-[#F2EFE7] px-5 text-[#0A0A0B] hover:bg-[#E2DDD1]"
+              className="mt-6 h-12 rounded-none border-landing-invert bg-landing-invert px-5 text-landing-invert-fg hover:bg-landing-invert-hover"
               render={<Link to="/sign-up?type=owner" />}
             >
               Apply for gym verification
@@ -912,12 +919,12 @@ function FaqSection({ stats }: { stats: LandingStats | null }) {
         </div>
 
         <div className="lg:col-span-8">
-          <div className="border-t border-white/10">
+          <div className="border-t border-landing-line">
             {items.map((item) => (
-              <Collapsible key={item.q} className="border-b border-white/10">
-                <CollapsibleTrigger className="group flex min-h-[72px] w-full items-start justify-between gap-4 py-6 pr-1 text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F2EFE7]">
+              <Collapsible key={item.q} className="border-b border-landing-line">
+                <CollapsibleTrigger className="group flex min-h-[72px] w-full items-start justify-between gap-4 py-6 pr-1 text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-landing-fg">
                   <span className="text-[17px] font-semibold leading-6">{item.q}</span>
-                  <span className="mt-0.5 shrink-0 text-[#C9C3B7]">
+                  <span className="mt-0.5 shrink-0 text-landing-soft">
                     <Plus className="size-5 group-data-panel-open:hidden" aria-hidden />
                     <Minus className="hidden size-5 group-data-panel-open:block" aria-hidden />
                   </span>
@@ -937,7 +944,7 @@ function FaqSection({ stats }: { stats: LandingStats | null }) {
 function ClosingSection() {
   return (
     <section aria-labelledby="closing-title">
-      <div className="h-[160px] w-full overflow-hidden bg-[#141416] md:h-[240px]">
+      <div className="h-[160px] w-full overflow-hidden bg-landing-surface md:h-[240px]">
         <img
           className="h-full w-full object-cover grayscale contrast-[1.05]"
           src={photoUrl(PHOTOS.closing.id, PHOTOS.closing.width, PHOTOS.closing.height)}
@@ -955,7 +962,7 @@ function ClosingSection() {
             <h2 id="closing-title" className="mt-3 font-display text-[44px] uppercase leading-[0.95] tracking-[-0.015em] md:text-[64px] lg:text-[80px]">
               Your next session
               <br />
-              starts with a <span className="text-[#C63C26]">gym.</span>
+              starts with a <span className="text-landing-accent">gym.</span>
             </h2>
             <p className={cn('mt-5 max-w-xl text-[15px] leading-7', MUTED)}>
               Find a place to train, or apply to bring your gym onto CombatPro.
@@ -963,14 +970,14 @@ function ClosingSection() {
           </div>
           <div className="flex flex-col gap-3 lg:col-span-4 lg:items-end">
             <Button
-              className="h-12 w-full rounded-none border-[#F2EFE7] bg-[#F2EFE7] px-5 text-[#0A0A0B] hover:bg-[#E2DDD1] lg:w-auto"
+              className="h-12 w-full rounded-none border-landing-invert bg-landing-invert px-5 text-landing-invert-fg hover:bg-landing-invert-hover lg:w-auto"
               render={<Link to="/sign-up?type=member" />}
             >
               Find a gym
             </Button>
             <Button
               variant="outline"
-              className="h-12 w-full rounded-none border-white/25 bg-transparent px-5 text-[#F2EFE7] hover:bg-white/5 dark:bg-transparent dark:hover:bg-white/5 lg:w-auto"
+              className="h-12 w-full rounded-none border-landing-line-strong bg-transparent px-5 text-landing-fg hover:bg-landing-wash dark:bg-transparent dark:hover:bg-landing-wash lg:w-auto"
               render={<Link to="/sign-up?type=owner" />}
             >
               Apply to list your gym
@@ -987,7 +994,7 @@ function ClosingSection() {
 
 function Footer() {
   return (
-    <footer className="border-t border-white/10">
+    <footer className="border-t border-landing-line">
       <div className={cn(SHELL, 'py-10')}>
         <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
           <div>
@@ -1003,30 +1010,30 @@ function Footer() {
               <a
                 key={item.href}
                 href={item.href}
-                className="inline-flex min-h-11 items-center text-sm text-[#C9C3B7] underline-offset-4 hover:text-[#F2EFE7] hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F2EFE7]"
+                className="inline-flex min-h-11 items-center text-sm text-landing-soft underline-offset-4 hover:text-landing-fg hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-landing-fg"
               >
                 {item.label}
               </a>
             ))}
             <Link
               to="/sign-in"
-              className="inline-flex min-h-11 items-center text-sm text-[#C9C3B7] underline-offset-4 hover:text-[#F2EFE7] hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F2EFE7]"
+              className="inline-flex min-h-11 items-center text-sm text-landing-soft underline-offset-4 hover:text-landing-fg hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-landing-fg"
             >
               Sign in
             </Link>
           </nav>
         </div>
 
-        <details className="mt-10 border-t border-white/10 pt-6">
-          <summary className="inline-flex min-h-11 cursor-pointer items-center font-mono text-[11px] uppercase tracking-[0.12em] text-[#C9C3B7] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F2EFE7]">
+        <details className="mt-10 border-t border-landing-line pt-6">
+          <summary className="inline-flex min-h-11 cursor-pointer items-center font-mono text-[11px] uppercase tracking-[0.12em] text-landing-soft focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-landing-fg">
             Photo credits
           </summary>
           <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {PHOTO_CREDITS.map((credit) => (
-              <li key={credit.id} className="text-sm leading-6 text-[#A6A096]">
+              <li key={credit.id} className="text-sm leading-6 text-landing-muted">
                 {credit.label} ·{' '}
                 <a
-                  className="underline underline-offset-2 hover:text-[#F2EFE7]"
+                  className="underline underline-offset-2 hover:text-landing-fg"
                   href={`https://www.pexels.com/photo/${credit.id}/`}
                   target="_blank"
                   rel="noreferrer"
@@ -1045,14 +1052,14 @@ function Footer() {
 }
 
 function StateLine({ children }: { children: React.ReactNode }) {
-  return <p className={cn('border-y border-white/10 py-8 text-sm leading-6', MUTED)}>{children}</p>
+  return <p className={cn('border-y border-landing-line py-8 text-sm leading-6', MUTED)}>{children}</p>
 }
 
 function LoadingRows({ rows }: { rows: number }) {
   return (
     <div className="flex flex-col gap-2" aria-hidden="true">
       {Array.from({ length: rows }).map((_, index) => (
-        <div key={index} className="h-[76px] w-full bg-[#141416]" />
+        <div key={index} className="h-[76px] w-full bg-landing-surface" />
       ))}
     </div>
   )

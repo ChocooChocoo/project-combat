@@ -6,6 +6,21 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+    --color-landing-bg: var(--landing-bg);
+    --color-landing-fg: var(--landing-fg);
+    --color-landing-soft: var(--landing-soft);
+    --color-landing-muted: var(--landing-muted);
+    --color-landing-faint: var(--landing-faint);
+    --color-landing-surface: var(--landing-surface);
+    --color-landing-line: var(--landing-line);
+    --color-landing-line-soft: var(--landing-line-soft);
+    --color-landing-line-strong: var(--landing-line-strong);
+    --color-landing-wash: var(--landing-wash);
+    --color-landing-invert: var(--landing-invert);
+    --color-landing-invert-fg: var(--landing-invert-fg);
+    --color-landing-invert-hover: var(--landing-invert-hover);
+    --color-landing-hover: var(--landing-hover);
+    --color-landing-accent: var(--landing-accent);
     --animate-skeleton: skeleton 2s -1s infinite linear;
     --animate-caret-blink: 1s ease-out infinite caret-blink;
     --animate-toast-success-odd: toast-success-odd 0.32s cubic-bezier(0.5, 1, 0.89, 1);
@@ -142,6 +157,21 @@
 }
 
 :root {
+    --landing-bg: #FAF8F2;
+    --landing-fg: #12110F;
+    --landing-soft: #45413A;
+    --landing-muted: #6B665D;
+    --landing-faint: #746E63;
+    --landing-surface: #EFEBE2;
+    --landing-line: rgb(0 0 0 / 12%);
+    --landing-line-soft: rgb(0 0 0 / 18%);
+    --landing-line-strong: rgb(0 0 0 / 28%);
+    --landing-wash: rgb(0 0 0 / 4%);
+    --landing-invert: #12110F;
+    --landing-invert-fg: #FAF8F2;
+    --landing-invert-hover: #302D28;
+    --landing-hover: #302D28;
+    --landing-accent: #B1331F;
     --destructive-foreground: var(--color-red-700);
     --info: var(--color-blue-500);
     --info-foreground: var(--color-blue-700);
@@ -187,6 +217,21 @@
 }
 
 .dark {
+    --landing-bg: #0A0A0B;
+    --landing-fg: #F2EFE7;
+    --landing-soft: #C9C3B7;
+    --landing-muted: #A6A096;
+    --landing-faint: #9A958B;
+    --landing-surface: #141416;
+    --landing-line: rgb(255 255 255 / 10%);
+    --landing-line-soft: rgb(255 255 255 / 15%);
+    --landing-line-strong: rgb(255 255 255 / 25%);
+    --landing-wash: rgb(255 255 255 / 5%);
+    --landing-invert: #F2EFE7;
+    --landing-invert-fg: #0A0A0B;
+    --landing-invert-hover: #E2DDD1;
+    --landing-hover: #D8D2C6;
+    --landing-accent: #C63C26;
     --destructive-foreground: var(--color-red-400);
     --info: var(--color-blue-500);
     --info-foreground: var(--color-blue-400);
