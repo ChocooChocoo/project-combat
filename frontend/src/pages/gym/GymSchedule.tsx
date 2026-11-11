@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { PageHeader } from '@/components/page-header'
 import { SessionEditor } from '@/components/schedule/session-editor'
-import { CancelSessionDialog, ReassignCoachDialog } from '@/components/schedule/session-actions'
+import { CancelSessionDialog, ClearFlagButton, ReassignCoachDialog } from '@/components/schedule/session-actions'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -142,6 +142,7 @@ export default function GymSchedule() {
                 <p className="mt-1 text-sm wrap-anywhere">{flagReasonLabel(session.flag_reason)}</p>
               </div>
               {canManage && <div className="flex flex-wrap justify-end gap-2">
+                <ClearFlagButton gymId={gym.id} sessionId={session.id} onSaved={refresh} />
                 <Button size="sm" variant="outline" onClick={() => setReassigning(session)}>Reassign coach</Button>
                 <Button size="sm" variant="outline" onClick={() => setEditing(session)}>Move</Button>
                 <Button size="sm" variant="destructive-outline" onClick={() => setCancelling(session)}>Cancel</Button>

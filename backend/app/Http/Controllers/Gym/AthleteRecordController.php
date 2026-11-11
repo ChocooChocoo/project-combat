@@ -63,6 +63,20 @@ class AthleteRecordController extends Controller
         return response()->json(['entry' => $this->entryPayload($entry->load('recordedBy'))], 201);
     }
 
+    /** D-35: a permitted coach sets the athlete's level, which booking checks against the session level. */
+    public function updateLevel(Request $request, Gym $gym, User $user): JsonResponse
+    {
+        $profile = $this->profile($gym, $user);
+        abort_if($request->user()->id === $user->id, 403, 'You cannot change your own level.');
+
+        $data = $request->validate([
+            'level' => ['present', 'nullable', Rule::in(array_keys(config('offer.athlete_levels')))],
+        ]);
+        $profile->update(['level' => $data['level']]);
+
+        return response()->json(['level' => $profile->level]);
+    }
+
     /** R-41: the athlete's own record, health included. */
     public function mine(Request $request, Gym $gym): JsonResponse
     {
@@ -150,6 +164,7 @@ class AthleteRecordController extends Controller
             'athlete' => [...$this->personPayload($user), 'phone' => $user->phone],
             'background' => $profile->background,
             'starting_rank' => $profile->current_rank,
+            'level' => $profile->level,
             'training_history' => $profile->training_history,
             'ranks' => $ranks,
             'entries' => $entries->map(fn (AthleteEntry $entry) => $this->entryPayload($entry))->values(),

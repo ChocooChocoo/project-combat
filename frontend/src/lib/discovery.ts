@@ -103,6 +103,7 @@ export type PublicService = {
   name: string
   discipline?: string | null
   activity_type?: string | null
+  activity_type_label?: string | null
   overview?: string | null
   level?: string | null
   duration_minutes?: number | null

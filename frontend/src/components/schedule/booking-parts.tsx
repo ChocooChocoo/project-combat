@@ -270,8 +270,8 @@ export function StaffBookingList({ bookings, canApprove, canManage, onAction, on
           <TableBody>
             {bookings.map((booking) => (
               <TableRow key={booking.id}>
-                <TableCell className="max-w-48 whitespace-normal">{athlete(booking)}</TableCell>
-                <TableCell className="max-w-64 whitespace-normal break-words">
+                <TableCell>{athlete(booking)}</TableCell>
+                <TableCell className="max-w-64 whitespace-normal break-words min-w-48">
                   {sessionLink(booking)}
                   <span className="mt-1 block text-muted-foreground text-xs">
                     {dayLabel(booking.session.starts_at)}, {sessionTime(booking.session.starts_at)}
@@ -282,7 +282,7 @@ export function StaffBookingList({ bookings, canApprove, canManage, onAction, on
                   {booking.waitlist_position && <span className="mt-1 block text-muted-foreground text-xs tabular-nums">Position {booking.waitlist_position}</span>}
                   {booking.decision_reason && <p className="mt-1 max-w-64 whitespace-normal text-sm">{booking.decision_reason}</p>}
                 </TableCell>
-                <TableCell className="max-w-64 whitespace-normal">{fee(booking)}</TableCell>
+                <TableCell>{fee(booking)}</TableCell>
                 {participant && <TableCell className="min-w-72 max-w-sm whitespace-normal">{participant(booking)}</TableCell>}
                 <TableCell className="w-12 text-right">{actions(booking)}</TableCell>
               </TableRow>

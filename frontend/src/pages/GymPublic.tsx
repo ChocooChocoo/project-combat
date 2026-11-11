@@ -469,7 +469,7 @@ export default function GymPublic() {
                           <Badge variant="outline">{DISCIPLINE_LABELS[service.discipline] ?? labelKey(service.discipline)}</Badge>
                         )}
                         {service.activity_type && (
-                          <Badge variant="secondary">{ACTIVITY_LABELS[service.activity_type] ?? labelKey(service.activity_type)}</Badge>
+                          <Badge variant="secondary">{service.activity_type_label ?? ACTIVITY_LABELS[service.activity_type] ?? labelKey(service.activity_type)}</Badge>
                         )}
                       </div>
                       </div>

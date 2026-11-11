@@ -4,10 +4,10 @@ namespace App\Notifications;
 
 use Illuminate\Notifications\Notification;
 
-/** R-46: one summary per leave approval, not one notice per occurrence. */
+/** R-46, D-32: one summary per change that flags sessions, not one notice per occurrence. */
 class SessionsFlagged extends Notification
 {
-    public function __construct(private int $gymId, private int $count, private string $coach) {}
+    public function __construct(private int $gymId, private int $count, private string $reason) {}
 
     public function via(object $notifiable): array
     {
@@ -18,7 +18,7 @@ class SessionsFlagged extends Notification
     {
         return [
             'title' => $this->count === 1 ? 'Session needs attention' : 'Sessions need attention', 'type' => 'sessions_flagged',
-            'message' => $this->count.($this->count === 1 ? ' session needs' : ' sessions need')." a new coach or time because {$this->coach} is on approved leave.",
+            'message' => $this->count.($this->count === 1 ? ' session needs' : ' sessions need')." a new coach or time: {$this->reason}.",
             'gym_id' => $this->gymId, 'count' => $this->count,
         ];
     }

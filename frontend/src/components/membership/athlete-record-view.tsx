@@ -1,14 +1,45 @@
 import { EntriesList } from '@/components/membership/membership-parts'
 import { Card, CardAction, CardDescription, CardHeader, CardPanel, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs'
-import { dateLabel, type AthleteRecord, type HealthDetails, type MembershipForm } from '@/lib/membership'
+import { useState } from 'react'
+import { ATHLETE_LEVELS, dateLabel, type AthleteLevel, type AthleteRecord, type HealthDetails, type MembershipForm } from '@/lib/membership'
 import { Button } from '@/components/ui/button'
+import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { FileText } from 'lucide-react'
 import { AttendanceList, ProgressNotes } from '@/components/schedule/attendance-list'
 import { ATTENDANCE_LABELS } from '@/lib/attendance'
 
+/** D-35: the level booking checks. Coaches with training.athletes.manage can change it. */
+function AthleteLevelRow({ level, onChange }: { level: AthleteLevel | null; onChange?: (level: AthleteLevel | null) => Promise<void> }) {
+  const [busy, setBusy] = useState(false)
+  const items = [{ value: 'none', label: 'Not set (counts as Beginner)' }, ...Object.entries(ATHLETE_LEVELS).map(([value, label]) => ({ value, label }))]
+  async function change(next: string) {
+    if (!onChange) return
+    setBusy(true)
+    try { await onChange(next === 'none' ? null : next as AthleteLevel) } finally { setBusy(false) }
+  }
+  return (
+    <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h3 className="font-medium text-sm">Training level</h3>
+        <p className="mt-1 text-muted-foreground text-xs">Sessions for a higher level cannot be booked.</p>
+      </div>
+      {onChange ? (
+        <Select items={items} value={level ?? 'none'} disabled={busy} onValueChange={(next) => change(String(next ?? 'none'))}>
+          <SelectTrigger aria-label="Training level" className="sm:w-64"><SelectValue /></SelectTrigger>
+          <SelectPopup>{items.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectPopup>
+        </Select>
+      ) : (
+        <p className="font-semibold text-sm">{level ? ATHLETE_LEVELS[level] : 'Beginner (not set)'}</p>
+      )}
+    </div>
+  )
+}
+
 /** Current ranks plus the four lists of the athlete record (R-37 to R-39, R-41). */
-export function AthleteRecordView({ record, action }: { record: AthleteRecord; action?: React.ReactNode }) {
+export function AthleteRecordView({ record, action, onLevelChange }: {
+  record: AthleteRecord; action?: React.ReactNode; onLevelChange?: (level: AthleteLevel | null) => Promise<void>
+}) {
   return (
     <Card className="min-w-0">
       <CardHeader>
@@ -34,6 +65,7 @@ export function AthleteRecordView({ record, action }: { record: AthleteRecord; a
               {record.starting_rank ? `Rank given when joining: ${record.starting_rank}. No promotions recorded here yet.` : 'No rank recorded yet.'}
             </p>
           )}
+          <AthleteLevelRow level={record.level} onChange={onLevelChange} />
         </div>
 
         <Tabs defaultValue="promotion" className="min-w-0">

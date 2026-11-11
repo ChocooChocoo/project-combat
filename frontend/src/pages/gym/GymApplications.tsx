@@ -218,7 +218,7 @@ export default function GymApplications() {
                   <TableBody>
                     {rows.map((row) => (
                       <TableRow key={row.id}>
-                        <TableCell className="max-w-56 whitespace-normal">
+                        <TableCell>
                           <div className="flex items-center gap-3">
                             <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-xs" aria-hidden>{initials(row.member.name)}</span>
                             <div className="flex min-w-0 flex-col">
@@ -227,7 +227,7 @@ export default function GymApplications() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="max-w-48 whitespace-normal">
+                        <TableCell>
                           <p className="wrap-anywhere">{row.plan?.name}</p>
                           <p className="mt-0.5 text-muted-foreground text-xs tabular-nums">{money(row.plan?.total_fee)}</p>
                         </TableCell>

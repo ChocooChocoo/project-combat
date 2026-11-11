@@ -268,6 +268,15 @@ export default function MemberRecord() {
           {record && (
             <AthleteRecordView
               record={record}
+              onLevelChange={canCoach && membership.member.id !== user?.id ? async (level) => {
+                try {
+                  await api(`/gyms/${gymId}/athletes/${membership.member.id}/level`, { method: 'PUT', body: { level } })
+                  setRecord((current) => (current ? { ...current, level } : current))
+                  toastManager.add({ title: 'Training level saved.', type: 'success' })
+                } catch (failure) {
+                  toastManager.add({ title: failure instanceof ApiError ? failure.message : 'The level could not be saved.', type: 'error' })
+                }
+              } : undefined}
               action={
                 canCoach && membership.member.id !== user?.id ? (
                   <Button size="sm" variant="outline" onClick={() => setEntryOpen(true)}>

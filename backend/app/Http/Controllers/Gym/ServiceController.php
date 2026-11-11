@@ -43,7 +43,7 @@ class ServiceController extends Controller
 
     public function store(Request $request, Gym $gym): JsonResponse
     {
-        $data = $request->validate($this->rules(), self::MESSAGES);
+        $data = $request->validate($this->rules($gym), self::MESSAGES);
 
         if ($data['price_included'] && ($data['price'] ?? null) !== null) {
             throw ValidationException::withMessages(['price' => 'Leave the price empty when it is included in the membership.']);
@@ -61,7 +61,7 @@ class ServiceController extends Controller
     public function update(Request $request, Gym $gym, int $service): JsonResponse
     {
         $model = $gym->gymServices()->findOrFail($service);
-        $data = $request->validate($this->rules(updating: true), self::MESSAGES);
+        $data = $request->validate($this->rules($gym, updating: true), self::MESSAGES);
 
         $model->fill($data);
 
@@ -77,7 +77,7 @@ class ServiceController extends Controller
 
         // A published service stays publishable: the edited result must still pass the same rules.
         if ($model->published_at) {
-            $errors = $this->publishErrors($model);
+            $errors = $this->publishErrors($gym, $model);
 
             if ($errors) {
                 throw ValidationException::withMessages($errors);
@@ -166,7 +166,7 @@ class ServiceController extends Controller
     public function publish(Gym $gym, int $service): JsonResponse
     {
         $model = $gym->gymServices()->findOrFail($service);
-        $errors = $this->publishErrors($model);
+        $errors = $this->publishErrors($gym, $model);
 
         if ($errors) {
             throw ValidationException::withMessages($errors);
@@ -220,7 +220,7 @@ class ServiceController extends Controller
         ];
     }
 
-    private function publishErrors(GymService $service): array
+    private function publishErrors(Gym $gym, GymService $service): array
     {
         $errors = [];
 
@@ -232,7 +232,7 @@ class ServiceController extends Controller
             $errors['discipline'] = 'Choose a combat sport from the list.';
         }
 
-        if (! array_key_exists((string) $service->activity_type, config('offer.activity_types'))) {
+        if (! array_key_exists((string) $service->activity_type, $gym->activityTypeOptions())) {
             $errors['activity_type'] = 'Choose an activity type from the list.';
         }
 
@@ -283,14 +283,14 @@ class ServiceController extends Controller
         return $errors;
     }
 
-    private function rules(bool $updating = false): array
+    private function rules(Gym $gym, bool $updating = false): array
     {
         $sometimes = $updating ? ['sometimes'] : [];
 
         return [
             'name' => [...$sometimes, 'required', 'string', 'max:120'],
             'discipline' => [...$sometimes, 'required', Rule::in(array_keys(config('verification.disciplines')))],
-            'activity_type' => [...$sometimes, 'required', Rule::in(array_keys(config('offer.activity_types')))],
+            'activity_type' => [...$sometimes, 'required', Rule::in(array_keys($gym->activityTypeOptions()))],
             'overview' => [...$sometimes, 'required', 'string', 'max:5000'],
             'level' => [...$sometimes, 'required', Rule::in(array_keys(config('offer.levels')))],
             'duration_minutes' => [...$sometimes, 'required', 'integer', 'min:1', 'max:600'],

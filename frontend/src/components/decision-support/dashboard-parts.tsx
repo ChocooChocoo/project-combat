@@ -80,8 +80,8 @@ export function AggregateTable({ caption, columns, rows }: { caption: string; co
     {rows.length > 0 && <>
       <div className={cn(mode === 'screen' && 'hidden sm:block')}>
         <Table>
-          <TableHeader><TableRow>{columns.map((column) => <TableHead key={column} className="whitespace-normal bg-muted/50 text-xs first:pl-5">{column}</TableHead>)}</TableRow></TableHeader>
-          <TableBody>{rows.map(({ key, cells }) => <TableRow key={key}>{cells.map((cell, index) => <TableCell key={index} className="whitespace-normal break-words text-xs tabular-nums first:pl-5">{cell}</TableCell>)}</TableRow>)}</TableBody>
+          <TableHeader><TableRow>{columns.map((column) => <TableHead key={column} className="whitespace-nowrap print:whitespace-normal bg-muted/50 text-xs first:pl-5">{column}</TableHead>)}</TableRow></TableHeader>
+          <TableBody>{rows.map(({ key, cells }) => <TableRow key={key}>{cells.map((cell, index) => <TableCell key={index} className="whitespace-nowrap print:whitespace-normal print:break-words text-xs tabular-nums first:pl-5">{cell}</TableCell>)}</TableRow>)}</TableBody>
         </Table>
       </div>
       {mode === 'screen' && <div className="flex flex-col gap-3 p-4 sm:hidden">{rows.map(({ key, cells }) => <dl key={key} className="flex flex-col gap-2 rounded-lg border p-3">

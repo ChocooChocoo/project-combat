@@ -967,7 +967,9 @@ class DatabaseSeeder extends Seeder
             if (! $member->hasGymRole($gym, GymPersonType::Member)) {
                 $gym->addPerson($member, GymPersonType::Member);
             }
-            AthleteProfile::create(['user_id' => $member->id, ...$profile, 'created_at' => $approved, 'updated_at' => $approved]);
+            // D-35: a spread of levels, so the level check shows in the demo.
+            AthleteProfile::create(['user_id' => $member->id, ...$profile, 'level' => ['intermediate', 'advanced', 'beginner'][$index % 3],
+                'created_at' => $approved, 'updated_at' => $approved]);
             if ($status === 'awaiting_payment') {
                 Carbon::withTestNow($approved, fn () => $ledger->recordPayment($membership, (float) $plan->total_fee / 2, PaymentMethod::Cash, $owner));
             } else {

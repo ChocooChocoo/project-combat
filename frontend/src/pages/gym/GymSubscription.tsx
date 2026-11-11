@@ -128,7 +128,7 @@ export default function GymSubscription() {
           <TableBody>{payments.map((payment) => <TableRow key={payment.id}>
             <TableCell>{dateLabel(payment.paid_at)}</TableCell>
             <TableCell>{payment.plan_name}</TableCell>
-            <TableCell className="whitespace-normal">{dateLabel(payment.period_starts_at)} to {dateLabel(payment.period_ends_at)}</TableCell>
+            <TableCell>{dateLabel(payment.period_starts_at)} to {dateLabel(payment.period_ends_at)}</TableCell>
             <TableCell className="text-end tabular-nums">{money(payment.amount)}</TableCell>
           </TableRow>)}</TableBody>
         </Table>}

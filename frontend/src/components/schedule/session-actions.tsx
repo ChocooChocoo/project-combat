@@ -53,6 +53,26 @@ export function CancelSessionDialog({ gymId, session, onClose, onSaved }: {
   )
 }
 
+/** D-32: confirm a flagged session once its coach can run it again. The server rechecks and says why if not. */
+export function ClearFlagButton({ gymId, sessionId, onSaved }: { gymId: number | string; sessionId: number; onSaved: () => void }) {
+  const [busy, setBusy] = useState(false)
+  async function clear() {
+    setBusy(true)
+    try {
+      await api(`/gyms/${gymId}/sessions/${sessionId}/clear-flag`, { method: 'POST' })
+      toastManager.add({ title: 'Session confirmed. Booked athletes notified.', type: 'success' })
+      onSaved()
+    } catch (failure) {
+      toastManager.add({
+        title: 'The flag could not be cleared',
+        description: failure instanceof ApiError ? Object.values(failure.errors).flat().join(' ') || failure.message : 'Try again.',
+        type: 'error',
+      })
+    } finally { setBusy(false) }
+  }
+  return <Button size="sm" variant="outline" loading={busy} onClick={clear}>Keep as planned</Button>
+}
+
 /** R-46: only coaches passing the same save-time clash check are offered. */
 export function ReassignCoachDialog({ gymId, session, onClose, onSaved }: {
   gymId: number; session: TrainingSession; onClose: () => void; onSaved: () => void

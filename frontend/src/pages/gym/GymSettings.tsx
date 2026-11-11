@@ -1,4 +1,4 @@
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { CaviteLocationFields } from '@/components/cavite-location-fields'
@@ -40,6 +40,7 @@ type FormState = {
   location: LatLng | null
   disciplines: string[]
   activity_types: string[]
+  custom_activity_types: string[]
   hours: DayHours
   working_days: Day[]
   policies: string
@@ -71,6 +72,7 @@ function fromSetup(setup: WorkspaceSetup): FormState {
         : null,
     disciplines: setup.disciplines ?? [],
     activity_types: setup.activity_types ?? [],
+    custom_activity_types: setup.custom_activity_types ?? [],
     hours,
     working_days: setup.working_days ?? [],
     policies: setup.policies ?? '',
@@ -79,6 +81,50 @@ function fromSetup(setup: WorkspaceSetup): FormState {
     cancel_cutoff_hours: String(setup.cancel_cutoff_hours),
     session_reminder_minutes: String(setup.session_reminder_minutes),
   }
+}
+
+/** D-24: the gym's own session types, used by services and the schedule. Saved with the rest of the form. */
+function CustomTypes({ value, onChange, disabled }: { value: string[]; onChange: (value: string[]) => void; disabled: boolean }) {
+  const [draft, setDraft] = useState('')
+  const name = draft.trim()
+  const duplicate = value.some((type) => type.toLowerCase() === name.toLowerCase())
+  const add = () => {
+    if (!name || duplicate || value.length >= 20) return
+    onChange([...value, name])
+    setDraft('')
+  }
+  return (
+    <Field name="custom_activity_types" className="w-full">
+      <FieldLabel>Extra session types</FieldLabel>
+      <FieldDescription>Add types the built-in list does not cover, such as Kids class. They show up only in your services and schedule, not in public gym search.</FieldDescription>
+      {value.length > 0 && (
+        <ul className="flex flex-wrap gap-2">
+          {value.map((type) => (
+            <li key={type} className="flex items-center gap-1 rounded-md border py-1 ps-3 pe-1 text-sm">
+              {type}
+              <Button type="button" size="icon-sm" variant="ghost" aria-label={`Remove ${type}`} disabled={disabled}
+                onClick={() => onChange(value.filter((item) => item !== type))}>
+                <X aria-hidden />
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="flex w-full gap-2">
+        <Input
+          aria-label="New session type"
+          placeholder="Type name"
+          maxLength={40}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); add() } }}
+        />
+        <Button type="button" variant="outline" disabled={disabled || !name || duplicate || value.length >= 20} onClick={add}>Add type</Button>
+      </div>
+      {duplicate && <p className="text-muted-foreground text-sm">That type is already in the list.</p>}
+      <FieldError />
+    </Field>
+  )
 }
 
 /** R-20, S-16: everything the owner set about the gym after approval, in one place. */
@@ -152,6 +198,7 @@ export default function GymSettings() {
           contact_email: form.contact_email || null,
           disciplines: form.disciplines,
           activity_types: form.activity_types,
+          custom_activity_types: form.custom_activity_types,
           operating_hours: Object.fromEntries(
             DAYS.filter(({ key }) => form.hours[key].open).map(({ key }) => [
               key,
@@ -334,6 +381,12 @@ export default function GymSettings() {
                   </Fieldset>
                   <FieldError />
                 </Field>
+
+                <CustomTypes
+                  value={form.custom_activity_types}
+                  onChange={(value) => set('custom_activity_types', value)}
+                  disabled={!canManage}
+                />
               </CardPanel>
             </Card>
 

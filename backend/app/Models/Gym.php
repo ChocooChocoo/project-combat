@@ -13,12 +13,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 /** A gym. Until approved, the same row is its owner application (R-11 to R-18). */
 #[Fillable([
     'name', 'tier', 'address_line', 'barangay', 'city', 'province', 'zip_code', 'latitude', 'longitude',
     'contact_phone', 'contact_email', 'operating_hours', 'disciplines', 'services', 'facilities',
-    'activity_types', 'working_days', 'policies',
+    'activity_types', 'custom_activity_types', 'working_days', 'policies',
     'booking_approval', 'late_grace_minutes', 'cancel_cutoff_hours', 'session_reminder_minutes',
     'payroll_frequency', 'payroll_steps', 'staff_grace_minutes', 'overtime_min_minutes',
 ])]
@@ -32,6 +33,26 @@ class Gym extends Model
     }
 
     use HasFactory;
+
+    /** D-24: built-in session types plus the gym's own, keyed custom_<slug>. */
+    public function activityTypeOptions(): array
+    {
+        $own = collect($this->custom_activity_types ?? [])
+            ->mapWithKeys(fn (string $label) => [self::customTypeKey($label) => $label]);
+
+        return [...config('offer.activity_types'), ...$own];
+    }
+
+    public static function customTypeKey(string $label): string
+    {
+        return 'custom_'.Str::slug($label, '_');
+    }
+
+    /** ponytail: a removed custom type keeps showing as its key in readable form; block removal while in use if that confuses staff. */
+    public function activityTypeLabel(?string $type): string
+    {
+        return $this->activityTypeOptions()[$type] ?? Str::headline(Str::after((string) $type, 'custom_'));
+    }
 
     /** Profile fields an application needs before it can be sent (R-11). */
     public const REQUIRED_PROFILE = [
@@ -70,6 +91,7 @@ class Gym extends Model
             'services' => 'array',
             'facilities' => 'array',
             'activity_types' => 'array',
+            'custom_activity_types' => 'array',
             'working_days' => 'array',
             'booking_approval' => 'boolean',
             'late_grace_minutes' => 'integer',

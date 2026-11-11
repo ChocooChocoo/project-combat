@@ -82,10 +82,20 @@ export type AthleteEntry = {
   recorded_by: string | null
 }
 
+export type AthleteLevel = 'beginner' | 'intermediate' | 'advanced'
+
+export const ATHLETE_LEVELS: Record<AthleteLevel, string> = {
+  beginner: 'Beginner',
+  intermediate: 'Intermediate',
+  advanced: 'Advanced',
+}
+
 export type AthleteRecord = {
   athlete: { id: number; name: string; email: string; phone: string | null }
   background: string | null
   starting_rank: string | null
+  /** D-35: booking needs this level or higher; null counts as beginner. */
+  level: AthleteLevel | null
   training_history: string | null
   ranks: { discipline: string; rank: string; since: string }[]
   entries: AthleteEntry[]

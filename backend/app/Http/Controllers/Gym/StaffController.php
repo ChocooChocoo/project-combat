@@ -6,10 +6,12 @@ use App\Enums\GymPersonType;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Gym\Concerns\PresentsHr;
 use App\Models\Gym;
+use App\Models\TrainingSession;
 use App\Models\User;
 use App\Notifications\EmployeeAdded;
 use App\Support\GymRoleAssigner;
 use App\Support\OneTimeCodes;
+use App\Support\SessionFlagger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -179,6 +181,8 @@ class StaffController extends Controller
         $this->ensureEmployee($gym, $user);
 
         DB::transaction(function () use ($request, $gym, $user) {
+            // R-46: same lock order as session saves, so no occurrence is missed.
+            Gym::whereKey($gym->id)->lockForUpdate()->firstOrFail();
             if ($user->gymRoles($gym)->exists()) {
                 abort_unless($request->user()->hasPermission($gym, 'hr.roles.manage'), 403);
                 app(GymRoleAssigner::class)->replace($request->user(), $gym, $user, []);
@@ -191,6 +195,11 @@ class StaffController extends Controller
             }
 
             $gym->people()->wherePivot('role', GymPersonType::Employee->value)->detach($user->id);
+
+            // D-32: the removed coach's upcoming sessions need a new coach.
+            $name = trim("{$user->first_name} {$user->last_name}");
+            app(SessionFlagger::class)->flag($gym, TrainingSession::where('coach_id', $user->id),
+                "Coach {$name} is no longer on staff", "{$name} was removed from staff");
         });
 
         return response()->json(['message' => 'Employee removed.']);

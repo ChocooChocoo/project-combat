@@ -22,7 +22,7 @@ export function Table({
     children: (
       <table
         className={cn(
-          "w-full caption-bottom in-data-[variant=card]:border-separate in-data-[variant=card]:border-spacing-0 text-sm",
+          "w-full min-w-max print:min-w-0 caption-bottom in-data-[variant=card]:border-separate in-data-[variant=card]:border-spacing-0 text-sm",
           className,
         )}
         data-slot="table"

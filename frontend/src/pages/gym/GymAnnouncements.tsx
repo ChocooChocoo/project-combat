@@ -74,11 +74,11 @@ export default function GymAnnouncements() {
       ) : (
         <>
           <div className="hidden md:block">
-            <Table variant="card" className="table-fixed">
-              <TableHeader><TableRow><TableHead className="w-1/2">Announcement</TableHead><TableHead>Audience</TableHead><TableHead>Delivery</TableHead><TableHead>Sent</TableHead></TableRow></TableHeader>
+            <Table variant="card">
+              <TableHeader><TableRow><TableHead className="min-w-80">Announcement</TableHead><TableHead>Audience</TableHead><TableHead>Delivery</TableHead><TableHead>Sent</TableHead></TableRow></TableHeader>
               <TableBody>{data.announcements.map((announcement) => (
                 <TableRow key={announcement.id}>
-                  <TableCell className="align-top whitespace-normal"><AnnouncementContent announcement={announcement} /></TableCell>
+                  <TableCell className="min-w-80 align-top whitespace-normal"><AnnouncementContent announcement={announcement} /></TableCell>
                   <TableCell className="align-top whitespace-normal"><AudienceContent announcement={announcement} /></TableCell>
                   <TableCell className="align-top whitespace-normal"><DeliveryContent announcement={announcement} /></TableCell>
                   <TableCell className="align-top whitespace-normal text-muted-foreground">{announcementDate(announcement.created_at)}<span className="mt-1 block break-words">{announcement.created_by_name}</span></TableCell>

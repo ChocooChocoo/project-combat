@@ -386,7 +386,7 @@ export function ServiceEditor({
                     onValueChange={(value) => set('activity_type', String(value ?? '') === 'none' ? '' : String(value ?? ''))}
                     items={[
                       { value: 'none', label: 'Choose a type' },
-                      ...Object.entries(options.activity_types).map(([value, label]) => ({ value, label })),
+                      ...Object.entries(options.session_types).map(([value, label]) => ({ value, label })),
                     ]}
                   >
                     <SelectTrigger aria-invalid={errors.activity_type ? true : undefined}>
@@ -394,7 +394,7 @@ export function ServiceEditor({
                     </SelectTrigger>
                     <SelectPopup>
                       <SelectItem value="none">Choose a type</SelectItem>
-                      {Object.entries(options.activity_types).map(([value, label]) => (
+                      {Object.entries(options.session_types).map(([value, label]) => (
                         <SelectItem key={value} value={value}>
                           {label}
                         </SelectItem>

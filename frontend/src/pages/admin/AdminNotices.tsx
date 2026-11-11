@@ -45,10 +45,10 @@ export default function AdminNotices() {
       : !data ? <div className="flex flex-col gap-2" aria-busy="true" aria-label="Loading platform notices"><Skeleton className="h-20" /><Skeleton className="h-20" /></div>
         : data.notices.length === 0 ? <Empty className="rounded-xl border"><EmptyHeader><EmptyTitle>No platform notices sent</EmptyTitle><EmptyDescription>Sent notices will appear here with their audience and delivery count.</EmptyDescription></EmptyHeader></Empty>
           : <>
-            <div className="hidden md:block"><Table variant="card" className="table-fixed">
-              <TableHeader><TableRow><TableHead className="w-1/2">Notice</TableHead><TableHead>Audience</TableHead><TableHead>Recipients</TableHead><TableHead>Sent</TableHead></TableRow></TableHeader>
+            <div className="hidden md:block"><Table variant="card">
+              <TableHeader><TableRow><TableHead className="min-w-80">Notice</TableHead><TableHead>Audience</TableHead><TableHead>Recipients</TableHead><TableHead>Sent</TableHead></TableRow></TableHeader>
               <TableBody>{data.notices.map((notice) => <TableRow key={notice.id}>
-                <TableCell className="align-top whitespace-normal"><NoticeContent notice={notice} /></TableCell>
+                <TableCell className="min-w-80 align-top whitespace-normal"><NoticeContent notice={notice} /></TableCell>
                 <TableCell className="align-top whitespace-normal">{audienceLabels[notice.audience]}</TableCell>
                 <TableCell className="align-top tabular-nums">{notice.recipients_count}</TableCell>
                 <TableCell className="align-top whitespace-normal text-muted-foreground">{noticeDate(notice.created_at)}</TableCell>

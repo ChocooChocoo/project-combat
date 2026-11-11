@@ -201,7 +201,7 @@ export default function GymServices() {
 
                     <p className="text-muted-foreground text-sm">
                       {options.disciplines[service.discipline ?? ''] ?? labelKey(service.discipline ?? '')} ·{' '}
-                      {options.activity_types[service.activity_type ?? ''] ?? labelKey(service.activity_type ?? '')}
+                      {options.session_types[service.activity_type ?? ''] ?? labelKey(service.activity_type ?? '')}
                       {service.duration_minutes ? ` · ${service.duration_minutes} min` : ''}
                       {service.frequency ? ` · ${options.frequencies[service.frequency] ?? labelKey(service.frequency)}` : ''}
                     </p>

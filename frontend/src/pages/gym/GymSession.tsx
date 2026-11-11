@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs'
-import { CancelSessionDialog } from '@/components/schedule/session-actions'
+import { CancelSessionDialog, ClearFlagButton } from '@/components/schedule/session-actions'
 import { RecordPaymentDialog } from '@/components/membership/payment-dialogs'
 import { SessionAttendance, SessionNoteDialog } from '@/components/schedule/session-attendance'
 import { ProgressNotes } from '@/components/schedule/attendance-list'
@@ -61,7 +61,10 @@ export default function GymSession() {
       ) : (
         <>
           <PageHeader title={data.session.name} meta={<Badge variant={SESSION_PHASES[data.session.phase].variant}>{SESSION_PHASES[data.session.phase].label}</Badge>} actions={can(gym, 'training.sessions.manage') && data.session.status === 'scheduled' && <Button variant="destructive-outline" onClick={() => setCancelling(true)}>Cancel session</Button>} />
-          {data.session.flagged_at && <Alert variant="warning"><AlertTitle>Needs attention</AlertTitle><AlertDescription>{flagReasonLabel(data.session.flag_reason)}. Use Schedule to reassign, move or cancel.</AlertDescription></Alert>}
+          {data.session.flagged_at && <Alert variant="warning"><AlertTitle>Needs attention</AlertTitle><AlertDescription>
+            {flagReasonLabel(data.session.flag_reason)}. Use Schedule to reassign, move or cancel, or keep it as planned once the coach is free again.
+            {can(gym, 'training.sessions.manage') && <ClearFlagButton gymId={gym.id} sessionId={data.session.id} onSaved={() => setVersion((v) => v + 1)} />}
+          </AlertDescription></Alert>}
           {data.session.cancel_reason && <p className="text-sm">Cancellation reason: {data.session.cancel_reason}</p>}
           <Tabs defaultValue="details" className="min-w-0">
             <TabsList variant="underline" aria-label="Session sections" className="max-w-full overflow-x-auto overflow-y-hidden [scrollbar-width:none]">

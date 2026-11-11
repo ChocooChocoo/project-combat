@@ -182,20 +182,21 @@ class PublicGymController extends Controller
                 'working_days' => $gym->workingDays(),
                 'policies' => $gym->policies,
                 'facilities' => $gym->facilities ?? [],
-                'services' => $services->map(fn (GymService $service) => $this->servicePayload($service))->all(),
+                'services' => $services->map(fn (GymService $service) => $this->servicePayload($service, $gym))->all(),
                 'plans' => $plans->map(fn (MembershipPlan $plan) => $this->planPayload($plan))->all(),
                 'coaches' => $this->coaches($gym),
             ],
         ]);
     }
 
-    private function servicePayload(GymService $service): array
+    private function servicePayload(GymService $service, Gym $gym): array
     {
         return [
             'id' => $service->id,
             'name' => $service->name,
             'discipline' => $service->discipline,
             'activity_type' => $service->activity_type,
+            'activity_type_label' => $gym->activityTypeLabel($service->activity_type),
             'overview' => $service->overview,
             'level' => $service->level,
             'duration_minutes' => $service->duration_minutes,

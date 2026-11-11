@@ -2760,7 +2760,8 @@ function BudgetGroupSection({
         </dl>
       </header>
 
-      <div className="overflow-hidden rounded-xl border bg-card">
+      <div className="overflow-x-auto rounded-xl border bg-card">
+        <div className="md:min-w-[44rem]">
         <div className="hidden items-center gap-3 border-b bg-muted/40 px-3 py-2 font-medium text-muted-foreground text-xs md:grid md:grid-cols-[minmax(0,1fr)_9rem_7.5rem_8.5rem_6rem]">
           <span>Category</span>
           <span>Budget</span>
@@ -2823,6 +2824,7 @@ function BudgetGroupSection({
             )
           })}
         </ul>
+        </div>
       </div>
     </section>
   )

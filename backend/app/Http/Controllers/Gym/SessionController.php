@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Notifications\SessionChanged;
 use App\Support\BookingDesk;
 use App\Support\BookingLedger;
+use App\Support\SessionFlagger;
 use App\Support\SessionScheduler;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -60,7 +61,7 @@ class SessionController extends Controller
                 'id', 'name', 'discipline', 'activity_type', 'overview', 'level', 'duration_minutes', 'bring', 'price', 'price_included',
             ]),
             'plans' => $gym->membershipPlans()->orderBy('name')->get(['id', 'name']),
-            'activity_types' => config('offer.activity_types'), 'levels' => config('offer.levels'),
+            'activity_types' => $gym->activityTypeOptions(), 'levels' => config('offer.levels'),
         ]]);
     }
 
@@ -180,6 +181,31 @@ class SessionController extends Controller
         return response()->json(['coaches' => $coaches]);
     }
 
+    /** D-32: staff confirm a flagged session once its coach can run it again. */
+    public function clearFlag(Gym $gym, int $session, SessionScheduler $scheduler, SessionFlagger $flagger): JsonResponse
+    {
+        $model = DB::transaction(function () use ($gym, $session, $scheduler, $flagger) {
+            Gym::whereKey($gym->id)->lockForUpdate()->firstOrFail();
+            $model = TrainingSession::lockForUpdate()->findOrFail($session);
+            abort_unless($model->flagged_at && $model->status === SessionStatus::Scheduled, 409, 'This session is not flagged.');
+            if (! $this->coaches($gym)->contains('id', $model->coach_id)) {
+                throw ValidationException::withMessages(['coach_id' => 'This coach is no longer on staff. Choose a new coach.']);
+            }
+            $problems = $scheduler->problems($model->coach_id, $model->room_id, $model->starts_at, $model->ends_at, $model->id);
+            $blocking = [...($problems['starts_at'] ?? []), ...($problems['coach_id'] ?? [])];
+            if ($blocking !== []) {
+                throw ValidationException::withMessages(['flag' => $blocking]);
+            }
+            $model->update(['flagged_at' => null, 'flag_reason' => null]);
+            $flagger->tellAthletes($model, 'flag_cleared', 'This session goes ahead as planned.');
+            app(BookingDesk::class)->promote($model);
+
+            return $model->refresh();
+        });
+
+        return response()->json(['session' => $this->payload($model)]);
+    }
+
     public function cancel(Request $request, Gym $gym, int $session, BookingLedger $ledger): JsonResponse
     {
         $data = $request->validate(['reason' => ['required', 'string', 'max:2000']]);
@@ -219,7 +245,7 @@ class SessionController extends Controller
         $inGym = fn (string $table) => Rule::exists($table, 'id')->where('gym_id', $gym->id);
         $data = $request->validate([
             'gym_service_id' => ['nullable', 'integer', $inGym('gym_services')],
-            'type' => ['required', Rule::in(array_keys(config('offer.activity_types')))],
+            'type' => ['required', Rule::in(array_keys($gym->activityTypeOptions()))],
             'name' => ['required', 'string', 'max:120'], 'discipline' => ['nullable', 'string', 'max:40'],
             'level' => ['required', Rule::in(array_keys(config('offer.levels')))],
             'coach_id' => ['required', 'integer', Rule::in($this->coaches($gym)->pluck('id')->all())],

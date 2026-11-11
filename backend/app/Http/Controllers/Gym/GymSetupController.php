@@ -8,7 +8,9 @@ use App\Rules\ClosingTime;
 use App\Support\CaviteLocations;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /** R-20: the gym's workspace settings. */
 class GymSetupController extends Controller
@@ -21,6 +23,8 @@ class GymSetupController extends Controller
         'operating_hours.*.close.date_format' => 'Use a time such as 20:00.',
         'disciplines.*.in' => 'Choose combat sports from the list.',
         'activity_types.*.in' => 'Choose activity types from the list.',
+        'custom_activity_types.*.regex' => 'Type names need at least one letter or number.',
+        'custom_activity_types.*.distinct' => 'Each type name must be different.',
         'working_days.*.in' => 'Choose working days from Monday to Sunday.',
     ];
 
@@ -39,6 +43,14 @@ class GymSetupController extends Controller
                     ? ['open' => $day['open'], 'close' => $day['close']]
                     : null)
                 ->all();
+        }
+
+        // D-24: two names with the same key (e.g. "Kids class" and "Kids-class") would clash.
+        if (! empty($data['custom_activity_types'])) {
+            $keys = array_map(fn ($label) => Gym::customTypeKey($label), $data['custom_activity_types']);
+            if (count($keys) !== count(array_unique($keys))) {
+                throw ValidationException::withMessages(['custom_activity_types' => 'Each type name must be different.']);
+            }
         }
 
         $gym->update($data);
@@ -68,6 +80,7 @@ class GymSetupController extends Controller
             ]),
             'disciplines' => $gym->disciplines ?? [],
             'activity_types' => $gym->activity_types ?? [],
+            'custom_activity_types' => $gym->custom_activity_types ?? [],
             'operating_hours' => $gym->operating_hours ?? [],
             'working_days' => $gym->workingDays(),
             'policies' => $gym->policies,
@@ -90,6 +103,8 @@ class GymSetupController extends Controller
         return [
             'disciplines' => config('verification.disciplines'),
             'activity_types' => config('offer.activity_types'),
+            // D-24: services and sessions may also use the gym's own types.
+            'session_types' => $gym->activityTypeOptions(),
             'weekdays' => config('hr.weekdays'),
             'working_days' => $gym->workingDays(),
             'default_working_days' => Gym::DEFAULT_WORKING_DAYS,
@@ -123,6 +138,13 @@ class GymSetupController extends Controller
             'disciplines.*' => ['distinct', Rule::in(array_keys(config('verification.disciplines')))],
             'activity_types' => ['sometimes', 'nullable', 'array'],
             'activity_types.*' => ['distinct', Rule::in(array_keys(config('offer.activity_types')))],
+            'custom_activity_types' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'custom_activity_types.*' => ['required', 'string', 'max:40', 'regex:/[A-Za-z0-9]/', 'distinct:ignore_case',
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    if (is_string($value) && array_key_exists(Str::slug($value, '_'), config('offer.activity_types'))) {
+                        $fail('This type is already built in.');
+                    }
+                }],
             'operating_hours' => ['sometimes', 'nullable', "array:{$days}"],
             'operating_hours.*' => ['nullable', 'array:open,close'],
             'operating_hours.*.open' => ['nullable', 'required_with:operating_hours.*.close', 'date_format:H:i'],

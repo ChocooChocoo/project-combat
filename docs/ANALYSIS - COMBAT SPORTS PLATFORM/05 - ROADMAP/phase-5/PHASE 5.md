@@ -112,6 +112,8 @@ Sessions can repeat on a pattern.
 - Shown as a badge on each session in Schedule (`GymSchedule.tsx`) and in the session page header (`GymSession.tsx`). The status updates when those screens refresh (every 30 and 15 seconds).
 - Checked: `SessionTest` (21 tests, including one for the status boundaries in Philippine time); `pnpm build` and `pnpm lint` passed. Not checked in a browser.
 
+**Status note (10 November 2026, D-24 gap closed):** A gap check found there was no "group session" type, and gyms could not add their own types. Added "Group session" to `config/offer.php`. Owners can now add up to 20 extra type names under Gym setup → What the gym offers (`gyms.custom_activity_types`, keyed `custom_<slug>` by `Gym::activityTypeOptions()`). Services and sessions accept them. Public gym search and the public "what we offer" list still use only the built-in types. Plan: `docs/implementation-plan/training-gaps/plan.md`. Checked: `TrainingGapsTest`.
+
 **Still open:** nothing.
 
 **Old system:** `backend/app/Http/Controllers/API/TrainerSessionController.php`, lines 118 to 284 and 579 to 657.
@@ -215,6 +217,13 @@ If anything clashes, it says what, and does not save.
 
 **Status note (5 November 2026):** Built. Approving leave in `LeaveController` flags that coach's scheduled sessions in the leave dates and sends training managers one notice. The Schedule screen lists flagged sessions; staff reassign a free coach (`sessions/{session}/free-coaches`), move or cancel the session. A flagged session cannot be booked. Athletes and the new coach are notified. Checked in `SessionChangeTest`.
 
+**Status note (10 November 2026, D-32 gaps closed):** A gap check found three gaps. All three are now closed:
+- Before, only approved leave flagged sessions. `App\Support\SessionFlagger` now also runs when a coach's working hours change (sessions now outside hours or on a day off), when a gym holiday is added, and when a coach is removed from staff.
+- Booked and waitlisted athletes now get a "Session may change" notice as soon as a session is flagged.
+- Staff can choose "Keep as planned" (`sessions/{session}/clear-flag`, `training.sessions.manage`) once the coach is free again. The server rechecks first and refuses if the problem remains. Clearing the flag tells the athletes and gives freed places to the waiting list.
+
+Checked: `TrainingGapsTest`.
+
 **Still open:** nothing.
 
 **Old system:** none.
@@ -291,6 +300,8 @@ Only then does the booking go through. A booking that clashes with the coach's s
 - [x] The member sees their bookings in one list.
 
 **Status note (5 November 2026):** Built in `App\Support\BookingDesk`: checks active membership, allowed plans, sessions left on a session pack, and coach availability, and gives the reason when it refuses. Booking locks the session row so two people cannot take the last place (not proven by tests: SQLite ignores row locks). Members see all their bookings at `/bookings`. Q-24 answered: athletes cancel their own booking until the gym's cut-off (default 2 hours); after that only staff. Checked: `BookingTest` (26 tests), full suite 198 tests passed.
+
+**Status note (10 November 2026, D-35 gap closed):** A gap check found that the "wrong level" box above was ticked, but no level was ever checked. Each athlete record now has a training level (Beginner, Intermediate or Advanced) that coaches with `training.athletes.manage` set on the member record (`athletes/{user}/level`). `BookingDesk::eligibility()` refuses a session above the athlete's level. An athlete with no level set counts as Beginner, and "All levels" sessions are open to everyone. The same check runs on approval and on waiting-list promotion. Checked: `TrainingGapsTest`.
 
 **Still open:** Q-24 (can athletes cancel their own bookings, and until when?).
 

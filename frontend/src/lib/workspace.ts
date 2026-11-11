@@ -192,6 +192,8 @@ export type GymSetupProfile = {
 export type WorkspaceOptions = {
   disciplines: Record<string, string>
   activity_types: Record<string, string>
+  /** D-24: built-in types plus the gym's own, for services and sessions. */
+  session_types: Record<string, string>
   weekdays: Record<Day, string>
   working_days: Day[]
   default_working_days: Day[]
@@ -213,6 +215,7 @@ export type WorkspaceSetup = {
   profile: GymSetupProfile
   disciplines: string[]
   activity_types: string[]
+  custom_activity_types: string[]
   operating_hours: WorkingHours
   working_days: Day[]
   policies: string | null

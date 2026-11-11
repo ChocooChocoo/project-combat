@@ -19,7 +19,8 @@ class SessionChanged extends Notification
     {
         return [
             'title' => match ($this->type) {
-                'cancelled' => 'Session cancelled', 'coach_changed' => 'Session coach changed', default => 'Session moved',
+                'cancelled' => 'Session cancelled', 'coach_changed' => 'Session coach changed',
+                'flagged' => 'Session may change', 'flag_cleared' => 'Session confirmed', default => 'Session moved',
             },
             'type' => $this->type, 'message' => $this->session->name.': '.$this->message,
             'gym_id' => $this->session->gym_id, 'session_id' => $this->session->id,

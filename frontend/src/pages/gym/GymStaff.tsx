@@ -345,7 +345,7 @@ export default function GymStaff() {
                         const isOwner = employee.roles.includes('owner')
                         return (
                           <TableRow key={employee.id}>
-                            <TableCell className="max-w-56 whitespace-normal">
+                            <TableCell>
                               <div className="flex items-center gap-3">
                                 <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-xs" aria-hidden>{initials(`${employee.first_name} ${employee.last_name}`)}</span>
                                 <div className="flex min-w-0 flex-col">
@@ -359,7 +359,7 @@ export default function GymStaff() {
                                 </div>
                               </div>
                             </TableCell>
-                            <TableCell className="whitespace-normal">{employee.profile?.job_title || <span className="text-muted-foreground">Not set</span>}</TableCell>
+                            <TableCell>{employee.profile?.job_title || <span className="text-muted-foreground">Not set</span>}</TableCell>
                             <TableCell>
                               {employee.roles.length > 0 ? (
                                 <div className="flex flex-wrap gap-1">

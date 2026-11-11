@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Gym;
 
 use App\Enums\GymPersonType;
 use App\Enums\LeaveRequestStatus;
-use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Gym\Concerns\PresentsHr;
 use App\Models\Gym;
@@ -12,8 +11,8 @@ use App\Models\LeaveRequest;
 use App\Models\TrainingSession;
 use App\Notifications\LeaveRequestDecided;
 use App\Notifications\LeaveRequestSubmitted;
-use App\Notifications\SessionsFlagged;
 use App\Support\PayrollLock;
+use App\Support\SessionFlagger;
 use App\Support\WorkingDays;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -180,16 +179,12 @@ class LeaveController extends Controller
 
             $leave->user->notify(new LeaveRequestDecided($gym, $leave));
             if ($leave->status === LeaveRequestStatus::Approved) {
-                $count = TrainingSession::where('coach_id', $leave->user_id)->where('status', SessionStatus::Scheduled)
+                $sessions = TrainingSession::where('coach_id', $leave->user_id)
                     ->where('starts_at', '>=', $leave->starts_on->copy()->startOfDay())
-                    ->where('starts_at', '<', $leave->ends_on->copy()->addDay()->startOfDay())
-                    ->update(['flagged_at' => now(), 'flag_reason' => 'Coach on approved leave ('.$leave->starts_on->format('M j, Y')
-                        .($leave->starts_on->isSameDay($leave->ends_on) ? '' : ' to '.$leave->ends_on->format('M j, Y')).')']);
-                if ($count > 0) {
-                    foreach ($gym->peopleWithPermission('training.sessions.manage') as $manager) {
-                        $manager->notify(new SessionsFlagged($gym->id, $count, trim("{$leave->user->first_name} {$leave->user->last_name}")));
-                    }
-                }
+                    ->where('starts_at', '<', $leave->ends_on->copy()->addDay()->startOfDay());
+                $name = trim("{$leave->user->first_name} {$leave->user->last_name}");
+                app(SessionFlagger::class)->flag($gym, $sessions, 'Coach on approved leave ('.$leave->starts_on->format('M j, Y')
+                    .($leave->starts_on->isSameDay($leave->ends_on) ? '' : ' to '.$leave->ends_on->format('M j, Y')).')', "{$name} is on approved leave");
             }
         });
 

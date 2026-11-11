@@ -251,6 +251,7 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::post('sessions', [SessionController::class, 'store'])->middleware('permission:training.sessions.manage');
                 Route::put('sessions/{session}', [SessionController::class, 'update'])->whereNumber('session')->middleware('permission:training.sessions.manage');
                 Route::post('sessions/{session}/cancel', [SessionController::class, 'cancel'])->whereNumber('session')->middleware('permission:training.sessions.manage');
+                Route::post('sessions/{session}/clear-flag', [SessionController::class, 'clearFlag'])->whereNumber('session')->middleware('permission:training.sessions.manage');
                 Route::get('sessions/{session}/free-coaches', [SessionController::class, 'freeCoaches'])->whereNumber('session')->middleware('permission:training.sessions.view');
 
                 // Staff (R-22 to R-24). Showing a person is open to that person; the controller checks.
@@ -422,6 +423,7 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('athletes/{user}/record', [AthleteRecordController::class, 'show']);
                 Route::get('athletes/{user}/medical-file', [AthleteRecordController::class, 'medicalFile']);
                 Route::post('athletes/{user}/entries', [AthleteRecordController::class, 'storeEntry'])->middleware('permission:training.athletes.manage');
+                Route::put('athletes/{user}/level', [AthleteRecordController::class, 'updateLevel'])->middleware('permission:training.athletes.manage');
                 Route::get('my-record', [AthleteRecordController::class, 'mine']);
                 // POST as well as PUT: browsers send file uploads as POST.
                 Route::put('my-record/health', [AthleteRecordController::class, 'updateMyHealth']);

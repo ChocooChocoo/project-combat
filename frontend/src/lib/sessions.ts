@@ -1,7 +1,8 @@
 import type { PublicService } from '@/lib/discovery'
 import { dateLabel, gymDate } from '@/lib/membership'
 
-export type SessionType = 'classes' | 'programs' | 'private_coaching' | 'sparring' | 'open_mat'
+/** Built-in types, group_session, or the gym's own types keyed custom_<slug> (D-24). */
+export type SessionType = string
 export type SessionLevel = 'beginner' | 'intermediate' | 'advanced' | 'all'
 export type SessionStatus = 'scheduled' | 'cancelled'
 /** Shown status worked out by the server from the Philippine clock. */

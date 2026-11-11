@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Enums\BookingStatus;
 use App\Enums\MembershipStatus;
 use App\Enums\SessionStatus;
+use App\Models\AthleteProfile;
 use App\Models\Membership;
 use App\Models\SessionBooking;
 use App\Models\TrainingSession;
@@ -49,9 +50,28 @@ class BookingDesk
                 $reasons[] = 'Your membership has no sessions remaining.';
             }
         }
+        if ($reason = $this->levelProblem($user, $session)) {
+            $reasons[] = $reason;
+        }
         $problems = $this->scheduler->problems($session->coach_id, $session->room_id, $session->starts_at, $session->ends_at, $session->id);
 
         return [...$reasons, ...($problems['starts_at'] ?? []), ...($problems['coach_id'] ?? [])];
+    }
+
+    /** D-35: the athlete's level must be at or above the session's; no level set counts as beginner. */
+    private function levelProblem(User $user, TrainingSession $session): ?string
+    {
+        $order = array_keys(config('offer.athlete_levels'));
+        $needed = array_search($session->level, $order, true);
+        if ($needed === false) {
+            return null; // 'all' levels
+        }
+        $level = AthleteProfile::where('user_id', $user->id)->value('level') ?? $order[0];
+        if (array_search($level, $order, true) >= $needed) {
+            return null;
+        }
+
+        return 'This session is for '.config("offer.athlete_levels.{$session->level}").' athletes and above.';
     }
 
     public function needsApproval(TrainingSession $session): bool

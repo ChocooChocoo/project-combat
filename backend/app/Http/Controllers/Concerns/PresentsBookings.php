@@ -49,7 +49,7 @@ trait PresentsBookings
 
         return [
             'id' => $session->id, 'name' => $session->name, 'type' => $session->type,
-            'type_label' => config("offer.activity_types.{$session->type}", $session->type),
+            'type_label' => $session->gym->activityTypeLabel($session->type),
             'discipline' => $session->discipline,
             'discipline_label' => config("verification.disciplines.{$session->discipline}", $session->discipline),
             'level' => $session->level,

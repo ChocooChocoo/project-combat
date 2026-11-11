@@ -73,7 +73,7 @@ class SessionTest extends TestCase
                 ->assertJsonPath('session.room.id', $this->room->id)->assertJsonPath('session.content', 'Pad work')
                 ->assertJsonPath('session.allowed_plan_ids', [$this->plan->id])->assertJsonPath('session.fee', '150.00');
         }
-        $this->assertDatabaseCount('training_sessions', 5);
+        $this->assertDatabaseCount('training_sessions', count(config('offer.activity_types')));
     }
 
     public function test_training_manage_can_create_but_view_cannot(): void

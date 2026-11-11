@@ -6,7 +6,10 @@ use App\Enums\GymPersonType;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Gym\Concerns\PresentsHr;
 use App\Models\Gym;
+use App\Models\TrainingSession;
 use App\Models\User;
+use App\Support\SessionFlagger;
+use App\Support\SessionScheduler;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -67,6 +70,8 @@ class ScheduleController extends Controller
         }
 
         DB::transaction(function () use ($gym, $user, $data) {
+            // R-46: same lock order as session saves, so no occurrence is missed.
+            Gym::whereKey($gym->id)->lockForUpdate()->firstOrFail();
             $gym->workSchedules()->where('user_id', $user->id)->delete();
 
             foreach ($data['schedule'] as $row) {
@@ -77,6 +82,12 @@ class ScheduleController extends Controller
                     'end_time' => $row['end_time'] ?? null,
                 ]);
             }
+
+            // D-32: sessions now outside the coach's hours or on a day off need attention.
+            $scheduler = app(SessionScheduler::class);
+            app(SessionFlagger::class)->flag($gym, TrainingSession::where('coach_id', $user->id),
+                fn (TrainingSession $session) => $scheduler->problems($session->coach_id, $session->room_id, $session->starts_at, $session->ends_at, $session->id)['starts_at'][0] ?? null,
+                trim("{$user->first_name} {$user->last_name}")."'s working hours changed");
         });
 
         return response()->json(['schedule' => $this->scheduleWeek($gym, $user)]);

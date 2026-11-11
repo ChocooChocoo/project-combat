@@ -51,7 +51,7 @@ export function AttendanceList({ rows, checkOut, hideMember = false }: { rows: A
           <TableCell>{clock(row.check_in_at)}</TableCell>
           <TableCell>{checkOutCell(row)}</TableCell>
           <TableCell>{attendanceBadge(row)}</TableCell>
-          <TableCell><span className={row.by ? 'whitespace-normal text-sm' : 'text-muted-foreground text-sm'}>{row.by ?? 'Automatic'}</span></TableCell>
+          <TableCell><span className={row.by ? 'text-sm' :'text-muted-foreground text-sm'}>{row.by ?? 'Automatic'}</span></TableCell>
         </TableRow>)}</TableBody>
       </Table>
     </div>
