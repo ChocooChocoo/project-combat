@@ -18,12 +18,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { toastManager } from '@/components/ui/toast'
 import { api, apiFile, ApiError, formValues, type FieldErrors } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
+import { manilaToday } from '@/lib/dashboard'
 import { approvedGym, can } from '@/lib/gym-access'
 import { correctable, dateLabel, ENTRY_LABELS, money, periodLabel, type AthleteEntry, type AthleteRecord, type Membership, type MembershipForm, type Payment } from '@/lib/membership'
 
 type Action = 'renew' | 'freeze' | 'unfreeze' | 'cancel'
 const ENTRY_TYPES = (Object.keys(ENTRY_LABELS) as AthleteEntry['type'][]).map((value) => ({ value, label: ENTRY_LABELS[value] }))
-const TODAY = new Date().toISOString().slice(0, 10)
 
 /** S-22: one member's membership, payments and athlete record, each part shown by permission (R-34 to R-41). */
 export default function MemberRecord() {
@@ -433,7 +433,7 @@ export default function MemberRecord() {
               {(entryType === 'competition' || entryType === 'assessment') && (
                 <TextField name="result" label={entryType === 'competition' ? 'Result' : 'Score or outcome'} maxLength={150} required placeholder={entryType === 'competition' ? 'For example: Gold' : 'For example: 4 of 5'} />
               )}
-              <TextField name="occurred_on" label="Date" type="date" max={TODAY} defaultValue={TODAY} required />
+              <TextField name="occurred_on" label="Date" type="date" max={manilaToday()} defaultValue={manilaToday()} required />
               <Field name="notes" className="w-full">
                 <FieldLabel>Notes (optional)</FieldLabel>
                 <Textarea name="notes" rows={3} maxLength={2000} />

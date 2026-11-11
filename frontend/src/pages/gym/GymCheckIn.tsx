@@ -68,6 +68,20 @@ export default function GymCheckIn() {
       field.current?.focus()
     }
   }, [gymId])
+  const checkOut = useCallback(async (row: AttendanceRow) => {
+    setBusy(true)
+    setMessage('')
+    try {
+      const path = row.booking_id ? `bookings/${row.booking_id}/check-out` : `check-ins/visits/${row.id.replace('visit-', '')}/check-out`
+      await api(`/gyms/${gymId}/${path}`, { method: 'POST' })
+      setMessage(`${row.member.name}: checked out.`)
+      setVersion((v) => v + 1)
+    } catch (failure) {
+      setMessage(failure instanceof ApiError ? Object.values(failure.errors).flat().join(' ') || failure.message : 'Check-out failed. Try again.')
+    } finally {
+      setBusy(false)
+    }
+  }, [gymId])
   const scanned = useCallback((value: string) => { setCode(value); void submit({ code: value }) }, [submit])
   if (!allowed) return <BookingEmpty title="Check-in is staff-only" description="Your role needs training manage access." />
   return <div className="flex min-w-0 flex-col gap-6">
@@ -86,7 +100,7 @@ export default function GymCheckIn() {
       {search.trim() && (searchError ? <p role="alert">{searchError}</p> : members === null ? <p role="status">Searching…</p> : members.length === 0 ? <p className="text-muted-foreground text-sm">No active members match that name.</p> : <ul className="flex flex-col gap-2">{members.map((member) => <li key={member.id} className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm"><span className="break-words">{member.name}</span><Button variant="outline" disabled={busy} onClick={() => void submit({ user_id: member.id })}>Check in {member.name}</Button></li>)}</ul>)}
     </section>
     <section className="flex min-w-0 flex-col gap-3"><h2 className="text-xl font-semibold">Today's check-ins</h2>
-      {error ? <BookingError message={error} retry={() => setVersion((v) => v + 1)} /> : !rows ? <BookingLoading /> : <AttendanceList rows={rows} />}
+      {error ? <BookingError message={error} retry={() => setVersion((v) => v + 1)} /> : !rows ? <BookingLoading /> : <AttendanceList rows={rows} checkOut={{ busy, run: (row) => void checkOut(row), allow: (row) => !row.booking_id || Boolean(gym && can(gym, 'training.attendance.manage')) }} />}
     </section>
   </div>
 }

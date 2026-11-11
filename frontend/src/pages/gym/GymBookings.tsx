@@ -25,12 +25,12 @@ export default function GymBookings() {
     if (!silent) setError('')
     try {
       const result = await api<{ bookings: StaffBooking[] }>(`/gyms/${gymId}/bookings?status=requested`)
-      const booked = canPay ? await api<{ bookings: StaffBooking[] }>(`/gyms/${gymId}/bookings?status=booked`) : null
-      if (isCurrent()) { setBookings(result.bookings); setOwing((booked?.bookings ?? []).filter((b) => Number(b.balance) > 0)); setError('') }
+      const booked = await api<{ bookings: StaffBooking[] }>(`/gyms/${gymId}/bookings?status=booked`)
+      if (isCurrent()) { setBookings(result.bookings); setOwing(booked.bookings.filter((b) => Number(b.balance) > 0)); setError('') }
     } catch (failure) {
       if (isCurrent() && !silent) setError(failure instanceof ApiError ? failure.message : 'Booking requests could not be loaded.')
     }
-  }, [gymId, canPay])
+  }, [gymId])
   usePolling(load, 15_000, Boolean(user && canView), version)
   if (!gym) return null
   if (!canView) return <BookingEmpty title="Bookings are not available" description="Your role does not include training access for this gym." />
@@ -65,7 +65,8 @@ export default function GymBookings() {
       {owing.length > 0 && gym && (
         <section className="flex flex-col gap-3">
           <h2 className="font-medium text-lg">Approved, payment owed</h2>
-          <StaffBookingList bookings={owing} canApprove={false} canManage={can(gym, 'training.bookings.manage')} onAction={setTarget} onPayment={setPaying} />
+          {!canPay && <p className="text-muted-foreground text-sm">Ask the front desk to record these payments in Payments.</p>}
+          <StaffBookingList bookings={owing} canApprove={false} canManage={can(gym, 'training.bookings.manage')} onAction={setTarget} onPayment={canPay ? setPaying : undefined} />
         </section>
       )}
       {paying && <RecordPaymentDialog gymId={Number(gymId)} open memberships={[]} bookings={[paying]} onClose={() => setPaying(null)} onSaved={() => { setPaying(null); setVersion((v) => v + 1) }} />}

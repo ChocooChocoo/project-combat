@@ -14,7 +14,7 @@ class GymVisit extends Model
 
     protected function casts(): array
     {
-        return ['checked_in_at' => 'datetime'];
+        return ['checked_in_at' => 'datetime', 'checked_out_at' => 'datetime'];
     }
 
     public function user(): BelongsTo

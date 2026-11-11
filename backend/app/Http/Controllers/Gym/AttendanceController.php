@@ -93,6 +93,11 @@ class AttendanceController extends Controller
         return response()->json(['attendance' => $row]);
     }
 
+    public function checkOutVisit(Request $request, Gym $gym, int $visit, AttendanceLedger $ledger): JsonResponse
+    {
+        return response()->json(['attendance' => $ledger->checkOutVisit($visit)]);
+    }
+
     public function index(Request $request, Gym $gym, AttendanceLedger $ledger): JsonResponse
     {
         $filters = $request->validate([

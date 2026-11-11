@@ -372,7 +372,7 @@ export default function GymSettings() {
                             <Field
                               name={`operating_hours.${key}.close`}
                               className="min-w-0 sm:w-36"
-                              validate={(value) => (value && String(value) <= form.hours[key].start ? 'Must be after opening time.' : null)}
+                              validate={(value) => (value && String(value) !== '00:00' && String(value) <= form.hours[key].start ? 'Must be after opening time. Use 12:00 AM for midnight.' : null)}
                             >
                               <Input
                                 type="time"

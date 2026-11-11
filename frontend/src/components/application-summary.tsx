@@ -65,7 +65,7 @@ const row = (label: string, value: React.ReactNode) => (
 export function ProfileSummary({ app, requirements }: { app: Application; requirements: Requirements }) {
   const hours = DAYS.filter(({ key }) => app.operating_hours?.[key]).map(({ key, label }) => ({
     label,
-    time: `${app.operating_hours![key]!.open}–${app.operating_hours![key]!.close}`,
+    time: app.operating_hours![key]!.open === '00:00' && app.operating_hours![key]!.close === '00:00' ? 'Open 24 hours' : `${app.operating_hours![key]!.open}–${app.operating_hours![key]!.close}`,
   }))
 
   return (

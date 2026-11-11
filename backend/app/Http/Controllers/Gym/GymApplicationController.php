@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Gym;
 use App\Enums\GymStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Gym;
+use App\Rules\ClosingTime;
 use App\Support\Verification;
 use App\Support\CaviteLocations;
 use Illuminate\Http\JsonResponse;
@@ -25,7 +26,6 @@ class GymApplicationController extends Controller
         'operating_hours.*.close.required' => 'Add a closing time.',
         'operating_hours.*.open.date_format' => 'Use a time such as 08:00.',
         'operating_hours.*.close.date_format' => 'Use a time such as 20:00.',
-        'operating_hours.*.close.after' => 'Closing time must be after opening time.',
         'operating_hours.array' => 'Operating hours can only be set for Monday to Sunday.',
         'disciplines.*.in' => 'Choose combat sports from the list.',
     ];
@@ -133,7 +133,7 @@ class GymApplicationController extends Controller
             'operating_hours' => ['nullable', "array:{$days}"],
             'operating_hours.*' => ['array:open,close'],
             'operating_hours.*.open' => ['required', 'date_format:H:i'],
-            'operating_hours.*.close' => ['required', 'date_format:H:i', 'after:operating_hours.*.open'],
+            'operating_hours.*.close' => ['required', 'date_format:H:i', new ClosingTime],
             'disciplines' => ['nullable', 'array'],
             'disciplines.*' => ['distinct', Rule::in(array_keys(config('verification.disciplines')))],
             'services' => ['nullable', 'array', 'max:30'],

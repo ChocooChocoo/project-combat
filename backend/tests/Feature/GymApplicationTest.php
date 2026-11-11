@@ -192,13 +192,25 @@ class GymApplicationTest extends TestCase
             ->assertOk()->assertJsonPath('applications.0.status', 'submitted');
     }
 
+    public function test_a_midnight_close_and_a_24_hour_day_are_allowed(): void
+    {
+        $gym = $this->application();
+
+        $this->actingAs($this->applicant)->putJson("/api/gym-applications/{$gym->id}", [
+            'operating_hours' => ['mon' => ['open' => '08:00', 'close' => '00:00'], 'tue' => ['open' => '00:00', 'close' => '00:00']],
+        ])->assertOk();
+
+        $this->assertSame('00:00', $gym->fresh()->operating_hours['mon']['close']);
+        $this->assertSame('00:00', $gym->fresh()->operating_hours['tue']['open']);
+    }
+
     public function test_operating_hours_must_close_after_opening(): void
     {
         $gym = $this->application();
 
         $this->actingAs($this->applicant)->putJson("/api/gym-applications/{$gym->id}", [
             'operating_hours' => ['mon' => ['open' => '20:00', 'close' => '08:00']],
-        ])->assertUnprocessable()->assertJsonValidationErrors(['operating_hours.mon.close' => 'Closing time must be after opening time.']);
+        ])->assertUnprocessable()->assertJsonValidationErrors(['operating_hours.mon.close' => 'Closing time must be after opening time. Use 12:00 AM for midnight.']);
 
         $this->actingAs($this->applicant)->putJson("/api/gym-applications/{$gym->id}", [
             'operating_hours' => ['funday' => ['open' => '08:00', 'close' => '09:00']],

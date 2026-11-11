@@ -53,7 +53,7 @@ export function AthleteRecordView({ record, action }: { record: AthleteRecord; a
         <section className="flex min-w-0 flex-col gap-4 border-t pt-6">
           <h3 className="font-semibold text-lg tracking-tight">Attendance</h3>
           <dl className="flex flex-wrap gap-x-8 gap-y-4 pb-2 text-sm">{Object.entries(record.attendance_counts).map(([status, count]) => <div key={status}><dt className="text-muted-foreground text-xs">{ATTENDANCE_LABELS[status as keyof typeof ATTENDANCE_LABELS]}</dt><dd className="mt-1 font-semibold text-2xl tabular-nums">{count}</dd></div>)}</dl>
-          <AttendanceList rows={record.attendance} />
+          <AttendanceList rows={record.attendance} hideMember />
         </section>
         <section className="flex min-w-0 flex-col gap-4 border-t pt-6">
           <h3 className="font-semibold text-lg tracking-tight">Progress notes</h3><ProgressNotes notes={record.progress_notes} />

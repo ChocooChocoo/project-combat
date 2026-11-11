@@ -231,6 +231,7 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('check-ins/members', [AttendanceController::class, 'members'])->middleware('permission:training.check_ins.manage');
                 Route::get('check-ins', [AttendanceController::class, 'today'])->middleware('permission:training.check_ins.manage');
                 Route::post('check-ins', [AttendanceController::class, 'store'])->middleware(['permission:training.check_ins.manage', 'throttle:60,1']);
+                Route::post('check-ins/visits/{visit}/check-out', [AttendanceController::class, 'checkOutVisit'])->whereNumber('visit')->middleware('permission:training.check_ins.manage');
                 Route::get('attendance', [AttendanceController::class, 'index'])->middleware('permission:training.attendance.view');
                 Route::put('bookings/{booking}/attendance', [AttendanceController::class, 'attendance'])->whereNumber('booking')->middleware('permission:training.attendance.manage');
                 Route::post('bookings/{booking}/check-out', [AttendanceController::class, 'checkOut'])->whereNumber('booking')->middleware('permission:training.attendance.manage');

@@ -401,7 +401,7 @@ export default function GymApply() {
                                   <Field
                                     name={`operating_hours.${key}.close`}
                                     className="min-w-0 sm:w-36"
-                                    validate={(value) => (value && String(value) <= form.hours[key].open ? 'Must be after opening time.' : null)}
+                                    validate={(value) => (value && String(value) !== '00:00' && String(value) <= form.hours[key].open ? 'Must be after opening time. Use 12:00 AM for midnight.' : null)}
                                   >
                                     <Input type="time" required aria-label={`${label} closes`} value={form.hours[key].close} onChange={(e) => setDay(key, { close: e.target.value })} />
                                     <FieldError />
@@ -534,6 +534,9 @@ function Documents({ app, requirements, onChange }: { app: Application; requirem
     setUploadErrors((current) => ({ ...current, ...Object.fromEntries(group.map((t) => [t, ''])), [type]: failed.join(' ') }))
     setUploading('')
     await reload()
+    const done = files.length - failed.length
+    if (done > 0) toastManager.add({ title: `${done} ${done === 1 ? 'file' : 'files'} uploaded. It is listed below.`, type: 'success' })
+    if (failed.length > 0) toastManager.add({ title: 'Some files were not uploaded.', description: failed.join(' '), type: 'error' })
   }
 
   async function remove(documentId: number) {

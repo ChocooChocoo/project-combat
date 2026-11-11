@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { toastManager } from '@/components/ui/toast'
 import { api, ApiError, type FieldErrors } from '@/lib/api'
+import { money } from '@/lib/membership'
 import { BOOKING_STATUS_LABELS, BOOKING_STATUS_VARIANTS, bookingPaymentLabel, dayLabel, type Booking, type BookingStatus, type SessionDetails, type StaffBooking } from '@/lib/bookings'
 import { sessionFee, sessionTime } from '@/lib/sessions'
 
@@ -134,10 +135,15 @@ export function BookingActionDialog({ target, onClose, onSaved }: { target: Book
     setBusy(true)
     setMessage('')
     try {
-      await api(`/gyms/${target.booking.gym_id}/bookings/${target.booking.id}/${target.action === 'cancel' ? 'cancel' : 'decision'}`, {
+      const result = await api<{ booking?: { balance?: string } }>(`/gyms/${target.booking.gym_id}/bookings/${target.booking.id}/${target.action === 'cancel' ? 'cancel' : 'decision'}`, {
         method: 'POST', ...(target.action !== 'cancel' ? { body: { decision: target.action, reason: reason || null } } : {}),
       })
-      toastManager.add({ title: `Booking ${target.action === 'approve' ? 'approved' : target.action === 'reject' ? 'rejected' : 'cancelled'}.`, type: 'success' })
+      const owed = target.action === 'approve' ? Number(result.booking?.balance ?? 0) : 0
+      toastManager.add({
+        title: `Booking ${target.action === 'approve' ? 'approved' : target.action === 'reject' ? 'rejected' : 'cancelled'}.`,
+        ...(owed > 0 ? { description: `${money(owed)} is owed. Find it under "Approved, payment owed".` } : {}),
+        type: 'success',
+      })
       onSaved()
     } catch (failure) {
       setErrors(failure instanceof ApiError ? failure.errors : {})

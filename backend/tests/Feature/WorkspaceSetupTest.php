@@ -156,6 +156,13 @@ class WorkspaceSetupTest extends TestCase
             ]);
     }
 
+    public function test_setup_accepts_a_midnight_close(): void
+    {
+        $this->actingAs($this->owner)->putJson($this->url('setup'), [
+            'operating_hours' => ['mon' => ['open' => '08:00', 'close' => '00:00'], 'tue' => ['open' => '00:00', 'close' => '00:00']],
+        ])->assertOk();
+    }
+
     public function test_location_is_limited_to_cavite_with_server_side_zip(): void
     {
         $this->actingAs($this->owner)->putJson($this->url('setup'), [

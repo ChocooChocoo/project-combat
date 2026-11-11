@@ -44,6 +44,8 @@ class AttendanceLedger
                     ->where('starts_at', '<=', now()->addMinutes(30))->where('ends_at', '>=', now()))
                 ->with('session')->orderBy('training_session_id')->lockForUpdate()->first();
             if ($booking) {
+                // A session check-in ends any open gym visit, so the desk is never stuck.
+                GymVisit::where('user_id', $user->id)->whereNull('checked_out_at')->update(['checked_out_at' => now()]);
                 if ($booking->check_in_at) {
                     $this->duplicate($booking->check_in_at);
                 }
@@ -52,13 +54,24 @@ class AttendanceLedger
 
                 return $this->bookingRow($booking->load(['user', 'attendanceBy']));
             }
-            $previous = GymVisit::where('user_id', $user->id)->whereDate('checked_in_at', today())->first();
+            $previous = GymVisit::where('user_id', $user->id)->whereDate('checked_in_at', today())->whereNull('checked_out_at')->first();
             if ($previous) {
                 $this->duplicate($previous->checked_in_at);
             }
             $visit = GymVisit::create(['user_id' => $user->id, 'checked_in_at' => now(), 'checked_in_by' => $by->id, 'method' => $method]);
 
             return $this->visitRow($visit->load(['user', 'checkedInBy']));
+        });
+    }
+
+    public function checkOutVisit(int $visit): array
+    {
+        return DB::transaction(function () use ($visit) {
+            $model = GymVisit::lockForUpdate()->findOrFail($visit);
+            abort_if($model->checked_out_at, 422, 'Already checked out.');
+            $model->forceFill(['checked_out_at' => now()])->save();
+
+            return $this->visitRow($model->load(['user', 'checkedInBy']));
         });
     }
 
@@ -112,7 +125,7 @@ class AttendanceLedger
             'id' => 'visit-'.$visit->id, 'booking_id' => null,
             'member' => ['id' => $visit->user_id, 'name' => trim("{$visit->user->first_name} {$visit->user->last_name}")],
             'session' => null, 'date' => $visit->checked_in_at->format('Y-m-d H:i:s'),
-            'check_in_at' => $visit->checked_in_at->format('Y-m-d H:i:s'), 'check_out_at' => null,
+            'check_in_at' => $visit->checked_in_at->format('Y-m-d H:i:s'), 'check_out_at' => $visit->checked_out_at?->format('Y-m-d H:i:s'),
             'attendance' => 'gym_visit', 'method' => $visit->method,
             'by' => $visit->checkedInBy ? trim("{$visit->checkedInBy->first_name} {$visit->checkedInBy->last_name}") : null,
         ];

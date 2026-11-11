@@ -107,6 +107,33 @@ class AttendanceTest extends TestCase
         $this->assertDatabaseHas('session_bookings', ['id' => $this->bookingId, 'check_in_at' => null]);
     }
 
+    public function test_a_gym_visit_can_be_checked_out_and_a_new_visit_can_follow(): void
+    {
+        $this->travel(-60)->minutes();
+        $visit = $this->scan()->assertCreated()->json('check_in.id');
+        $id = (int) str_replace('visit-', '', $visit);
+
+        $this->scan()->assertUnprocessable();
+        $this->travel(20)->minutes();
+        $this->actingAs($this->owner)->postJson($this->url("check-ins/visits/{$id}/check-out"))
+            ->assertOk()->assertJsonPath('attendance.id', $visit)->assertJsonPath('attendance.check_out_at', now()->format('Y-m-d H:i:s'));
+        $this->postJson($this->url("check-ins/visits/{$id}/check-out"))->assertUnprocessable();
+
+        $this->scan()->assertCreated()->assertJsonPath('check_in.attendance', 'gym_visit');
+        $this->assertDatabaseCount('gym_visits', 2);
+    }
+
+    public function test_only_the_check_in_desk_can_check_out_a_gym_visit(): void
+    {
+        $this->travel(-31)->minutes();
+        $id = (int) str_replace('visit-', '', $this->scan()->assertCreated()->json('check_in.id'));
+
+        foreach ([$this->applicant, $this->coach] as $user) {
+            $this->actingAs($user)->postJson($this->url("check-ins/visits/{$id}/check-out"))->assertForbidden();
+        }
+        $this->assertNull(\App\Models\GymVisit::withoutGlobalScopes()->find($id)->checked_out_at);
+    }
+
     public function test_session_pack_decrements_once_and_absent_restores_only_actual_debits(): void
     {
         $membership = Membership::withoutGlobalScope('gym')->where('user_id', $this->applicant->id)->firstOrFail();

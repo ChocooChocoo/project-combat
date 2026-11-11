@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Gym;
 
 use App\Http\Controllers\Controller;
 use App\Models\Gym;
+use App\Rules\ClosingTime;
 use App\Support\CaviteLocations;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,7 +19,6 @@ class GymSetupController extends Controller
         'operating_hours.*' => 'Set an opening and closing time, or leave the day closed.',
         'operating_hours.*.open.date_format' => 'Use a time such as 08:00.',
         'operating_hours.*.close.date_format' => 'Use a time such as 20:00.',
-        'operating_hours.*.close.after' => 'Closing time must be after opening time.',
         'disciplines.*.in' => 'Choose combat sports from the list.',
         'activity_types.*.in' => 'Choose activity types from the list.',
         'working_days.*.in' => 'Choose working days from Monday to Sunday.',
@@ -126,7 +126,7 @@ class GymSetupController extends Controller
             'operating_hours' => ['sometimes', 'nullable', "array:{$days}"],
             'operating_hours.*' => ['nullable', 'array:open,close'],
             'operating_hours.*.open' => ['nullable', 'required_with:operating_hours.*.close', 'date_format:H:i'],
-            'operating_hours.*.close' => ['nullable', 'required_with:operating_hours.*.open', 'date_format:H:i', 'after:operating_hours.*.open'],
+            'operating_hours.*.close' => ['nullable', 'required_with:operating_hours.*.open', 'date_format:H:i', new ClosingTime],
             'working_days' => ['sometimes', 'nullable', 'array'],
             'working_days.*' => ['distinct', Rule::in(array_keys(config('hr.weekdays')))],
             'policies' => ['sometimes', 'nullable', 'string', 'max:5000'],

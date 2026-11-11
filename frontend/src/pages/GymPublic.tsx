@@ -83,6 +83,11 @@ function timeLabel(value: string): string {
   return `${hour % 12 || 12}:${minute.padStart(2, '0')} ${suffix}`
 }
 
+/** 00:00 to 00:00 is a day open around the clock. */
+function hoursLabel(open: string, close: string): string {
+  return open === '00:00' && close === '00:00' ? 'Open 24 hours' : `${timeLabel(open)} – ${timeLabel(close)}`
+}
+
 function initials(name: string): string {
   return name
     .split(/\s+/)
@@ -354,7 +359,7 @@ export default function GymPublic() {
                       {isToday && <span className="text-xs text-success-foreground">Today</span>}
                     </dt>
                     <dd className={cn('ms-auto whitespace-nowrap tabular-nums', hours && 'text-card-foreground')}>
-                      {hours ? `${timeLabel(hours.open)} – ${timeLabel(hours.close)}` : 'Closed'}
+                      {hours ? hoursLabel(hours.open, hours.close) : 'Closed'}
                     </dd>
                   </div>
                 )
