@@ -77,7 +77,7 @@ class MembershipLedger
             $membership->ends_on = null;
         } else {
             $membership->sessions_remaining = null;
-            $membership->ends_on = $from->copy()->addMonthsNoOverflow($plan->duration_months)->subDay()->toDateString();
+            $membership->ends_on = $from->copy()->addMonthsNoOverflow(MembershipPricing::months($plan, (int) ($membership->prepaid_terms ?? 1)))->subDay()->toDateString();
         }
 
         $membership->freeze_days_used = 0;

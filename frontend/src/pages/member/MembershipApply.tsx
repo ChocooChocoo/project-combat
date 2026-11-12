@@ -18,7 +18,7 @@ import { toastManager } from '@/components/ui/toast'
 import { api, ApiError, type FieldErrors } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { type GymDetailPayload, planLength, type PublicGymDetail, readGymDetail } from '@/lib/discovery'
-import { appendForm, money, type EmergencyContact, type Membership, type MembershipForm } from '@/lib/membership'
+import { appendForm, money, prepayCharge, type EmergencyContact, type Membership, type MembershipForm } from '@/lib/membership'
 import { fileProblem } from '@/lib/validation'
 
 /** S-13, R-31 and R-32: apply to join a gym on a chosen plan, with health declaration and waivers. */
@@ -35,6 +35,7 @@ export default function MembershipApply() {
   const [version, setVersion] = useState(0)
 
   const [planId, setPlanId] = useState(search.get('plan') ?? '')
+  const [terms, setTerms] = useState('1')
   const [contacts, setContacts] = useState<EmergencyContact[]>([{ name: '', relationship: '', phone: '' }])
   const [answers, setAnswers] = useState<Record<string, boolean | undefined>>({})
   const [waivers, setWaivers] = useState<Record<string, boolean>>({})
@@ -83,6 +84,8 @@ export default function MembershipApply() {
 
     const body = new FormData()
     appendForm(body, 'plan_id', planId)
+    if (Number(terms) > 1) appendForm(body, 'prepaid_terms', terms)
+    if (values.voucher_code?.trim()) appendForm(body, 'voucher_code', values.voucher_code.trim())
     appendForm(body, 'emergency_contacts', contacts)
     appendForm(body, 'background', values.background)
     appendForm(body, 'current_rank', values.current_rank)
@@ -168,7 +171,7 @@ export default function MembershipApply() {
           </CardHeader>
           <CardPanel>
             <Field name="plan_id" className="w-full">
-              <RadioGroup aria-label="Membership plan" value={planId} onValueChange={(value) => setPlanId(String(value))} className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              <RadioGroup aria-label="Membership plan" value={planId} onValueChange={(value) => { setPlanId(String(value)); setTerms('1') }} className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                 {gym.plans.map((plan) => {
                   const inclusions = [...(plan.registration_included ? ['Registration included'] : []), ...(plan.inclusions ?? [])]
                   const addons = plan.addons ?? []
@@ -214,6 +217,30 @@ export default function MembershipApply() {
                   )
                 })}
               </RadioGroup>
+              <FieldError />
+            </Field>
+            {(() => {
+              // R-109: a time plan may be prepaid for several terms in one payment.
+              const chosen = gym.plans.find((plan) => String(plan.id) === planId)
+              const max = chosen?.billing_type === 'time' ? Number(chosen.max_prepay_terms ?? 1) : 1
+              if (!chosen || max <= 1) return null
+              const count = Math.min(Math.max(Number(terms) || 1, 1), max)
+              const discount = Number(chosen.prepay_discount_percent ?? 0)
+              return (
+                <Field name="prepaid_terms" className="mt-5 w-full max-w-xs">
+                  <FieldLabel>Terms to prepay</FieldLabel>
+                  <Input type="number" min="1" max={String(max)} step="1" inputMode="numeric" value={terms} onChange={(event) => setTerms(event.target.value)} />
+                  <FieldDescription>
+                    Up to {max} terms.{discount > 0 && ` ${discount}% off for 2 or more.`} You pay {money(prepayCharge(chosen.total_fee, count, discount))} after approval.
+                  </FieldDescription>
+                  <FieldError />
+                </Field>
+              )
+            })()}
+            <Field name="voucher_code" className="mt-5 w-full max-w-xs">
+              <FieldLabel>Voucher code (optional)</FieldLabel>
+              <Input name="voucher_code" maxLength={40} autoComplete="off" />
+              <FieldDescription>Checked when the gym approves. Promos apply by themselves.</FieldDescription>
               <FieldError />
             </Field>
           </CardPanel>

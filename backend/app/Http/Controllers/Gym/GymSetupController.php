@@ -88,6 +88,9 @@ class GymSetupController extends Controller
             'late_grace_minutes' => $gym->late_grace_minutes,
             'cancel_cutoff_hours' => $gym->cancel_cutoff_hours,
             'session_reminder_minutes' => $gym->session_reminder_minutes,
+            // R-115 and R-116: empty reminder days mean the platform default.
+            'membership_reminder_days' => $gym->membership_reminder_days ?? config('communication.membership_expiry_reminder_days'),
+            'inactivity_days' => $gym->inactivity_days ?? 14,
             'payroll_frequency' => $gym->payroll_frequency,
             'payroll_steps' => $gym->payrollSteps(),
             'staff_grace_minutes' => $gym->staff_grace_minutes,
@@ -156,6 +159,9 @@ class GymSetupController extends Controller
             'late_grace_minutes' => ['sometimes', 'required', 'integer', 'between:0,120'],
             'cancel_cutoff_hours' => ['sometimes', 'required', 'integer', 'between:0,72'],
             'session_reminder_minutes' => ['sometimes', 'required', 'integer', Rule::in([30, 60, 120, 1440])],
+            'membership_reminder_days' => ['sometimes', 'nullable', 'array', 'max:5'],
+            'membership_reminder_days.*' => ['integer', 'between:1,60', 'distinct'],
+            'inactivity_days' => ['sometimes', 'required', 'integer', 'between:3,180'],
             // Payroll and staff attendance settings change only through payroll/settings (owner, R-59, R-61).
         ];
     }

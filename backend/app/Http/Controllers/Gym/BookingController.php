@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Gym;
 
+use App\Support\DateRange;
 use App\Enums\BookingStatus;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Concerns\PresentsBookings;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Gym\Concerns\PresentsHr;
 use App\Models\Gym;
+use App\Models\Injury;
 use App\Models\SessionBooking;
 use App\Models\SessionNote;
 use App\Models\TrainingSession;
@@ -64,9 +66,11 @@ class BookingController extends Controller
 
     public function index(Request $request, Gym $gym): JsonResponse
     {
-        $data = $request->validate(['status' => ['sometimes', Rule::enum(BookingStatus::class)]]);
+        $data = $request->validate(['status' => ['sometimes', Rule::enum(BookingStatus::class)], ...DateRange::rules()]);
         $bookings = SessionBooking::with(['session.coach', 'session.room', 'user', 'gym'])
-            ->where('status', $data['status'] ?? BookingStatus::Requested)->orderBy('created_at')->orderBy('id')->get();
+            ->where('status', $data['status'] ?? BookingStatus::Requested)
+            ->when(filled($data['from'] ?? null) || filled($data['to'] ?? null), fn ($query) => $query->whereHas('session', fn ($session) => DateRange::apply($session, $data, 'starts_at')))
+            ->orderBy('created_at')->orderBy('id')->get();
 
         return response()->json(['bookings' => $bookings->map(fn ($booking) => $this->staffPayload($booking, $request))]);
     }
@@ -90,10 +94,13 @@ class BookingController extends Controller
             ->orderByRaw("CASE status WHEN 'booked' THEN 0 WHEN 'requested' THEN 1 WHEN 'waitlisted' THEN 2 ELSE 3 END")
             ->orderBy('waitlisted_at')->orderBy('id')->get();
         $position = 0;
+        // R-119: coaches see only that an athlete has an open injury, never the details.
+        $restricted = Injury::restrictedAmong($gym->id, $bookings->pluck('user_id'));
 
-        return response()->json(['bookings' => $bookings->map(function ($booking) use ($request, &$position) {
+        return response()->json(['bookings' => $bookings->map(function ($booking) use ($request, &$position, $restricted) {
             return [...$this->staffPayload($booking, $request),
-                'waitlist_position' => $booking->status === BookingStatus::Waitlisted ? ++$position : null];
+                'waitlist_position' => $booking->status === BookingStatus::Waitlisted ? ++$position : null,
+                'restricted' => isset($restricted[$booking->user_id])];
         }), 'notes' => SessionNote::with(['session', 'author'])->where('training_session_id', $model->id)
             ->latest()->get()->map(fn ($note) => $note->payload())]);
     }

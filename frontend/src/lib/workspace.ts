@@ -163,6 +163,8 @@ export type MembershipPlan = {
   duration_months: number | null
   session_count: number | null
   total_fee: string
+  max_prepay_terms: number
+  prepay_discount_percent: string
   registration_included: boolean
   inclusions: string[] | null
   policy_validity: string | null
@@ -223,6 +225,8 @@ export type WorkspaceSetup = {
   late_grace_minutes: number
   cancel_cutoff_hours: number
   session_reminder_minutes: number
+  membership_reminder_days: number[]
+  inactivity_days: number
   services: string[]
   facilities: string[]
   options?: WorkspaceOptions

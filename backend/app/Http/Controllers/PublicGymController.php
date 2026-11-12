@@ -224,6 +224,8 @@ class PublicGymController extends Controller
             'duration_months' => $plan->duration_months,
             'session_count' => $plan->session_count,
             'total_fee' => $plan->total_fee,
+            'max_prepay_terms' => $plan->max_prepay_terms ?? 1,
+            'prepay_discount_percent' => $plan->prepay_discount_percent ?? '0.00',
             'registration_included' => $plan->registration_included,
             'inclusions' => $plan->inclusions ?? [],
             'policy_validity' => $plan->policy_validity,

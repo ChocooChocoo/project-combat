@@ -6,6 +6,7 @@ use App\Models\Gym;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseRequest;
 use App\Models\User;
+use App\Notifications\GymNotice;
 use App\Notifications\PurchaseRequestDecided;
 use App\Notifications\PurchaseStatusChanged;
 use Illuminate\Support\Collection;
@@ -13,6 +14,19 @@ use Illuminate\Support\Collection;
 /** Keeps the R-79 audience rule in one place: requester, approver and creator, minus the actor. */
 class Notifier
 {
+    /** R-113: approvers hear about a new request, except the person who made it. */
+    public function requestSubmitted(Gym $gym, PurchaseRequest $request, User $actor): void
+    {
+        $gym->peopleWithPermission('procurement.requests.approve')
+            ->reject(fn (User $person) => $person->id === $actor->id)
+            ->each(fn (User $person) => $person->notify(new GymNotice(
+                'Purchase request waiting',
+                trim("{$actor->first_name} {$actor->last_name}")." submitted {$request->number} with {$request->lines->count()} ".($request->lines->count() === 1 ? 'item' : 'items').'.',
+                $gym->id,
+                "/gyms/{$gym->id}/manage/purchasing?tab=requests",
+            )));
+    }
+
     public function requestDecided(Gym $gym, PurchaseRequest $request): void
     {
         $requester = $request->requestedBy;

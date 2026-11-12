@@ -41,6 +41,8 @@ export type Membership = {
     duration_months: number | null
     session_count: number | null
     total_fee: string
+    max_prepay_terms: number
+    prepay_discount_percent: string
     inclusions: string[]
     max_freeze_days: number | null
     refundable: boolean
@@ -54,6 +56,15 @@ export type Membership = {
   signature_name: string
   signed_on: string
   amount_charged: string
+  /** R-110: fee kept on renewal while active or frozen; null before approval. */
+  locked_fee: string | null
+  prepaid_terms: number
+  /** R-111: voucher from the application and the discount taken at approval. */
+  voucher_code: string | null
+  discount_amount: string
+  offer_name: string | null
+  /** R-119: on the members list only: an open injury, no details. */
+  restricted?: boolean
   amount_paid: string
   balance: string
   starts_on: string | null
@@ -194,6 +205,20 @@ export function dateLabel(value: string | null | undefined): string {
 export function gymDate(value: string): Date {
   const iso = value.replace(' ', 'T')
   return new Date(/(?:Z|[+-]\d{2}:?\d{2})$/i.test(iso) ? iso : `${iso}+08:00`)
+}
+
+/** R-111: what approving would charge, from `price-preview`. */
+export type PricePreview = { base: number; prepay_discount: number; offer_name: string | null; offer_discount: number; payable: number }
+
+/** R-109: same math as the server's MembershipPricing::charge, for previews only. */
+export function prepayCharge(fee: string | number, terms: number, discountPercent: string | number = 0): number {
+  const percent = terms > 1 ? Number(discountPercent) || 0 : 0
+  return Math.round(Number(fee) * terms * (1 - percent / 100) * 100) / 100
+}
+
+/** Gym calendar day (Y-m-d, Manila) of an API timestamp. */
+export function gymDay(value: string): string {
+  return gymDate(value).toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })
 }
 
 export function dateTimeLabel(value: string | null | undefined): string {

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { ArrowLeft, PackageCheck } from 'lucide-react'
 import { Link, useParams } from 'react-router'
 import { PageHeader } from '@/components/page-header'
+import { ProofGallery } from '@/components/procurement/proof-gallery'
+import { PROOF_ACCEPT, uploadProofs } from '@/lib/procurement'
 import { TextField } from '@/components/text-field'
 import { Alert, AlertAction, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -10,6 +12,7 @@ import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogPanel, Dia
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Form } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
@@ -462,6 +465,8 @@ export default function PurchaseOrder() {
           )}
         </section>
 
+        <ProofGallery gymId={gymId} orderId={order.id} canUpload={canReceive} version={version} />
+
         <section aria-labelledby="order-timeline-heading" className="flex min-w-0 flex-col gap-3">
           <div>
             <h2 id="order-timeline-heading" className="font-heading font-semibold text-base">
@@ -543,6 +548,7 @@ function ReceiveDialog({
   )
   const [receivedOn, setReceivedOn] = useState(todayIso)
   const [note, setNote] = useState('')
+  const [proofFiles, setProofFiles] = useState<File[]>([])
   const [errors, setErrors] = useState<FieldErrors>({})
   const [busy, setBusy] = useState(false)
 
@@ -585,6 +591,14 @@ function ReceiveDialog({
         title: number ? `Goods received. ${number}.` : 'Goods received.',
         type: 'success',
       })
+      // R-114: proof files go up after the receipt is saved, so the stock change never waits on them.
+      if (proofFiles.length > 0) {
+        try {
+          await uploadProofs(gymId, order.id, proofFiles, result.receipt?.id)
+        } catch (failure) {
+          toastManager.add({ title: `Goods were received, but the proof files did not upload. ${message(failure, 'Add them again from the order page.')}`, type: 'warning' })
+        }
+      }
       onSaved()
     } catch (failure) {
       setErrors(formErrors(failure, ['received_on', 'note', 'lines'], 'The delivery could not be recorded.'))
@@ -622,6 +636,12 @@ function ReceiveDialog({
                 placeholder="Delivery note or reference"
               />
             </div>
+
+            <Field name="proofs" className="w-full">
+              <FieldLabel>Receipt photos or PDFs (optional)</FieldLabel>
+              <Input type="file" multiple accept={PROOF_ACCEPT} onChange={(event) => setProofFiles(Array.from(event.target.files ?? []))} />
+              <p className="text-muted-foreground text-xs">{proofFiles.length > 0 ? `${proofFiles.length} selected.` : 'Up to 10 files, 5 MB each.'}</p>
+            </Field>
 
             <fieldset className="flex flex-col gap-3">
               <legend className="font-medium text-sm">Quantities received</legend>

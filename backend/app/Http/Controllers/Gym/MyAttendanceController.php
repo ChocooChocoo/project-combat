@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Gym;
 
+use App\Support\DateRange;
 use App\Enums\GymPersonType;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Gym\Concerns\PresentsAttendance;
@@ -20,25 +21,27 @@ class MyAttendanceController extends Controller
     public function index(Request $request, Gym $gym): JsonResponse
     {
         $user = $request->user();
+        $data = $request->validate(DateRange::rules());
+        $ranged = filled($data['from'] ?? null) || filled($data['to'] ?? null);
 
-        $rows = $gym->staffAttendance()
+        $rows = DateRange::apply($gym->staffAttendance(), $data, 'work_date')
             ->with('user')
             ->where('user_id', $user->id)
             ->orderByDesc('work_date')
-            ->limit(31)
+            ->limit($ranged ? 366 : 31)
             ->get();
 
-        $overtime = $gym->overtimeRequests()
+        $overtime = DateRange::apply($gym->overtimeRequests(), $data, 'work_date')
             ->with(['user', 'decidedBy'])
             ->where('user_id', $user->id)
             ->orderByDesc('work_date')
             ->orderByDesc('id')
-            ->limit(20)
+            ->limit($ranged ? 200 : 20)
             ->get();
 
         return response()->json([
             'attendance' => $rows->map(fn (StaffAttendance $row) => $this->attendancePayload($row)),
-            'today' => ($today = $rows->first(fn (StaffAttendance $row) => $row->work_date?->isToday())) ? $this->attendancePayload($today) : null,
+            'today' => ($today = $gym->staffAttendance()->with('user')->where('user_id', $user->id)->whereDate('work_date', today())->first()) ? $this->attendancePayload($today) : null,
             'overtime' => $overtime->map(fn (OvertimeRequest $row) => $this->overtimePayload($row)),
             'settings' => [
                 'grace_minutes' => $gym->staff_grace_minutes,

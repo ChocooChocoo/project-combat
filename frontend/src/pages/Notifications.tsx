@@ -1,4 +1,6 @@
 import { useCallback, useState } from 'react'
+import { RangePicker } from '@/components/decision-support/range-picker'
+import { NO_RANGE, rangeQuery } from '@/lib/decision-support'
 import { Link } from 'react-router'
 import type { Notice, NoticeList } from '@/components/notifications-menu'
 import { PageHeader } from '@/components/page-header'
@@ -18,6 +20,7 @@ export default function Notifications() {
   const { user } = useAuth()
   const [notices, setNotices] = useState<Notice[] | null>(null)
   const [page, setPage] = useState(1)
+  const [range, setRange] = useState(NO_RANGE)
   const [lastPage, setLastPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -27,7 +30,7 @@ export default function Notifications() {
   const load = useCallback(async (silent: boolean, isCurrent: () => boolean) => {
     if (!silent) { setLoading(true); setError('') }
     try {
-      const result = await api<NoticeList>(`/notifications?page=${page}`)
+      const result = await api<NoticeList>(`/notifications?page=${page}${rangeQuery(range)}`)
       if (!isCurrent()) return
       setUnread(result.unread_count)
       if (result.notifications.data.length === 0 && page > 1) {
@@ -42,7 +45,7 @@ export default function Notifications() {
     } finally {
       if (isCurrent()) setLoading(false)
     }
-  }, [page, setUnread])
+  }, [page, setUnread, range])
 
   usePolling(load, 15_000, Boolean(user), version)
 
@@ -71,6 +74,7 @@ export default function Notifications() {
           </>
         }
       />
+      <RangePicker optional name="notifications" value={range} onChange={(next) => { setRange(next); setPage(1) }} />
 
       {error ? (
         <Alert variant="error">

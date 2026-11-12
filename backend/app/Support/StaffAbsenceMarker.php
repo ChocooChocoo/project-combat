@@ -9,6 +9,7 @@ use App\Enums\GymPersonType;
 use App\Enums\GymStatus;
 use App\Models\Gym;
 use App\Models\User;
+use App\Notifications\GymNotice;
 use Illuminate\Support\Carbon;
 
 /**
@@ -17,12 +18,14 @@ use Illuminate\Support\Carbon;
  */
 class StaffAbsenceMarker
 {
-    public function mark(Carbon $from, Carbon $to): int
+    /** R-116: $notify tells each absent employee and sends one digest per gym (the daily run only). */
+    public function mark(Carbon $from, Carbon $to, bool $notify = false): int
     {
         $count = 0;
 
         foreach (Gym::where('status', GymStatus::Approved)->get() as $gym) {
             app(CurrentGym::class)->set($gym);
+            $absent = [];
 
             $profiles = $gym->employees()->with('user')->get();
 
@@ -75,6 +78,7 @@ class StaffAbsenceMarker
                         'source' => AttendanceSource::System->value,
                     ]);
 
+                    $absent[] = [$user, $date->copy()];
                     $count++;
                 }
             }
@@ -86,9 +90,38 @@ class StaffAbsenceMarker
                 ->whereNull('clock_out_at')
                 ->whereDate('work_date', '<', today()->toDateString())
                 ->update(['missing_clock_out' => true]);
+
+            if ($notify && $absent !== []) {
+                $this->notifyAbsences($gym, $absent);
+            }
         }
 
         return $count;
+    }
+
+    /** @param array<int, array{0: User, 1: Carbon}> $absent */
+    private function notifyAbsences(Gym $gym, array $absent): void
+    {
+        $names = [];
+
+        foreach ($absent as [$user, $date]) {
+            $day = $date->format('M j');
+            $user->notify(new GymNotice(
+                'Marked absent',
+                "You were marked absent at {$gym->name} on {$day}. If this is wrong, explain it from My work.",
+                $gym->id,
+                "/gyms/{$gym->id}/manage/my-work",
+            ));
+            $names[] = trim("{$user->first_name} {$user->last_name}")." ({$day})";
+        }
+
+        $list = implode(', ', array_slice($names, 0, 10)).(count($names) > 10 ? ' and '.(count($names) - 10).' more' : '');
+        $gym->peopleWithPermission('hr.attendance.view')->each(fn (User $person) => $person->notify(new GymNotice(
+            count($names) === 1 ? '1 staff absence' : count($names).' staff absences',
+            "Marked absent: {$list}.",
+            $gym->id,
+            "/gyms/{$gym->id}/manage/staff-attendance",
+        )));
     }
 
     private function onApprovedLeave(Gym $gym, User $user, Carbon $date): bool

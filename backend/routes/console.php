@@ -12,6 +12,8 @@ use App\Support\PermissionCatalog;
 use App\Support\Reminders\FollowUpReminders;
 use App\Support\Reminders\MembershipExpiryReminders;
 use App\Support\Reminders\SessionReminders;
+use App\Support\Reminders\EquipmentCheckReminders;
+use App\Support\Reminders\InactivityMonitor;
 use App\Support\Reminders\SubscriptionReminders;
 use App\Support\StaffAbsenceMarker;
 use App\Support\StockLedger;
@@ -122,16 +124,31 @@ Artisan::command('app:mark-staff-absences {--date=} {--from=} {--to=}', function
         $start = $end = today()->subDay();
     }
 
+    // R-116: only the default daily run sends notices; backfills stay quiet.
+    $notify = ! $date && ! $from && ! $to;
+
     if ($end->lessThan($start)) {
         $this->error('The end date must be on or after the start date.');
 
         return 1;
     }
 
-    $count = app(StaffAbsenceMarker::class)->mark($start->copy()->startOfDay(), $end->copy()->startOfDay());
+    $count = app(StaffAbsenceMarker::class)->mark($start->copy()->startOfDay(), $end->copy()->startOfDay(), $notify);
     $this->info("{$count} absences marked.");
 })->purpose('Mark missing staff attendance as absent');
 Schedule::call(fn () => Artisan::call('app:mark-staff-absences'))->name('app:mark-staff-absences')->dailyAt('00:20');
+
+// R-116: members with no visit or attended session for the gym's inactivity days. Notice only.
+Artisan::command('app:monitor-inactivity', function (InactivityMonitor $monitor) {
+    $this->info($monitor->run().' inactive members noticed.');
+})->purpose('Tell inactive members and staff about long gaps in attendance');
+Schedule::call(fn () => Artisan::call('app:monitor-inactivity'))->name('app:monitor-inactivity')->dailyAt('08:20')->withoutOverlapping();
+
+// R-120: one digest per gym for equipment safety checks that are due.
+Artisan::command('app:remind-equipment-checks', function (EquipmentCheckReminders $reminders) {
+    $this->info($reminders->send().' equipment checks due.');
+})->purpose('Remind staff about equipment safety checks that are due');
+Schedule::call(fn () => Artisan::call('app:remind-equipment-checks'))->name('app:remind-equipment-checks')->dailyAt('08:30')->withoutOverlapping();
 
 Artisan::command('app:check-stock-counts', function (StockLedger $ledger) {
     $rows = $ledger->mismatches();

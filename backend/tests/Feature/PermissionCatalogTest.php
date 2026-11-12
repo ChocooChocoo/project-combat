@@ -14,10 +14,10 @@ class PermissionCatalogTest extends TestCase
         $this->assertEqualsCanonicalizing(array_column(Module::cases(), 'value'), array_keys(config('permissions.catalog')));
     }
 
-    public function test_catalog_has_67_unique_exact_keys(): void
+    public function test_catalog_has_75_unique_exact_keys(): void
     {
         $all = PermissionCatalog::all();
-        $this->assertCount(67, $all);
+        $this->assertCount(75, $all);
         $this->assertSame($all, array_values(array_unique($all)));
         foreach ($all as $key) {
             $this->assertMatchesRegularExpression('/^[a-z_]+\.[a-z_]+\.[a-z_]+$/', $key);
@@ -65,14 +65,18 @@ class PermissionCatalogTest extends TestCase
     {
         $placeholder = fn (string $module, string $action) => implode('.', [$module, 'general', $action]);
 
+        // R-120 added inventory.safety.*; the replacement follows the current catalog.
         $this->assertEqualsCanonicalizing([
             'inventory.items.view',
+            'inventory.safety.view',
         ], PermissionCatalog::replacementFor($placeholder('inventory', 'view')));
 
         $this->assertEqualsCanonicalizing([
             'inventory.items.view',
             'inventory.items.manage',
             'inventory.movements.manage',
+            'inventory.safety.view',
+            'inventory.safety.manage',
         ], PermissionCatalog::replacementFor($placeholder('inventory', 'manage')));
 
         $procurement = PermissionCatalog::replacementFor($placeholder('procurement', 'approve'));

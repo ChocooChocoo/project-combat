@@ -48,6 +48,8 @@ type FormState = {
   late_grace_minutes: string
   cancel_cutoff_hours: string
   session_reminder_minutes: string
+  membership_reminder_days: string
+  inactivity_days: string
 }
 
 function fromSetup(setup: WorkspaceSetup): FormState {
@@ -80,6 +82,8 @@ function fromSetup(setup: WorkspaceSetup): FormState {
     late_grace_minutes: String(setup.late_grace_minutes),
     cancel_cutoff_hours: String(setup.cancel_cutoff_hours),
     session_reminder_minutes: String(setup.session_reminder_minutes),
+    membership_reminder_days: (setup.membership_reminder_days ?? []).join(', '),
+    inactivity_days: String(setup.inactivity_days ?? 14),
   }
 }
 
@@ -211,6 +215,9 @@ export default function GymSettings() {
           late_grace_minutes: Number(form.late_grace_minutes),
           cancel_cutoff_hours: Number(form.cancel_cutoff_hours),
           session_reminder_minutes: Number(form.session_reminder_minutes),
+          // R-115: comma list of days, e.g. "7, 3, 1"; empty uses the default.
+          membership_reminder_days: form.membership_reminder_days.split(',').map((day) => day.trim()).filter(Boolean).map(Number),
+          inactivity_days: Number(form.inactivity_days),
         },
       })
       setSetup(result.setup)
@@ -504,6 +511,12 @@ export default function GymSettings() {
                   <FieldDescription>Booked athletes get an in-app reminder this long before the session starts.</FieldDescription>
                   <FieldError />
                 </Field>
+                <TextField name="membership_reminder_days" label="Membership expiry reminders (days before)"
+                  value={form.membership_reminder_days} onChange={(e) => set('membership_reminder_days', e.target.value)} inputMode="numeric"
+                  description="Comma list, up to 5 days between 1 and 60. Default: 7, 3, 1." />
+                <TextField name="inactivity_days" label="Inactive member after (days)" type="number" required min={3} max={180} step={1}
+                  value={form.inactivity_days} onChange={(e) => set('inactivity_days', e.target.value)}
+                  description="With no visit or attended session for this long, the member and staff get a notice. Default: 14." />
               </CardPanel>
             </Card>
 

@@ -1,4 +1,6 @@
 import { useCallback, useState } from 'react'
+import { RangePicker } from '@/components/decision-support/range-picker'
+import { NO_RANGE, rangeQuery } from '@/lib/decision-support'
 import { useParams } from 'react-router'
 import { BookingActionDialog, BookingEmpty, BookingError, BookingLoading, StaffBookingList, type BookingAction } from '@/components/schedule/booking-parts'
 import { api, ApiError } from '@/lib/api'
@@ -21,16 +23,17 @@ export default function GymBookings() {
   const [owing, setOwing] = useState<StaffBooking[]>([])
   const [paying, setPaying] = useState<StaffBooking | null>(null)
   const canPay = Boolean(gym && can(gym, 'finance.payments.manage'))
+  const [range, setRange] = useState(NO_RANGE)
   const load = useCallback(async (silent: boolean, isCurrent: () => boolean) => {
     if (!silent) setError('')
     try {
-      const result = await api<{ bookings: StaffBooking[] }>(`/gyms/${gymId}/bookings?status=requested`)
-      const booked = await api<{ bookings: StaffBooking[] }>(`/gyms/${gymId}/bookings?status=booked`)
+      const result = await api<{ bookings: StaffBooking[] }>(`/gyms/${gymId}/bookings?status=requested${rangeQuery(range)}`)
+      const booked = await api<{ bookings: StaffBooking[] }>(`/gyms/${gymId}/bookings?status=booked${rangeQuery(range)}`)
       if (isCurrent()) { setBookings(result.bookings); setOwing(booked.bookings.filter((b) => Number(b.balance) > 0)); setError('') }
     } catch (failure) {
       if (isCurrent() && !silent) setError(failure instanceof ApiError ? failure.message : 'Booking requests could not be loaded.')
     }
-  }, [gymId])
+  }, [gymId, range])
   usePolling(load, 15_000, Boolean(user && canView), version)
   if (!gym) return null
   if (!canView) return <BookingEmpty title="Bookings are not available" description="Your role does not include training access for this gym." />
@@ -41,6 +44,7 @@ export default function GymBookings() {
           <h1 className="font-semibold text-3xl tracking-tight sm:text-4xl">Bookings</h1>
           <p className="mt-3 max-w-prose text-muted-foreground text-sm leading-relaxed">Requested bookings reserve places until someone with approval access decides.</p>
         </div>
+        <RangePicker optional name="bookings" value={range} onChange={setRange} />
         {bookings && bookings.length > 0 && (
           <div>
             <p className="text-muted-foreground text-xs">Waiting for a decision</p>

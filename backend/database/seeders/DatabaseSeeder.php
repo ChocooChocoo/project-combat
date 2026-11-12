@@ -59,6 +59,7 @@ use Illuminate\Support\Str;
 class DatabaseSeeder extends Seeder
 {
     use DemoScenarios;
+    use P09Scenarios;
 
     private const PASSWORD = 'Password_123';
 
@@ -161,6 +162,16 @@ class DatabaseSeeder extends Seeder
 
         $tables = [
             'subscription_payments',
+            'offer_plan',
+            'offers',
+            'purchase_order_proofs',
+            'inactivity_notices',
+            'coach_applications',
+            'goal_milestones',
+            'training_goals',
+            'injury_updates',
+            'injuries',
+            'equipment_checks',
             'platform_notices',
             'announcements',
             'notifications',
@@ -243,6 +254,7 @@ class DatabaseSeeder extends Seeder
         Storage::disk('local')->deleteDirectory('gym-applications');
         Storage::disk('local')->deleteDirectory('leave-attachments');
         Storage::disk('local')->deleteDirectory('medical-files');
+        Storage::disk('local')->deleteDirectory('purchase-proofs');
     }
 
     /** @return array<string, User> */
@@ -341,6 +353,7 @@ class DatabaseSeeder extends Seeder
         foreach ($this->approvedGymSpecs() as $spec) {
             $owner = $people[$spec['owner']];
             $gym = $this->createGym($spec, $owner, $admin);
+            $gym->update(['membership_reminder_days' => $gym->id === 1 ? [10, 5, 1] : null]);
             $gym->update(['payroll_steps' => match ($gym->id) { 1 => ['finance_review', 'owner'], 2 => ['hr_review', 'owner'], default => ['owner'] }]);
 
             $this->seedGymDocuments($gym, $owner, $spec);
@@ -421,6 +434,10 @@ class DatabaseSeeder extends Seeder
                 $plan->gym_id = $gym->id;
                 $plan->published_at = now()->subDays(40 - $index);
                 $plan->created_at = $plan->published_at;
+                // R-109: the first two gyms sell monthly plans prepaid up to three terms, 10% off.
+                if ($gym->id <= 2 && $plan->billing_type === PlanBilling::Time && (int) $plan->duration_months === 1) {
+                    $plan->forceFill(['max_prepay_terms' => 3, 'prepay_discount_percent' => 10]);
+                }
                 $plan->save();
 
                 foreach ($addons as $addon) {
@@ -454,9 +471,14 @@ class DatabaseSeeder extends Seeder
             $this->seedProcurement($gym, $owner, array_values($employees));
             $this->seedPayroll($gym, $owner, array_values($employees));
             $this->seedHrScenarios($gym, $owner, array_values($employees));
+            $this->seedP09($gym, $owner, array_values($employees));
 
             $owner->notify(new GymApplicationDecided($gym));
         }
+
+        // R-116, R-120: run the daily jobs once so the bell already holds their notices.
+        app(\App\Support\Reminders\InactivityMonitor::class)->run();
+        app(\App\Support\Reminders\EquipmentCheckReminders::class)->send();
     }
 
     private function seedAnnouncements(Gym $gym, User $owner): void
@@ -947,6 +969,10 @@ class DatabaseSeeder extends Seeder
             ]);
             Carbon::withTestNow($applied, fn () => $ledger->log($membership, 'applied', $member));
             if ($status === 'applied') {
+                // R-109: this applicant asks to prepay three months at once.
+                if ($gym->id <= 2 && $plan->max_prepay_terms > 1) {
+                    $membership->forceFill(['prepaid_terms' => 3])->save();
+                }
                 $memberships->push($membership);
 
                 continue;
@@ -1018,6 +1044,10 @@ class DatabaseSeeder extends Seeder
                     'created_at' => today()->subDays(4), 'updated_at' => today()->subDays(4),
                 ]);
             }
+            // R-110: live memberships keep the fee they were approved at. One active member is locked below today's fee.
+            if (in_array($status, ['active', 'awaiting_payment', 'frozen'], true)) {
+                $membership->forceFill(['locked_fee' => $scenario === 3 && $plan->billing_type === PlanBilling::Time ? (float) $plan->total_fee - 300 : $plan->total_fee])->save();
+            }
             $memberships->push($membership->refresh());
         }
 
@@ -1030,6 +1060,9 @@ class DatabaseSeeder extends Seeder
                 'status' => 'applied', 'waivers' => array_keys(config('membership.waivers')),
                 'signature_name' => 'Anthony Padilla', 'signed_on' => $applied->toDateString(), 'created_at' => $applied, 'updated_at' => $applied,
             ]);
+            if ($gym->id <= 2) {
+                $membership->forceFill(['voucher_code' => 'WELCOME10'])->save();
+            }
             Carbon::withTestNow($applied, fn () => $ledger->log($membership, 'applied', $anthony));
             $memberships->push($membership);
         }
@@ -1278,6 +1311,10 @@ class DatabaseSeeder extends Seeder
         ]);
         $workflow->compute($gym, $review, $preparer);
         $workflow->submit($gym, $review->fresh(), $preparer);
+
+        // Ready to run: attendance is stored for this month and no run exists yet. Create it in Payroll, compute, submit and approve.
+        $readyStart = $reviewStart->copy()->subMonthNoOverflow()->startOfMonth();
+        $this->seedStaffAttendance($gym, $owner, $employees, $readyStart, $readyStart->copy()->endOfMonth());
     }
 
     /** Stored attendance for the released period, so the demo payroll is not all absences. */

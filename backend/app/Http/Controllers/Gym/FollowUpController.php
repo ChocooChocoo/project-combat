@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Gym;
 
+use App\Support\DateRange;
 use App\Enums\CustomerFollowUpStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Gym\Concerns\PresentsCustomers;
@@ -27,9 +28,10 @@ class FollowUpController extends Controller
             'status' => ['nullable', Rule::enum(CustomerFollowUpStatus::class)],
             'assigned_to' => ['nullable', 'integer', 'min:1'],
             'page' => ['nullable', 'integer', 'min:1'],
+            ...DateRange::rules(),
         ]);
 
-        $page = $gym->customerFollowUps()
+        $page = DateRange::apply($gym->customerFollowUps(), $data, 'due_at')
             ->with(['customer', 'assignedTo', 'doneBy'])
             ->when($data['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
             ->when($data['assigned_to'] ?? null, fn ($query, $userId) => $query->where('assigned_to', $userId))

@@ -9,8 +9,11 @@ use App\Enums\PlanBilling;
 use App\Http\Controllers\Concerns\PresentsMemberships;
 use App\Http\Controllers\Controller;
 use App\Models\Gym;
+use App\Models\Injury;
 use App\Models\Membership;
 use App\Support\MembershipLedger;
+use App\Support\MembershipPricing;
+use App\Support\OfferApplier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -52,8 +55,11 @@ class MembershipController extends Controller
             $query->where('status', $data['status']);
         }
 
-        $memberships = $query->orderByDesc('created_at')->orderByDesc('id')->get()
-            ->map(fn (Membership $membership) => $this->membershipPayload($membership, false))
+        $rows = $query->orderByDesc('created_at')->orderByDesc('id')->get();
+        // R-119: the restricted flag only, no injury details.
+        $restricted = Injury::restrictedAmong($gym->id, $rows->pluck('user_id'));
+        $memberships = $rows
+            ->map(fn (Membership $membership) => [...$this->membershipPayload($membership, false), 'restricted' => isset($restricted[$membership->user_id])])
             ->values();
 
         return response()->json(['memberships' => $memberships]);
@@ -68,6 +74,28 @@ class MembershipController extends Controller
         ]);
     }
 
+    /** R-111: what approving would charge, with the promo or voucher. Read-only; nothing is used up. */
+    public function pricePreview(Request $request, Gym $gym, int $membership): JsonResponse
+    {
+        $model = $this->find($gym, $membership);
+        abort_unless($model->status === MembershipStatus::Applied, 409, 'Only waiting applications can be priced.');
+
+        $code = $request->validate(['voucher_code' => ['nullable', 'string', 'max:40']])['voucher_code'] ?? null;
+        $terms = (int) $model->prepaid_terms;
+        $base = round((float) $model->plan->total_fee * $terms, 2);
+        $charge = MembershipPricing::charge($model->plan, (float) $model->plan->total_fee, $terms);
+        $offer = app(OfferApplier::class)->pick($model, $code, $charge);
+        $discount = $offer ? $offer->discountOn($charge) : 0.0;
+
+        return response()->json(['price' => [
+            'base' => $base,
+            'prepay_discount' => round($base - $charge, 2),
+            'offer_name' => $offer?->name,
+            'offer_discount' => $discount,
+            'payable' => round($charge - $discount, 2),
+        ]]);
+    }
+
     /** R-33: only membership approvers and the owner reach this (route middleware). */
     public function decide(Request $request, Gym $gym, int $membership): JsonResponse
     {
@@ -80,6 +108,7 @@ class MembershipController extends Controller
         $data = $request->validate([
             'decision' => ['required', Rule::in(['approve', 'reject'])],
             'reason' => ['required_if:decision,reject', 'nullable', 'string', 'max:2000'],
+            'voucher_code' => ['nullable', 'string', 'max:40'],
         ], ['reason.required_if' => 'Give the applicant a reason.']);
 
         DB::transaction(function () use ($gym, $model, $user, $data) {
@@ -95,8 +124,15 @@ class MembershipController extends Controller
                 return;
             }
 
+            // R-110: the fee is locked at approval; R-109: prepaid terms are charged together.
             $model->status = MembershipStatus::AwaitingPayment;
-            $model->amount_charged = $model->plan->total_fee;
+            $model->locked_fee = $model->plan->total_fee;
+            $model->amount_charged = MembershipPricing::charge($model->plan, (float) $model->locked_fee, (int) $model->prepaid_terms);
+            // R-111: a voucher given now replaces the one from the application.
+            if (array_key_exists('voucher_code', $data)) {
+                $model->voucher_code = filled($data['voucher_code']) ? strtoupper(trim($data['voucher_code'])) : null;
+            }
+            app(OfferApplier::class)->apply($model, $model->voucher_code);
             $model->decision_reason = $data['reason'] ?? null;
             $model->save();
 
@@ -113,7 +149,10 @@ class MembershipController extends Controller
         return response()->json(['membership' => $this->membershipPayload($this->find($gym, $model->id), $this->canSeeHealth($request, $gym), true)]);
     }
 
-    /** R-36: renew for one more period at the plan's fee. An expired membership restarts once paid. */
+    /**
+     * R-36: renew for one or more periods. R-110: active and frozen memberships keep their locked fee;
+     * an expired one restarts at the plan's current fee, which becomes the new locked fee.
+     */
     public function renew(Request $request, Gym $gym, int $membership): JsonResponse
     {
         $model = $this->find($gym, $membership);
@@ -125,17 +164,26 @@ class MembershipController extends Controller
             'Only active, frozen or expired memberships can be renewed.',
         );
 
-        DB::transaction(function () use ($request, $model, $plan) {
-            $model->amount_charged = (float) $model->amount_charged + (float) $plan->total_fee;
+        $terms = (int) ($request->validate(['prepaid_terms' => MembershipPricing::termsRule($plan)], [
+            'prepaid_terms.max' => 'This plan can be prepaid for up to '.max(1, (int) $plan->max_prepay_terms).' terms.',
+        ])['prepaid_terms'] ?? 1);
+
+        DB::transaction(function () use ($request, $model, $plan, $terms) {
+            if ($model->status === MembershipStatus::Expired || $model->locked_fee === null) {
+                $model->locked_fee = $plan->total_fee;
+            }
+            $charge = MembershipPricing::charge($plan, (float) $model->locked_fee, $terms);
+            $model->amount_charged = (float) $model->amount_charged + $charge;
+            $model->prepaid_terms = $terms;
 
             if ($model->status === MembershipStatus::Expired) {
                 $model->status = MembershipStatus::AwaitingPayment;
-                $note = 'Starts again once PHP '.number_format((float) $plan->total_fee, 2).' is paid';
+                $note = 'Starts again once PHP '.number_format($charge, 2).' is paid';
             } elseif ($plan->billing_type === PlanBilling::Sessions) {
                 $model->sessions_remaining = (int) $model->sessions_remaining + $plan->session_count;
                 $note = $model->sessions_remaining.($model->sessions_remaining === 1 ? ' session left' : ' sessions left');
             } else {
-                $model->ends_on = $model->ends_on->copy()->addMonthsNoOverflow($plan->duration_months);
+                $model->ends_on = $model->ends_on->copy()->addMonthsNoOverflow(MembershipPricing::months($plan, $terms));
                 $note = 'Valid until '.$model->ends_on->toDateString();
             }
 

@@ -39,6 +39,19 @@ class StaffAbsenceJobTest extends TestCase
         $this->assertSame('system', $row->source->value);
     }
 
+    /** R-116: the default daily run tells the employee and the owner; backfills stay quiet. */
+    public function test_only_the_daily_run_sends_absence_notices(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-11 08:00:00'));
+        $this->runFor('2026-11-09');
+        $this->assertSame(0, $this->employee->notifications()->count());
+
+        $this->artisan('app:mark-staff-absences')->assertExitCode(0);
+        $this->assertSame(1, $this->employee->notifications()->count());
+        $this->assertSame(1, $this->owner->notifications()->count());
+        $this->assertStringContainsString('absence', $this->owner->notifications()->first()->data['title']);
+    }
+
     public function test_the_job_is_idempotent(): void
     {
         $this->travelTo(Carbon::parse('2026-11-10 08:00:00'));

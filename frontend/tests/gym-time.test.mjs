@@ -18,3 +18,10 @@ test('Philippine midnight retains its gym date regardless of browser timezone', 
   assert.equal(dateTimeLabel(null), '')
   assert.equal(dateTimeLabel('not a date'), 'not a date')
 })
+
+test('prepay preview matches the server price math', async () => {
+  const { prepayCharge } = await import('../src/lib/membership.ts')
+  assert.equal(prepayCharge('1500.00', 1, '10.00'), 1500)
+  assert.equal(prepayCharge('1500.00', 3, '10.00'), 4050)
+  assert.equal(prepayCharge(1500, 3, 12.5), 3937.5)
+})

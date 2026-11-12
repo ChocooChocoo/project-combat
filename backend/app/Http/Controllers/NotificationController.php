@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\DateRange;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -11,10 +12,11 @@ class NotificationController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
+        $data = $request->validate(DateRange::rules());
 
         return response()->json([
             'unread_count' => $user->unreadNotifications()->count(),
-            'notifications' => $user->notifications()->latest()->paginate(20),
+            'notifications' => DateRange::apply($user->notifications(), $data, 'created_at')->latest()->paginate(20),
         ]);
     }
 

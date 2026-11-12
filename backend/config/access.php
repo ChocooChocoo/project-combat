@@ -25,8 +25,14 @@ return [
             'decision_support' => 'view',
         ],
         'hr' => [
-            // Approve adds hr.overtime.approve to the HR starter set.
-            'hr' => 'approve',
+            // Exact list: everything in HR, including hr.overtime.approve. R-117: coach applications
+            // are seen by HR but approved by the owner unless the owner grants approve on purpose.
+            'hr' => [
+                'hr.staff.view', 'hr.staff.manage', 'hr.roles.view', 'hr.roles.manage',
+                'hr.schedules.view', 'hr.schedules.manage', 'hr.leave.view', 'hr.leave.manage',
+                'hr.holidays.manage', 'hr.attendance.view', 'hr.attendance.manage', 'hr.overtime.approve',
+                'hr.performance.view', 'hr.performance.manage', 'hr.coach_applications.view',
+            ],
             'payroll' => 'manage',
         ],
     ],

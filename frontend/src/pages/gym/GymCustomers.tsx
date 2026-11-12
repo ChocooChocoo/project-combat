@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { RangePicker } from '@/components/decision-support/range-picker'
+import { NO_RANGE, rangeQuery } from '@/lib/decision-support'
 import { Link, useParams } from 'react-router'
 import { ChevronLeft, ChevronRight, Plus, Search } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
@@ -120,6 +122,7 @@ export default function GymCustomers() {
   const [followUps, setFollowUps] = useState<CustomerFollowUp[] | null>(null)
   const [followUpMeta, setFollowUpMeta] = useState<PageMeta | null>(null)
   const [followUpPage, setFollowUpPage] = useState(1)
+  const [followUpRange, setFollowUpRange] = useState(NO_RANGE)
   const [followUpError, setFollowUpError] = useState('')
   const [staff, setStaff] = useState<StaffChoice[]>([])
 
@@ -167,7 +170,7 @@ export default function GymCustomers() {
     if (!gymId || !canView || !viewerId) return
     let live = true
     setFollowUpError('')
-    api<Record<string, unknown>>(`/gyms/${gymId}/follow-ups?assigned_to=${viewerId}&page=${followUpPage}`)
+    api<Record<string, unknown>>(`/gyms/${gymId}/follow-ups?assigned_to=${viewerId}&page=${followUpPage}${rangeQuery(followUpRange)}`)
       .then((result) => {
         if (!live) return
         const rows = Array.isArray(result.followUps) ? (result.followUps as CustomerFollowUp[]) : []
@@ -184,7 +187,7 @@ export default function GymCustomers() {
     return () => {
       live = false
     }
-  }, [gymId, canView, viewerId, followUpPage, version])
+  }, [gymId, canView, viewerId, followUpPage, version, followUpRange])
 
   useEffect(() => {
     if (!gymId || !canManage) return
@@ -482,6 +485,7 @@ export default function GymCustomers() {
         </TabsPanel>
 
         <TabsPanel value="followups" className="flex flex-col gap-4 pt-4">
+          <RangePicker optional name="follow-ups" value={followUpRange} onChange={(next) => { setFollowUpRange(next); setFollowUpPage(1) }} />
           {followUpError ? (
             <Alert variant="error">
               <AlertTitle>Follow-ups could not be loaded</AlertTitle>

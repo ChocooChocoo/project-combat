@@ -136,6 +136,8 @@ export type PublicPlan = {
   duration_months?: number | null
   session_count?: number | null
   total_fee: string | number
+  max_prepay_terms?: number
+  prepay_discount_percent?: string | number
   registration_included?: boolean
   inclusions?: string[] | null
   policy_validity?: string | null

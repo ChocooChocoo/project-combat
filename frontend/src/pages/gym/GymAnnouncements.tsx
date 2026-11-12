@@ -1,5 +1,7 @@
 import { Megaphone, Plus } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { RangePicker } from '@/components/decision-support/range-picker'
+import { NO_RANGE, rangeQuery } from '@/lib/decision-support'
 import { useParams } from 'react-router'
 import { PageHeader } from '@/components/page-header'
 import { TextField } from '@/components/text-field'
@@ -33,6 +35,7 @@ export default function GymAnnouncements() {
   const [data, setData] = useState<AnnouncementPage | null>(null)
   const [error, setError] = useState('')
   const [page, setPage] = useState(1)
+  const [range, setRange] = useState(NO_RANGE)
   const [version, setVersion] = useState(0)
   const [composing, setComposing] = useState(false)
 
@@ -41,11 +44,11 @@ export default function GymAnnouncements() {
     let live = true
     setData(null)
     setError('')
-    api<AnnouncementPage>(`/gyms/${gymId}/announcements?page=${page}`)
+    api<AnnouncementPage>(`/gyms/${gymId}/announcements?page=${page}${rangeQuery(range)}`)
       .then((result) => live && setData(result))
       .catch((failure) => live && setError(failure instanceof ApiError ? failure.message : 'Announcements could not be loaded.'))
     return () => { live = false }
-  }, [gymId, page, version, canView])
+  }, [gymId, page, version, canView, range])
 
   if (!gym) return null
   if (!canView) return (
@@ -61,6 +64,7 @@ export default function GymAnnouncements() {
     <div className="flex min-w-0 flex-col gap-6">
       <PageHeader title="Announcements" description="Send training updates and events to the members who need them. Sent announcements cannot be edited."
         actions={canManage && <Button onClick={() => setComposing(true)}><Plus aria-hidden /> Send announcement</Button>} />
+      <RangePicker optional name="announcements" value={range} onChange={(next) => { setRange(next); setPage(1) }} />
       {error ? (
         <Alert variant="error"><AlertTitle>Announcements could not be loaded</AlertTitle><AlertDescription>
           <p>{error}</p><Button variant="outline" onClick={() => setVersion((value) => value + 1)}>Try again</Button>

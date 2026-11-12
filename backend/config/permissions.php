@@ -14,6 +14,8 @@ return [
             'attendance' => ['view', 'manage'],
             'overtime' => ['approve'],
             'performance' => ['view', 'manage'],
+            // R-117: members who apply to coach here.
+            'coach_applications' => ['view', 'approve'],
         ],
         'gym_setup' => [
             'settings' => ['view', 'manage'],
@@ -31,7 +33,8 @@ return [
             'plans' => ['view', 'manage'],
             'memberships' => ['view', 'manage', 'approve'],
         ],
-        'health_records' => ['records' => ['view']],
+        // R-119: injury details need records.view; injuries.manage records and updates them.
+        'health_records' => ['records' => ['view'], 'injuries' => ['manage']],
         'finance' => [
             'payments' => ['view', 'manage'],
             'expenses' => ['view', 'manage'],
@@ -47,10 +50,14 @@ return [
         'customers' => [
             'records' => ['view', 'manage'],
             'groups' => ['manage'],
+            // R-111: promos and vouchers. Staff make them, approvers (owner by default) turn them on.
+            'offers' => ['view', 'manage', 'approve'],
         ],
         'inventory' => [
             'items' => ['view', 'manage'],
             'movements' => ['manage'],
+            // R-120: safety checks on equipment and protective gear.
+            'safety' => ['view', 'manage'],
         ],
         'procurement' => [
             'requests' => ['view', 'manage', 'approve'],

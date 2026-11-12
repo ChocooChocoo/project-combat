@@ -1,4 +1,6 @@
 import { useCallback, useState } from 'react'
+import { RangePicker } from '@/components/decision-support/range-picker'
+import { NO_RANGE, rangeQuery } from '@/lib/decision-support'
 import { Link, useSearchParams } from 'react-router'
 import { CheckInCodes } from '@/components/schedule/check-in-code'
 import { BookingActionDialog, BookingBadge, BookingEmpty, BookingError, BookingLoading, type BookingAction } from '@/components/schedule/booking-parts'
@@ -24,6 +26,7 @@ function bookingDate(value: string) {
 export default function MyBookings() {
   const { user } = useAuth()
   const [data, setData] = useState<{ upcoming: MyBooking[]; past: MyBooking[] } | null>(null)
+  const [range, setRange] = useState(NO_RANGE)
   const [error, setError] = useState('')
   const [version, setVersion] = useState(0)
   const [target, setTarget] = useState<BookingAction | null>(null)
@@ -40,7 +43,7 @@ export default function MyBookings() {
         if (!isCurrent()) return
         confirmed = result.paid
       }
-      const result = await api<{ upcoming: MyBooking[]; past: MyBooking[] }>('/my-bookings')
+      const result = await api<{ upcoming: MyBooking[]; past: MyBooking[] }>(`/my-bookings${rangeQuery(range, '?')}`)
       if (!isCurrent()) return
       setData(result)
       setError('')
@@ -57,7 +60,7 @@ export default function MyBookings() {
     } catch (failure) {
       if (isCurrent() && !silent) setError(failure instanceof ApiError ? failure.message : 'Your bookings could not be loaded.')
     }
-  }, [search, setSearch])
+  }, [search, setSearch, range])
   usePolling(load, 15_000, Boolean(user), version)
   async function payOnline(bookingId: number) {
     setPaying(bookingId)
@@ -101,7 +104,8 @@ export default function MyBookings() {
             <TabsTab className="min-h-11" value="past">Past ({data.past.length})</TabsTab>
           </TabsList>
           {(['upcoming', 'past'] as const).map((period) => (
-            <TabsPanel key={period} value={period} className="pt-6">
+            <TabsPanel key={period} value={period} className="flex flex-col gap-4 pt-6">
+              {period === 'past' && <RangePicker optional name="past-bookings" value={range} onChange={setRange} />}
               {data[period].length === 0 ? (
                 <BookingEmpty title={`No ${period} bookings`} description="Open a gym's Sessions page to find your next session." />
               ) : (

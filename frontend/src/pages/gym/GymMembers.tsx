@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { MembershipStatusBadge } from '@/components/membership/membership-parts'
@@ -107,6 +108,7 @@ export default function GymMembers() {
                     <Link to={link(row)} className="flex flex-col gap-1.5 rounded-xl border p-4 outline-none hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring">
                       <span className="flex items-start gap-2">
                         <span className="min-w-0 flex-1 font-medium">{row.member.name}</span>
+                        {row.restricted && <Badge variant="warning">Restricted</Badge>}
                         <MembershipStatusBadge status={row.status} />
                       </span>
                       <span className="text-muted-foreground text-sm">
@@ -136,6 +138,7 @@ export default function GymMembers() {
                           <Link to={link(row)} className="font-medium underline-offset-4 hover:underline">
                             {row.member.name}
                           </Link>
+                          {row.restricted && <Badge variant="warning" className="ms-2">Restricted</Badge>}
                           <span className="block text-muted-foreground text-xs">{row.member.email}</span>
                         </TableCell>
                         <TableCell>{row.plan?.name}</TableCell>

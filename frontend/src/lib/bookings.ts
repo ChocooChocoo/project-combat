@@ -64,6 +64,8 @@ export type StaffBooking = Booking & {
   athlete: SessionChoice
   session: SessionSummary
   waitlist_position?: number | null
+  /** R-119: open injury, details hidden. Sent on session rosters. */
+  restricted?: boolean
 }
 export type MyBooking = Booking & { gym: SessionChoice; session: SessionSummary }
 export type OwedBooking = { id: number; balance: string; athlete: SessionChoice; session: { name: string; starts_at: string } }

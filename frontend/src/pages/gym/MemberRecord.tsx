@@ -1,5 +1,9 @@
 import { ArrowLeft, Plus } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { RangePicker } from '@/components/decision-support/range-picker'
+import { NO_RANGE } from '@/lib/decision-support'
+import { GoalsCard } from '@/components/training/goals-card'
+import { InjuriesCard } from '@/components/training/injuries-card'
 import { Link, useParams } from 'react-router'
 import { AthleteRecordView, HealthSummary } from '@/components/membership/athlete-record-view'
 import { HistoryList, MembershipStatusBadge, PaymentsList } from '@/components/membership/membership-parts'
@@ -20,7 +24,7 @@ import { api, apiFile, ApiError, formValues, type FieldErrors } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { manilaToday } from '@/lib/dashboard'
 import { approvedGym, can } from '@/lib/gym-access'
-import { correctable, dateLabel, ENTRY_LABELS, money, periodLabel, type AthleteEntry, type AthleteRecord, type Membership, type MembershipForm, type Payment } from '@/lib/membership'
+import { correctable, dateLabel, ENTRY_LABELS, gymDay, money, periodLabel, type AthleteEntry, type AthleteRecord, type Membership, type MembershipForm, type Payment } from '@/lib/membership'
 
 type Action = 'renew' | 'freeze' | 'unfreeze' | 'cancel'
 const ENTRY_TYPES = (Object.keys(ENTRY_LABELS) as AthleteEntry['type'][]).map((value) => ({ value, label: ENTRY_LABELS[value] }))
@@ -40,6 +44,7 @@ export default function MemberRecord() {
   const [form, setForm] = useState<MembershipForm | null>(null)
   const [error, setError] = useState('')
   const [version, setVersion] = useState(0)
+  const [historyRange, setHistoryRange] = useState(NO_RANGE)
 
   const [action, setAction] = useState<Action | null>(null)
   const [actionErrors, setActionErrors] = useState<FieldErrors>({})
@@ -87,6 +92,7 @@ export default function MemberRecord() {
     if (!membership || !action) return
     const body: Record<string, unknown> = {}
     if (action === 'freeze') Object.assign(body, { days: Number(values.days), reason: values.reason || null })
+    if (action === 'renew' && values.prepaid_terms) body.prepaid_terms = Number(values.prepaid_terms)
     if (action === 'cancel') {
       body.reason = values.reason
       if (values.refund_amount) Object.assign(body, { refund_amount: Number(values.refund_amount), refund_method: refundMethod })
@@ -224,8 +230,10 @@ export default function MemberRecord() {
                   </CardAction>
                 )}
               </CardHeader>
-              <CardPanel>
-                <HistoryList events={membership.history} />
+              <CardPanel className="flex flex-col gap-4">
+                {/* R-112: history is already loaded in full, so the date range filters it here. */}
+                <RangePicker optional name="membership-history" value={historyRange} onChange={setHistoryRange} />
+                <HistoryList events={membership.history.filter((event) => (!historyRange.from || gymDay(event.at) >= historyRange.from) && (!historyRange.to || gymDay(event.at) <= historyRange.to))} />
               </CardPanel>
             </Card>
           )}
@@ -287,6 +295,11 @@ export default function MemberRecord() {
               }
             />
           )}
+
+          {record && <GoalsCard gymId={gymId} athleteId={membership.member.id} canEdit={canCoach} />}
+          {record && gym && can(gym, 'health_records.records.view') && (
+            <InjuriesCard gymId={gymId} athleteId={membership.member.id} canReport={can(gym, 'health_records.injuries.manage')} canManage={can(gym, 'health_records.injuries.manage')} />
+          )}
         </div>
 
         <div className="flex flex-col gap-6">
@@ -316,6 +329,14 @@ export default function MemberRecord() {
                 <CardTitle render={<h2 />}>Plan rules</CardTitle>
               </CardHeader>
               <CardPanel className="flex flex-col gap-2 text-sm">
+                {Number(membership.discount_amount) > 0 && <p>Offer: {membership.offer_name ?? 'Discount'}, {money(membership.discount_amount)} off the first payment.</p>}
+                {membership.locked_fee !== null && (
+                  <p>
+                    Locked price: {money(membership.locked_fee)} a term
+                    {Number(membership.locked_fee) !== Number(plan.total_fee) && ` (plan is now ${money(plan.total_fee)})`}
+                    {membership.prepaid_terms > 1 && `. Last payment covered ${membership.prepaid_terms} terms`}.
+                  </p>
+                )}
                 <p>{plan.max_freeze_days != null ? `Freezing: up to ${plan.max_freeze_days} days a period (${freezeLeft} left).` : 'Freezing: not allowed.'}</p>
                 <p>{plan.refundable ? 'Refunds on cancelling: allowed.' : 'Refunds on cancelling: not given.'}</p>
                 {plan.policy_cancellation && <p className="whitespace-pre-line text-muted-foreground">{plan.policy_cancellation}</p>}
@@ -336,13 +357,28 @@ export default function MemberRecord() {
                 <DialogDescription>
                   {action === 'renew' &&
                     (status === 'expired'
-                      ? `Adds ${money(plan?.total_fee)} to pay. The new period starts once it is paid.`
-                      : `Adds one more ${plan?.billing_type === 'sessions' ? `${plan.session_count} ${plan.session_count === 1 ? 'session' : 'sessions'}` : `${plan?.duration_months} month period`} and ${money(plan?.total_fee)} to pay.`)}
+                      ? `Adds ${money(plan?.total_fee)} a term to pay, at the plan's current price. The new period starts once it is paid.`
+                      : `Adds one more ${plan?.billing_type === 'sessions' ? `${plan.session_count} ${plan.session_count === 1 ? 'session' : 'sessions'}` : `${plan?.duration_months} month period`} at the locked price of ${money(membership.locked_fee ?? plan?.total_fee)} a term.`)}
                   {action === 'freeze' && `The end date moves forward by the frozen days. ${freezeLeft} days left on this plan.`}
                   {action === 'unfreeze' && 'The membership becomes active today, and any unused frozen days are taken back off the end date.'}
                   {action === 'cancel' && 'The membership ends now. The member is told, with your reason.'}
                 </DialogDescription>
               </DialogHeader>
+              {action === 'renew' && plan?.billing_type === 'time' && plan.max_prepay_terms > 1 && (
+                <DialogPanel>
+                  <TextField
+                    name="prepaid_terms"
+                    label="Terms to renew"
+                    type="number"
+                    min="1"
+                    max={String(plan.max_prepay_terms)}
+                    step="1"
+                    defaultValue="1"
+                    inputMode="numeric"
+                    description={`Up to ${plan.max_prepay_terms} terms in one payment.${Number(plan.prepay_discount_percent) > 0 ? ` ${Number(plan.prepay_discount_percent)}% off when renewing 2 or more.` : ''}`}
+                  />
+                </DialogPanel>
+              )}
               {(action === 'freeze' || action === 'cancel') && (
                 <DialogPanel className="flex flex-col gap-4">
                   {action === 'freeze' && (

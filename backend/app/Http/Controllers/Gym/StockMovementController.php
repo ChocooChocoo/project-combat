@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Gym;
 
+use App\Support\DateRange;
 use App\Enums\StockMovementType;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Gym\Concerns\PresentsStock;
@@ -19,8 +20,9 @@ class StockMovementController extends Controller
 
     public function index(Request $request, Gym $gym, int $item): JsonResponse
     {
+        $data = $request->validate(DateRange::rules());
         $stock = $gym->stockItems()->findOrFail($item);
-        $page = $stock->movements()->with(['actor', 'issuedTo'])->withSum('returns as returned', 'quantity')
+        $page = DateRange::apply($stock->movements(), $data, 'created_at')->with(['actor', 'issuedTo'])->withSum('returns as returned', 'quantity')
             ->orderByDesc('id')->paginate(30);
         $openIssues = $stock->movements()->where('type', StockMovementType::Issue->value)
             ->with('issuedTo')->withSum('returns as returned', 'quantity')->orderByDesc('id')->get()

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Gym;
 
+use App\Support\DateRange;
 use App\Enums\PayrollStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Gym\Concerns\PresentsPayroll;
@@ -25,9 +26,10 @@ class PayrollRunController extends Controller
         $data = $request->validate([
             'status' => ['nullable', Rule::enum(PayrollStatus::class)],
             'page' => ['nullable', 'integer', 'min:1'],
+            ...DateRange::rules(),
         ]);
 
-        $page = $gym->payrollRuns()
+        $page = DateRange::overlap($gym->payrollRuns(), $data, 'starts_on', 'ends_on')
             ->with(['preparedBy', 'releasedBy'])
             ->withCount('lines')
             ->when($data['status'] ?? null, fn ($query, $status) => $query->where('status', $status))

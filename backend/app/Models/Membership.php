@@ -32,6 +32,9 @@ class Membership extends Model
             'waivers' => 'array',
             'signed_on' => 'date',
             'amount_charged' => 'decimal:2',
+            'locked_fee' => 'decimal:2',
+            'discount_amount' => 'decimal:2',
+            'prepaid_terms' => 'integer',
             'starts_on' => 'date',
             'ends_on' => 'date',
             'sessions_remaining' => 'integer',
@@ -49,6 +52,11 @@ class Membership extends Model
     public function plan(): BelongsTo
     {
         return $this->belongsTo(MembershipPlan::class, 'membership_plan_id')->withoutGlobalScope('gym');
+    }
+
+    public function offer(): BelongsTo
+    {
+        return $this->belongsTo(Offer::class)->withoutGlobalScope('gym');
     }
 
     public function decidedBy(): BelongsTo

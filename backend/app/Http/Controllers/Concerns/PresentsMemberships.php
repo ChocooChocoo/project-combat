@@ -35,6 +35,8 @@ trait PresentsMemberships
                 'duration_months' => $plan->duration_months,
                 'session_count' => $plan->session_count,
                 'total_fee' => $plan->total_fee,
+                'max_prepay_terms' => $plan->max_prepay_terms ?? 1,
+                'prepay_discount_percent' => $plan->prepay_discount_percent ?? '0.00',
                 'inclusions' => $plan->inclusions ?? [],
                 'max_freeze_days' => $plan->max_freeze_days,
                 'refundable' => $plan->refundable,
@@ -48,6 +50,13 @@ trait PresentsMemberships
             'signature_name' => $membership->signature_name,
             'signed_on' => $membership->signed_on?->toDateString(),
             'amount_charged' => number_format((float) $membership->amount_charged, 2, '.', ''),
+            // R-110: the fee this membership keeps on renewal while it stays active or frozen.
+            'locked_fee' => $membership->locked_fee,
+            'prepaid_terms' => $membership->prepaid_terms ?? 1,
+            // R-111: the promo or voucher taken off the first charge.
+            'voucher_code' => $membership->voucher_code,
+            'discount_amount' => number_format((float) $membership->discount_amount, 2, '.', ''),
+            'offer_name' => $membership->offer_id ? $membership->offer?->name : null,
             'amount_paid' => number_format($ledger->paid($membership), 2, '.', ''),
             'balance' => number_format($ledger->balance($membership), 2, '.', ''),
             'starts_on' => $membership->starts_on?->toDateString(),

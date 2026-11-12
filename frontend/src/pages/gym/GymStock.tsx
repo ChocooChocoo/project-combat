@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
+import { RangePicker } from '@/components/decision-support/range-picker'
+import { NO_RANGE, rangeQuery } from '@/lib/decision-support'
 import { Archive, ArrowLeftRight, History, Pencil, Plus } from 'lucide-react'
-import { useParams } from 'react-router'
+import { useParams, useSearchParams } from 'react-router'
+import { SafetyPanel } from '@/components/inventory/safety-panel'
+import { Tabs, TabsList, TabsTab } from '@/components/ui/tabs'
 import { PageHeader } from '@/components/page-header'
 import { TextField } from '@/components/text-field'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -58,6 +62,9 @@ export default function GymStock() {
   const canView = gym ? can(gym, 'inventory.items.view') : false
   const canManage = gym ? can(gym, 'inventory.items.manage') : false
   const canMove = gym ? can(gym, 'inventory.movements.manage') : false
+  const canSafety = gym ? can(gym, 'inventory.safety.view', 'inventory.safety.manage') : false
+  const [search, setSearch] = useSearchParams()
+  const tab = canSafety && search.get('tab') === 'safety' ? 'safety' : 'items'
   const [items, setItems] = useState<StockItem[] | null>(null)
   const [summary, setSummary] = useState<StockSummary | null>(null)
   const [error, setError] = useState('')
@@ -134,6 +141,14 @@ export default function GymStock() {
   return <div className="flex min-w-0 flex-col gap-6">
     <PageHeader title="Stock" description={`${gym.name}: what you have, where it is, and every change.`} actions={canManage && <Button size="sm" onClick={() => setItemDialog({ item: null })}><Plus aria-hidden />Add item</Button>} />
     {error && <Alert variant="error"><AlertTitle>Stock could not be loaded</AlertTitle><AlertDescription>{error}</AlertDescription><div className="pt-2"><Button size="sm" variant="outline" onClick={refresh}>Try again</Button></div></Alert>}
+    {canSafety && <Tabs value={tab} onValueChange={(value) => setSearch(value === 'safety' ? { tab: 'safety' } : {}, { replace: true })}>
+      <TabsList variant="underline" aria-label="Stock sections">
+        <TabsTab className="min-h-11" value="items">Items</TabsTab>
+        <TabsTab className="min-h-11" value="safety">Safety</TabsTab>
+      </TabsList>
+    </Tabs>}
+    {tab === 'safety' && gym && <SafetyPanel gymId={gym.id} canManage={can(gym, 'inventory.safety.manage')} />}
+    {tab === 'items' && <>
     {!error && <section aria-labelledby="stock-summary-heading">
       <h2 id="stock-summary-heading" className="sr-only">Active stock summary</h2>
       <dl className="grid grid-cols-3 gap-px overflow-hidden rounded-xl border bg-border" aria-live="polite">
@@ -174,6 +189,7 @@ export default function GymStock() {
         </>}
       </>)}
     </section>
+    </>}
     {itemDialog && canManage && <ItemDialog key={`${gymId}-${itemDialog.item?.id ?? 'new'}`} gymId={gymId} item={itemDialog.item} onClose={() => setItemDialog(null)} onSaved={() => { setItemDialog(null); refresh() }} />}
     {moving && canMove && <MovementDialog key={`${gymId}-${moving.id}`} gymId={gymId} item={moving} onClose={() => setMoving(null)} onSaved={() => { setMoving(null); refresh() }} />}
     {historyOf && <HistorySheet key={`${gymId}-${historyOf.id}`} gymId={gymId} item={historyOf} onClose={() => setHistoryOf(null)} />}
@@ -352,6 +368,7 @@ function HistorySheet({ gymId, item, onClose }: { gymId: number; item: StockItem
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [jumpTo, setJumpTo] = useState<number | null>(null)
+  const [range, setRange] = useState(NO_RANGE)
   const loadLock = useRef(false)
 
   useEffect(() => {
@@ -359,7 +376,7 @@ function HistorySheet({ gymId, item, onClose }: { gymId: number; item: StockItem
     setLoading(true)
     setError('')
     loadLock.current = true
-    api<StockMovementsPage>(`/gyms/${gymId}/stock-items/${item.id}/movements?page=${page}`)
+    api<StockMovementsPage>(`/gyms/${gymId}/stock-items/${item.id}/movements?page=${page}${rangeQuery(range)}`)
       .then((result) => {
         if (!live) return
         setData((current) => ({ ...result, movements: page === 1 ? result.movements : [...(current?.movements ?? []), ...result.movements] }))
@@ -367,7 +384,7 @@ function HistorySheet({ gymId, item, onClose }: { gymId: number; item: StockItem
       .catch((reason) => { if (live) setError(message(reason, 'History could not be loaded.')) })
       .finally(() => { if (live) { setLoading(false); loadLock.current = false } })
     return () => { live = false }
-  }, [gymId, item.id, page, version])
+  }, [gymId, item.id, page, version, range])
 
   useEffect(() => {
     if (jumpTo === null || loading || error || !data) return
@@ -389,6 +406,7 @@ function HistorySheet({ gymId, item, onClose }: { gymId: number; item: StockItem
     <SheetHeader className="pr-12"><SheetTitle className="break-words">{item.name}</SheetTitle><SheetDescription className="break-words">{quantityLabel(currentItem.quantity, item.unit)} · {currentItem.location}</SheetDescription></SheetHeader>
     <SheetPanel className="flex min-w-0 flex-col gap-4">
       <h2 className="font-medium text-sm">Movement history</h2>
+      <RangePicker optional name="movements" value={range} onChange={(next) => { setData(null); setPage(1); setRange(next) }} />
       {(currentItem.unit_cost !== null || currentItem.sale_price !== null) && <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm">{currentItem.unit_cost !== null && <div><dt className="text-muted-foreground">Unit cost</dt><dd>{money(currentItem.unit_cost)}</dd></div>}{currentItem.category === 'merchandise' && currentItem.sale_price !== null && <div><dt className="text-muted-foreground">Sale price</dt><dd>{money(currentItem.sale_price)}</dd></div>}</dl>}
       {error && <Alert variant="error"><AlertTitle>History could not be loaded</AlertTitle><AlertDescription>{error}</AlertDescription><div className="pt-2"><Button size="sm" variant="outline" onClick={() => setVersion((value) => value + 1)}>Try again</Button></div></Alert>}
       {!data && loading && <LoadingRows />}

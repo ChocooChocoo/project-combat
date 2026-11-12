@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { RangePicker } from '@/components/decision-support/range-picker'
+import { NO_RANGE, rangeQuery } from '@/lib/decision-support'
 import { Plus } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -38,11 +40,12 @@ export function MyAttendance({ gymId, shift = null }: { gymId: number; shift?: T
   const [busy, setBusy] = useState('')
   const [explaining, setExplaining] = useState<StaffAttendance | null>(null)
   const [requesting, setRequesting] = useState(false)
+  const [range, setRange] = useState(NO_RANGE)
 
   useEffect(() => {
     let live = true
     setError('')
-    api<MyAttendanceData>(`/gyms/${gymId}/my-attendance`)
+    api<MyAttendanceData>(`/gyms/${gymId}/my-attendance${rangeQuery(range, '?')}`)
       .then((result) => {
         if (live) setData(result)
       })
@@ -52,7 +55,7 @@ export function MyAttendance({ gymId, shift = null }: { gymId: number; shift?: T
     return () => {
       live = false
     }
-  }, [gymId, version])
+  }, [gymId, version, range])
 
   function refresh() {
     setVersion((current) => current + 1)
@@ -117,7 +120,8 @@ export function MyAttendance({ gymId, shift = null }: { gymId: number; shift?: T
         <Card>
           <CardHeader>
             <CardTitle render={<h2 />}>My attendance</CardTitle>
-            <CardDescription>The last 31 days. You can explain an absence or a late day.</CardDescription>
+            <CardDescription>{range.from || range.to ? 'Days in the chosen dates.' : 'The last 31 days.'} You can explain an absence or a late day.</CardDescription>
+            <RangePicker optional name="my-attendance" value={range} onChange={setRange} />
           </CardHeader>
           <CardPanel>
             {data.attendance.length === 0 ? (

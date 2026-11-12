@@ -15,10 +15,11 @@ class MembershipExpiryReminders
     public function send(): int
     {
         $sent = 0;
-        $thresholds = collect(config('communication.membership_expiry_reminder_days'))->sort()->values();
-
-        Gym::where('status', GymStatus::Approved)->each(function (Gym $gym) use (&$sent, $thresholds) {
+        Gym::where('status', GymStatus::Approved)->each(function (Gym $gym) use (&$sent) {
             app(CurrentGym::class)->set($gym);
+            // R-115: each gym can choose its own reminder days.
+            $thresholds = collect($gym->membership_reminder_days ?: config('communication.membership_expiry_reminder_days'))
+                ->map(fn ($days) => (int) $days)->sort()->values();
             Membership::where('status', 'active')->whereNotNull('ends_on')
                 ->whereDate('ends_on', '<=', today()->addDays($thresholds->max()))
                 ->chunkById(100, function ($memberships) use (&$sent, $thresholds) {

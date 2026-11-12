@@ -109,3 +109,15 @@ The proposed diagram in [04 - DIAGRAMS](../04%20-%20DIAGRAMS/04%20-%20DIAGRAMS.m
 - **The old stored information.** It is not carried over unless you decide otherwise (Q-08 in the [open questions](../00%20-%20START%20HERE/00%20-%20START%20HERE.md)).
 - **Old features outside the spec.** Each is waiting on its own question (Q-01 to Q-07). Until answered, they are not built.
 - **A choice of screen technology.** Moving from Vue to coss UI means nothing from the old screens can be reused directly. *Drawn from* the stack choice above and `frontend/package.json`.
+
+## Added after P09 (12 November 2026)
+
+**New records** (all per gym unless noted): `offers` and `offer_plan` (R-111); `purchase_order_proofs`, files on the private disk under `purchase-proofs/{gym}` (R-114); `inactivity_notices`, one row per quiet spell so each is told once (R-116); `coach_applications` (R-117); `training_goals` and `goal_milestones` (R-118); `injuries` and `injury_updates` (R-119); `equipment_checks` (R-120). New columns: `membership_plans.max_prepay_terms`, `prepay_discount_percent`; `memberships.locked_fee`, `prepaid_terms`, `voucher_code`, `offer_id`, `discount_amount`; `gyms.membership_reminder_days`, `inactivity_days`; `stock_items.safety_status`, `check_interval_days`, `next_check_on`, `check_reminded_for`.
+
+**New rules in one place:** `App\Support\DateRange` (history filters), `MembershipPricing` (prepay math), `OfferApplier` (picks and applies the offer inside the approval transaction, with a row lock on the offer), `CoachScheduleConflicts` (reads every gym on purpose), `Reminders\InactivityMonitor`, `Reminders\EquipmentCheckReminders`. In-app notices for these features use one plain class, `App\Notifications\GymNotice`.
+
+**New scheduled jobs** (in `backend/routes/console.php`): `app:monitor-inactivity` daily 08:20 and `app:remind-equipment-checks` daily 08:30. The daily `app:mark-staff-absences` run now also sends absence notices; backfills with dates stay quiet.
+
+**New permissions** (catalog now 75 keys): `customers.offers.view|manage|approve`, `hr.coach_applications.view|approve`, `health_records.injuries.manage`, `inventory.safety.view|manage`. The HR starter role gets `hr.coach_applications.view` only; approving coach applications and offers stays with the owner unless granted.
+
+Details per item: [PHASE 11](../05%20-%20ROADMAP/phase-11/PHASE%2011.md).

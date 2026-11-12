@@ -60,7 +60,7 @@ class PlanController extends Controller
             if ($model->billing_type === PlanBilling::Time) {
                 $model->forceFill(['session_count' => null])->save();
             } else {
-                $model->forceFill(['duration_months' => null])->save();
+                $model->forceFill(['duration_months' => null, 'max_prepay_terms' => 1])->save();
             }
 
             if ($replaceAddons) {
@@ -126,6 +126,9 @@ class PlanController extends Controller
                 Rule::requiredIf($billing === PlanBilling::Sessions->value),
             ],
             'total_fee' => ['required', 'numeric', 'min:0'],
+            // R-109: only time plans can be prepaid for more than one term.
+            'max_prepay_terms' => ['sometimes', 'integer', 'min:1', 'max:24', Rule::when($billing === PlanBilling::Sessions->value, 'max:1')],
+            'prepay_discount_percent' => ['sometimes', 'numeric', 'min:0', 'max:100'],
             'registration_included' => ['sometimes', 'boolean'],
             'inclusions' => ['required', 'array', 'min:1'],
             'inclusions.*' => ['string', 'max:255'],
@@ -144,6 +147,7 @@ class PlanController extends Controller
             ],
             'addons.*.price' => ['required', 'numeric', 'min:0'],
         ], [
+            'max_prepay_terms.max' => 'Only time plans can be prepaid for more than one term, up to 24.',
             'addons.*.service_id.exists' => 'Choose a service from this gym.',
             'addons.*.service_id.distinct' => 'Each service can be added only once.',
         ]);
@@ -201,6 +205,8 @@ class PlanController extends Controller
             'duration_months' => $plan->duration_months,
             'session_count' => $plan->session_count,
             'total_fee' => $plan->total_fee,
+            'max_prepay_terms' => $plan->max_prepay_terms ?? 1,
+            'prepay_discount_percent' => $plan->prepay_discount_percent ?? '0.00',
             'registration_included' => $plan->registration_included,
             'inclusions' => $plan->inclusions ?? [],
             'policy_validity' => $plan->policy_validity,

@@ -386,3 +386,22 @@ Staff by gym: Iron 6, Kalaw 6, Bakunawa 5, Cordillera 4, Davao 5.
 - "Active", "Awaiting payment", "Frozen", "Expired", and "Cancelled" are membership statuses, not account statuses.
 - Members with only a pending or rejected application have no active center link. They can still sign in and view their application.
 - Staff accounts are created by the owner through the app in normal use; these demo staff accounts are already verified and active.
+
+## Ready-to-test data (P09 seed)
+
+Sign in as the owner of Iron Will (`ramon.villanueva@ironwillboxing.ph`) or Kalaw (`andrea.lim@kalawcombat.ph`). Every approved center has the same kinds of items; gym 1 and 2 are the fullest.
+
+| What | Where | Try |
+|---|---|---|
+| Payroll period with attendance and no run yet | Payroll, new run for the month before the in-review run | Create, compute, submit. Iron Will: Finance Officer (`mark.cruz@ironwillboxing.ph`) then Ramon. Kalaw: HR then Andrea. Other centers: owner only |
+| Payroll run in review | Payroll | Approve, or reject with a reason |
+| Offer waiting (voucher `WELCOME10`, made by Front Desk) | Business, Offers | Owner approves or rejects. Front Desk (`trish.gonzales@ironwillboxing.ph`) cannot decide it |
+| Offer rejected, used up voucher `FRIEND200`, expired promo | Business, Offers | Read the reason, edit and resubmit |
+| Membership applications (one prepaying 3 months, one with `WELCOME10`) | Members, Applications | Approve before and after the offer is approved |
+| Coach applications (2 waiting, 1 rejected, 1 withdrawn) | HR, Coach applications | Owner approves or rejects. HR can only view |
+| Purchase requests waiting (2 per center) | Purchasing | Edit, approve, reject |
+| Part-received order with a delivery photo | Purchasing, orders | Open the Receipt proof section, add more photos |
+| Leave, overtime, booking and session requests waiting | Leave, Overtime, Sessions | Approve or reject |
+| Training goals, injuries (one Restricted), equipment checks (needs repair, unsafe, overdue) | Member record, Stock, Safety | Update status, clear the injury |
+| Notices already in the bell | Owner: waiting offer and coach application, inactive members, safety checks due | Open each link |
+| Inactive members (last two active members of each center) | Bell and Members | Check the notice text |

@@ -416,3 +416,22 @@ These gaps matter for the rebuild. Each is a question in the [open questions](..
 - **Cancelling a booking.** Whether, and until when, an athlete can cancel their own booking (Q-24).
 - **Free trial.** What a gym gets during the trial (Q-25), and whether it starts at application or approval (Q-26). Both answered 9 November 2026.
 - **Paid periods.** What happens when a paid period ends unpaid (Q-27), and which billing periods are offered (Q-28). Both answered 9 November 2026.
+
+## Your client's P09 requests (12 November 2026)
+
+Source: `docs/prompts/P09.md`, drawn from `gavins lists of changes.md` items 1 to 8 (item 9, tournaments, is out of scope). What the code showed before building, and the item each request became:
+
+| Request | What the rebuild had | Became |
+|---|---|---|
+| Sidebar groups; reopen the last gym after sign-in | Groups People/Training/Members/Business/Setup; non-owners landed on Home | R-108 |
+| Advance (prepaid) plans | One term per charge only | R-109 |
+| Keep the price a member paid | Renewal re-read the plan's current fee | R-110 |
+| Promos and vouchers | Discounts existed only on desk sales | R-111 |
+| Date filters on history pages | Only check-in, schedule, attendance and finance had dates | R-112 |
+| Several items per purchase request; receipt photos | Several items already worked; no edit, no approver notice, no proof files | R-113, R-114 |
+| Expiry reminders; absence and inactivity notices | Fixed 7/3/1 reminders; no absence or inactivity notices | R-115, R-116 |
+| Coach applications | Staff were added by email only | R-117 |
+| Training goals and milestones | None | R-118 |
+| Injury and equipment safety | None | R-119, R-120 |
+
+Status and checks are in [PHASE 11](../05%20-%20ROADMAP/phase-11/PHASE%2011.md).

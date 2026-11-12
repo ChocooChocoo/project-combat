@@ -463,3 +463,50 @@ stateDiagram-v2
 3. **Starter.** A gym whose trial or paid period ends without payment moves to the free plan, Starter. It keeps only the modules Starter includes; its records are kept, and the rest unlock when it pays (R-106). There are no extra days after a paid month (Q-27).
 
 This matches [PHASE 10](../05%20-%20ROADMAP/phase-10/PHASE%2010.md) and the subscription row in *The arrangement being proposed* in [03 - SYSTEM ARCHITECTURE](../03%20-%20SYSTEM%20ARCHITECTURE/03%20-%20SYSTEM%20ARCHITECTURE.md).
+
+## 13. An offer from draft to discount, built
+
+```mermaid
+flowchart LR
+    A[Staff saves offer] --> B{Made by owner?}
+    B -- yes --> D[Approved]
+    B -- no --> C[Pending: approvers notified]
+    C -- approver says yes --> D
+    C -- approver says no --> R[Rejected: maker notified]
+    D --> E{At membership approval: in date, right plan, uses left?}
+    E -- yes --> F[Discount off first charge; uses + 1]
+    E -- no --> G[Voucher refused / promo skipped]
+```
+
+**Reading this:** a staff offer never works until someone else approves it (R-111). Editing an approved offer as staff sends it back to pending. Renewals never get the discount.
+
+## 14. A coach application, built
+
+```mermaid
+flowchart LR
+    A[Member sends hours] --> B{Overlaps a shift at another gym?}
+    B -- yes --> X[Refused, clash listed]
+    B -- no --> C[Pending: owner notified]
+    C --> D{Approve: check clashes again}
+    D -- clash --> X
+    D -- clear --> E[Employee link + coach profile + schedule + Coach role]
+    C -- reject --> F[Applicant told the reason]
+```
+
+**Reading this:** the clash check runs when applying and again when approving, because schedules change (R-117). The account stays a member account.
+
+## 15. The daily inactivity check, built
+
+```mermaid
+flowchart LR
+    A[08:20 each day] --> B[Each approved gym]
+    B --> C[Active members]
+    C --> D{Last visit or attended session older than the gym's inactivity days?}
+    D -- no --> C
+    D -- yes --> E{Already told for this quiet spell?}
+    E -- yes --> C
+    E -- no --> F[Notice to member]
+    F --> G[One digest to staff with members access]
+```
+
+**Reading this:** notices only; nothing is blocked (R-116). A new visit starts a new quiet spell, which can be told once more.

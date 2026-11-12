@@ -368,6 +368,12 @@ export default function MyMembership() {
                     ))}
                   </ul>
                 )}
+                {membership.locked_fee !== null && (
+                  <p className="text-muted-foreground text-xs leading-relaxed">
+                    Your price: {money(membership.locked_fee)} a term, kept on renewal while your membership stays active
+                    {membership.prepaid_terms > 1 && `. Last payment covered ${membership.prepaid_terms} terms`}.
+                  </p>
+                )}
                 {plan.max_freeze_days !== null && (
                   <p className="mt-auto border-t pt-4 text-muted-foreground text-xs leading-relaxed">
                     Freeze: {membership.freeze_days_used} of {plan.max_freeze_days} days used this period.

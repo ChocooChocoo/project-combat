@@ -209,3 +209,15 @@ The old system gets these cells wrong:
 | Member ID check for the administrator | Old-system extra that contradicts the spec; waits on Q-04 |
 | Leave-to-cash and absence-explanation screens | Old-system extras; wait on Q-01 and Q-02 |
 | A screen for the administrator to manage administrator accounts | The roadmap says only the platform creates administrators (R-07, *drawn from* C-16), but neither the spec nor the roadmap says how. It should be decided during implementation planning. |
+
+## Added after P09 (12 November 2026)
+
+| ID | Screen | Who | What it does | Item |
+|---|---|---|---|---|
+| S-47 | Offers | Staff with offers access; approvers decide | List, create and edit promos and vouchers; approve or reject staff offers | R-111 |
+| S-48 | Coach applications (workspace) | HR view; owner or granted approver decides | Applicants, their hours, a fresh clash check, approve or reject | R-117 |
+| S-49 | Apply as coach | Member accounts not working at the gym | Experience, rank, weekly hours; clashes shown | R-117 |
+| S-50 | My coach applications | Member accounts | Status of each application; withdraw while waiting | R-117 |
+| S-51 | Stock → Safety | Staff with safety access | Check schedule, record pass / needs repair / unsafe, recent checks | R-120 |
+
+Changed screens: the sidebar groups (R-108); date filters on payments, bookings, payroll runs, leave, overtime, purchasing, stock history, follow-ups, announcements, notifications, my bookings, my attendance and membership history (R-112); prepay and price fields on plans, the application and the member record (R-109, R-110); voucher field on the application and approval (R-111); edit and receipt proof on purchasing (R-113, R-114); reminder and inactivity days on Setup (R-115); Goals and Injuries on the member record and My record (R-118, R-119); a *Restricted* badge on the members list and session rosters (R-119).

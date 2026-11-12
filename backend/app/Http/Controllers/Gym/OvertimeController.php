@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Gym;
 
+use App\Support\DateRange;
 use App\Enums\GymPersonType;
 use App\Enums\OvertimeStatus;
 use App\Http\Controllers\Controller;
@@ -26,9 +27,10 @@ class OvertimeController extends Controller
     {
         $data = $request->validate([
             'status' => ['nullable', Rule::enum(OvertimeStatus::class)],
+            ...DateRange::rules(),
         ]);
 
-        $rows = $gym->overtimeRequests()
+        $rows = DateRange::apply($gym->overtimeRequests(), $data, 'work_date')
             ->with(['user', 'decidedBy'])
             ->when($data['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
             ->orderByDesc('work_date')

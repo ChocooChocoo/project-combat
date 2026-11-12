@@ -27,7 +27,7 @@ class AdminPermissionTest extends TestCase
     public function test_only_admin_can_manage_catalog(): void
     {
         $this->actingAs(User::factory()->create())->getJson('/api/admin/permissions')->assertForbidden();
-        $this->actingAs($this->admin)->getJson('/api/admin/permissions')->assertOk()->assertJsonCount(67, 'permissions');
+        $this->actingAs($this->admin)->getJson('/api/admin/permissions')->assertOk()->assertJsonCount(75, 'permissions');
     }
 
     public function test_custom_permission_crud_and_validation(): void

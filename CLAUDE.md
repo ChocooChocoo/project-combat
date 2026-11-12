@@ -26,9 +26,10 @@ pnpm dev                       # app at http://localhost:5173
 pnpm build                     # type-check and build
 pnpm lint                      # oxlint
 node --test                    # node:test checks in frontend/tests/*.test.mjs (Node 24; not `node --test tests/`)
+node --test tests/dashboard.test.mjs   # one test file
 ```
 
-Scheduled jobs (membership expiry, session reminders, membership-expiry reminders, subscription reminders, follow-up reminders, no-shows, staff absences, token pruning) are defined in
+Scheduled jobs (membership expiry, session reminders, membership-expiry reminders, subscription reminders, follow-up reminders, no-shows, staff absences with notices, member inactivity `app:monitor-inactivity`, equipment safety checks `app:remind-equipment-checks`, token pruning) are defined in
 `backend/routes/console.php`. Use `Schedule::call(fn () => Artisan::call('...'))`, never `Schedule::command(...)`:
 Hostinger disables `proc_open`. Deploy steps: `docs/SETUPS/DEPLOY-HOSTINGER.md`.
 
@@ -95,7 +96,7 @@ The frontend calls the API at `VITE_API_URL` (`frontend/.env`).
 
 ## Rules
 
-## 1. Plan before bigger tasks
+### 1. Plan before bigger tasks
 
 For any task bigger than a small fix:
 
@@ -104,7 +105,7 @@ For any task bigger than a small fix:
 3. Check that the plan is not over-engineered.
 4. Implement. Keep the code as simple as the plan.
 
-## 2. Keep it simple and focused
+### 2. Keep it simple and focused
 
 - Do only what the user asked. The latest instruction wins.
 - Prefer the smallest change that correctly solves the task.
@@ -113,24 +114,24 @@ For any task bigger than a small fix:
 - Do not change, clean up, or restructure unrelated code.
 - Keep existing working behavior unless the task requires a change.
 
-## 3. Skills and plugins
+### 3. Skills and plugins
 
 - Use a skill or plugin only when it directly helps the current task. Do not load one just because it is available.
 - For general work, use the primary skills: Superpowers, Ponytail, and Caveman.
 - For frontend or UI/UX work, install and use design skills such as Impeccable, Anti-Slop, UI/UX Pro Max, Taste Skills, and others that fit the task.
 
-## 4. Git
+### 4. Git
 
 - Never commit unless the user asks.
 - Commit messages contain only the approved message. No Co-Authored-By, no Claude or AI author lines, no other author changes.
 
-## 5. Check work before finishing
+### 5. Check work before finishing
 
 - Review the changes for mistakes.
 - Run the checks that match the change.
 - Say clearly what was not checked.
 - Never claim something works without checking it when checking was possible.
 
-## 6. Plain language
+### 6. Plain language
 
 - Use simple, clear words. Keep explanations short. Explain any technical term that is needed.

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Gym;
 
+use App\Support\DateRange;
 use App\Enums\GymPersonType;
 use App\Enums\PurchaseOrderStatus;
 use App\Http\Controllers\Controller;
@@ -28,10 +29,11 @@ class PurchaseOrderController extends Controller
             'status' => ['nullable', Rule::in([...array_column(PurchaseOrderStatus::cases(), 'value'), 'all'])],
             'supplier_id' => ['nullable', 'integer', 'min:1'],
             'page' => ['nullable', 'integer', 'min:1'],
+            ...DateRange::rules(),
         ]);
         $status = ($data['status'] ?? null) === 'all' ? null : ($data['status'] ?? null);
 
-        $page = $gym->purchaseOrders()
+        $page = DateRange::apply($gym->purchaseOrders(), $data, 'created_at')
             ->with(['supplier', 'purchaseRequest', 'orderedBy'])
             ->withSum('receipts', 'total')
             ->when($status, fn ($query, $value) => $query->where('status', $value))

@@ -181,6 +181,8 @@ export default function GymPublic() {
 
   const access = approvedGym(user, id)
   const manage = access ? canOpenWorkspace(access) : false
+  // R-117: member accounts that do not already work here can apply to coach.
+  const canApplyCoach = user?.account_type === 'member' && !user.is_platform_admin && !access?.roles.some((role) => role === 'employee' || role === 'owner')
   const canApply = !mine && !access?.roles.includes('owner') && (!user || user.account_type === 'member')
 
   if (authLoading) {
@@ -295,7 +297,7 @@ export default function GymPublic() {
               </div>
             )}
           </div>
-          {(manage || mine) && (
+          {(manage || mine || canApplyCoach) && (
           <div className="flex flex-wrap items-center gap-3 lg:max-w-xs lg:justify-end">
             {manage && (
               <Button className="min-h-11" render={<Link to={`/gyms/${id}/manage`} />}>
@@ -305,6 +307,11 @@ export default function GymPublic() {
             {mine && (
               <Button className="min-h-11 h-auto whitespace-normal py-2" variant={manage ? 'outline' : 'default'} render={<Link to={`/memberships/${mine.id}`} />}>
                 My membership · {STATUS_LABELS[mine.status]}
+              </Button>
+            )}
+            {canApplyCoach && (
+              <Button className="min-h-11" variant="outline" render={<Link to={`/gyms/${id}/coach-apply`} />}>
+                Apply as coach
               </Button>
             )}
           </div>

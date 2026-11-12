@@ -1,5 +1,7 @@
 import { CalendarPlus, Paperclip, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { RangePicker } from '@/components/decision-support/range-picker'
+import { NO_RANGE, rangeQuery } from '@/lib/decision-support'
 import { useParams } from 'react-router'
 import { LeaveCalendar, formatDateRange, formatDay, isoDay } from '@/components/leave-calendar'
 import { PageHeader } from '@/components/page-header'
@@ -145,6 +147,7 @@ export default function GymLeave() {
   const [tab, setTab] = useState('requests')
   const [options, setOptions] = useState<GymOptions | null>(null)
   const [filter, setFilter] = useState<StatusFilter>('all')
+  const [range, setRange] = useState(NO_RANGE)
   const [requests, setRequests] = useState<RequestRow[] | null>(null)
   const [requestsError, setRequestsError] = useState('')
   const [approved, setApproved] = useState<RequestRow[] | null>(null)
@@ -178,7 +181,7 @@ export default function GymLeave() {
     let live = true
     setRequests(null)
     setRequestsError('')
-    const query = filter === 'all' ? '' : `?status=${filter}`
+    const query = filter === 'all' ? rangeQuery(range, '?') : `?status=${filter}${rangeQuery(range)}`
     api<{ requests: RequestRow[] }>(`/gyms/${gymId}/leave-requests${query}`)
       .then((result) => {
         if (live) setRequests(result.requests ?? [])
@@ -191,7 +194,7 @@ export default function GymLeave() {
     return () => {
       live = false
     }
-  }, [gymId, filter, version])
+  }, [gymId, filter, version, range])
 
   useEffect(() => {
     let live = true
@@ -397,7 +400,7 @@ export default function GymLeave() {
               </CardDescription>
             </CardHeader>
             <CardPanel className="flex flex-col gap-4">
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-end gap-3">
                 {requests === null ? (
                   <Skeleton className="mr-auto h-4 w-20" aria-label="Loading requests" />
                 ) : (
@@ -405,6 +408,7 @@ export default function GymLeave() {
                     {requests.length} {requests.length === 1 ? 'request' : 'requests'}
                   </p>
                 )}
+                <RangePicker optional name="leave" value={range} onChange={setRange} />
                 <Select
                   items={STATUS_ITEMS}
                   value={filter}

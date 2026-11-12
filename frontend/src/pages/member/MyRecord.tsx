@@ -1,3 +1,5 @@
+import { GoalsCard } from '@/components/training/goals-card'
+import { InjuriesCard } from '@/components/training/injuries-card'
 import { ArrowLeft, Pencil } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
@@ -157,7 +159,11 @@ export default function MyRecord() {
       </header>
 
       <div className="grid min-w-0 grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <AthleteRecordView record={record} />
+        <div className="flex min-w-0 flex-col gap-6">
+          <AthleteRecordView record={record} />
+          {user && <GoalsCard gymId={id} athleteId={user.id} canEdit />}
+          {user && <InjuriesCard gymId={id} athleteId={user.id} canReport canManage={false} />}
+        </div>
 
         {record.health && (
           <Card className="min-w-0 gap-0 overflow-hidden p-0">

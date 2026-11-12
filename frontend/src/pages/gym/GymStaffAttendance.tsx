@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { RangePicker } from '@/components/decision-support/range-picker'
+import { NO_RANGE, rangeQuery } from '@/lib/decision-support'
 import { Check, ChevronLeft, ChevronRight, History, Plus, X } from 'lucide-react'
 import { useParams } from 'react-router'
 import { PageHeader } from '@/components/page-header'
@@ -63,6 +65,7 @@ export default function GymStaffAttendance() {
   const [recordsPage, setRecordsPage] = useState(1)
   const [todayList, setTodayList] = useState<StaffAttendance[] | null>(null)
   const [overtime, setOvertime] = useState<OvertimeRequest[] | null>(null)
+  const [overtimeRange, setOvertimeRange] = useState(NO_RANGE)
   const [employees, setEmployees] = useState<EmployeeChoice[]>([])
   const [error, setError] = useState('')
   const [version, setVersion] = useState(0)
@@ -83,7 +86,7 @@ export default function GymStaffAttendance() {
 
     // Overtime approvers without attendance access load only the overtime list.
     if (!canView) {
-      api<{ requests: OvertimeRequest[] }>(`/gyms/${gymId}/overtime-requests`)
+      api<{ requests: OvertimeRequest[] }>(`/gyms/${gymId}/overtime-requests${rangeQuery(overtimeRange, '?')}`)
         .then((result) => live && setOvertime(result.requests))
         .catch((reason) => {
           if (live) setError(reason instanceof ApiError ? reason.message : 'Overtime requests could not be loaded.')
@@ -100,7 +103,7 @@ export default function GymStaffAttendance() {
     Promise.all([
       api<Record<string, unknown>>(`/gyms/${gymId}/staff-attendance?${todayQuery.toString()}`),
       api<Record<string, unknown>>(`/gyms/${gymId}/staff-attendance?${query.toString()}`),
-      api<{ requests: OvertimeRequest[] }>(`/gyms/${gymId}/overtime-requests`),
+      api<{ requests: OvertimeRequest[] }>(`/gyms/${gymId}/overtime-requests${rangeQuery(overtimeRange, '?')}`),
       api<{ employees: EmployeeChoice[] }>(`/gyms/${gymId}/staff-attendance/employees`),
     ])
       .then(([todayResult, attendanceResult, overtimeResult, employeeResult]) => {
@@ -122,7 +125,7 @@ export default function GymStaffAttendance() {
     return () => {
       live = false
     }
-  }, [gymId, canView, canManage, canApprove, from, to, employeeFilter, recordsPage, version])
+  }, [gymId, canView, canManage, canApprove, from, to, employeeFilter, recordsPage, version, overtimeRange])
 
   useEffect(() => {
     if (!historyOf) return
@@ -204,6 +207,7 @@ export default function GymStaffAttendance() {
       <div className="flex flex-col gap-6">
         <PageHeader title="Staff attendance" description={`${gym.name}: overtime decisions.`} />
         {errorAlert}
+        <RangePicker optional name="overtime" value={overtimeRange} onChange={setOvertimeRange} />
         {error ? unavailable : <OvertimePanel rows={overtime ?? []} loading={overtime === null} canApprove={canApprove} onDecide={setDeciding} />}
         {decisionDialog}
       </div>
@@ -318,7 +322,8 @@ export default function GymStaffAttendance() {
           {!error && <PageControls meta={recordsMeta} label="Attendance records" onPage={setRecordsPage} />}
         </TabsPanel>
 
-        <TabsPanel value="overtime" className="pt-4">
+        <TabsPanel value="overtime" className="flex flex-col gap-4 pt-4">
+          <RangePicker optional name="overtime" value={overtimeRange} onChange={setOvertimeRange} />
           {error ? unavailable : <OvertimePanel rows={overtime ?? []} loading={overtime === null} canApprove={canApprove} onDecide={setDeciding} />}
         </TabsPanel>
       </Tabs>

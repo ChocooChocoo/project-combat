@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { RangePicker } from '@/components/decision-support/range-picker'
+import { NO_RANGE, rangeQuery } from '@/lib/decision-support'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { ChevronLeft, ChevronRight, Plus, Trash2, X } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
@@ -233,12 +235,14 @@ export default function GymPurchasing() {
   const [requests, setRequests] = useState<PurchaseRequest[] | null>(null)
   const [requestsMeta, setRequestsMeta] = useState<PageMeta | null>(null)
   const [requestsPage, setRequestsPage] = useState(1)
+  const [requestsRange, setRequestsRange] = useState(NO_RANGE)
   const [requestsError, setRequestsError] = useState('')
   const [requestDetail, setRequestDetail] = useState<PurchaseRequest | null>(null)
 
   const [orders, setOrders] = useState<PurchaseOrder[] | null>(null)
   const [ordersMeta, setOrdersMeta] = useState<PageMeta | null>(null)
   const [ordersPage, setOrdersPage] = useState(1)
+  const [ordersRange, setOrdersRange] = useState(NO_RANGE)
   const [ordersError, setOrdersError] = useState('')
 
   const [suppliers, setSuppliers] = useState<Supplier[] | null>(null)
@@ -248,6 +252,7 @@ export default function GymPurchasing() {
 
   const [needOpen, setNeedOpen] = useState(false)
   const [requestSeed, setRequestSeed] = useState<RequestSeed | null>(null)
+  const [editingRequest, setEditingRequest] = useState<PurchaseRequest | null>(null)
   const [directOpen, setDirectOpen] = useState(false)
   const [supplierDialog, setSupplierDialog] = useState<{ supplier: Supplier | null } | null>(null)
   const [supplierAction, setSupplierAction] = useState<SupplierAction | null>(null)
@@ -308,7 +313,7 @@ export default function GymPurchasing() {
     let live = true
     setRequests(null)
     setRequestsError('')
-    api<Record<string, unknown>>(`/gyms/${gymId}/purchase-requests?page=${requestsPage}`)
+    api<Record<string, unknown>>(`/gyms/${gymId}/purchase-requests?page=${requestsPage}${rangeQuery(requestsRange)}`)
       .then((result) => {
         if (!live) return
         const rows = Array.isArray(result.requests) ? (result.requests as PurchaseRequest[]) : []
@@ -324,14 +329,14 @@ export default function GymPurchasing() {
     return () => {
       live = false
     }
-  }, [gymId, canViewRequests, activeTab, requestsPage, version])
+  }, [gymId, canViewRequests, activeTab, requestsPage, version, requestsRange])
 
   useEffect(() => {
     if (!gymId || !canViewOrders || activeTab !== 'orders') return
     let live = true
     setOrders(null)
     setOrdersError('')
-    api<Record<string, unknown>>(`/gyms/${gymId}/purchase-orders?page=${ordersPage}`)
+    api<Record<string, unknown>>(`/gyms/${gymId}/purchase-orders?page=${ordersPage}${rangeQuery(ordersRange)}`)
       .then((result) => {
         if (!live) return
         const rows = Array.isArray(result.orders) ? (result.orders as PurchaseOrder[]) : []
@@ -347,7 +352,7 @@ export default function GymPurchasing() {
     return () => {
       live = false
     }
-  }, [gymId, canViewOrders, activeTab, ordersPage, version])
+  }, [gymId, canViewOrders, activeTab, ordersPage, version, ordersRange])
 
   useEffect(() => {
     if (!gymId || !canViewSuppliers || activeTab !== 'suppliers') return
@@ -561,7 +566,8 @@ export default function GymPurchasing() {
         )}
 
         {canViewRequests && (
-          <TabsPanel value="requests" className="pt-4">
+          <TabsPanel value="requests" className="flex flex-col gap-4 pt-4">
+            <RangePicker optional name="requests" value={requestsRange} onChange={(next) => { setRequestsRange(next); setRequestsPage(1) }} />
             <RequestsPanel
               rows={requests}
               meta={requestsMeta}
@@ -576,7 +582,8 @@ export default function GymPurchasing() {
         )}
 
         {canViewOrders && (
-          <TabsPanel value="orders" className="pt-4">
+          <TabsPanel value="orders" className="flex flex-col gap-4 pt-4">
+            <RangePicker optional name="orders" value={ordersRange} onChange={(next) => { setOrdersRange(next); setOrdersPage(1) }} />
             <OrdersPanel
               gymId={gymId}
               rows={orders}
@@ -626,11 +633,13 @@ export default function GymPurchasing() {
         <NewRequestDialog
           gymId={gymId}
           seed={requestSeed}
+          editing={editingRequest}
           restockRows={restock ?? EMPTY_RESTOCK}
           supplyNeeds={needs ?? []}
-          onClose={() => setRequestSeed(null)}
+          onClose={() => { setRequestSeed(null); setEditingRequest(null) }}
           onSaved={() => {
             setRequestSeed(null)
+            setEditingRequest(null)
             setTab('requests')
             reload()
           }}
@@ -655,6 +664,18 @@ export default function GymPurchasing() {
           onOrder={(request) => {
             setRequestDetail(null)
             setOrderFromRequest(request)
+          }}
+          onEdit={(request) => {
+            // R-113: reuse the new-request dialog with the request's lines filled in.
+            setRequestDetail(null)
+            setEditingRequest(request)
+            setRequestSeed((request.lines ?? []).map((line) => ({
+              stockItemId: line.stock_item_id,
+              name: line.item_name ?? line.stock_item?.name ?? `Item #${line.stock_item_id}`,
+              quantity: String(line.quantity),
+              estUnitCost: line.est_unit_cost ?? '',
+              supplyNeedId: line.supply_need_id,
+            })))
           }}
         />
       )}
@@ -1727,6 +1748,7 @@ function AddNeedDialog({
 function NewRequestDialog({
   gymId,
   seed,
+  editing = null,
   restockRows,
   supplyNeeds,
   onClose,
@@ -1734,6 +1756,7 @@ function NewRequestDialog({
 }: {
   gymId: number
   seed: RequestSeed
+  editing?: PurchaseRequest | null
   restockRows: RestockRow[]
   supplyNeeds: SupplyNeed[]
   onClose: () => void
@@ -1755,8 +1778,8 @@ function NewRequestDialog({
     })),
   )
   const [picker, setPicker] = useState('')
-  const [neededBy, setNeededBy] = useState('')
-  const [note, setNote] = useState('')
+  const [neededBy, setNeededBy] = useState(editing?.needed_by ?? '')
+  const [note, setNote] = useState(editing?.note ?? '')
   const [errors, setErrors] = useState<FieldErrors>({})
   const [busy, setBusy] = useState(false)
 
@@ -1858,7 +1881,8 @@ function NewRequestDialog({
     setBusy(true)
     setErrors({})
     try {
-      await api(`/gyms/${gymId}/purchase-requests`, {
+      await api(editing ? `/gyms/${gymId}/purchase-requests/${editing.id}` : `/gyms/${gymId}/purchase-requests`, {
+        method: editing ? 'PUT' : 'POST',
         body: {
           needed_by: neededBy || null,
           note: note.trim() || null,
@@ -1870,7 +1894,7 @@ function NewRequestDialog({
           })),
         },
       })
-      toastManager.add({ title: 'Purchase request sent for approval.', type: 'success' })
+      toastManager.add({ title: editing ? 'Purchase request updated.' : 'Purchase request sent for approval.', type: 'success' })
       onSaved()
     } catch (reason) {
       setErrors(formErrors(reason, ['needed_by', 'note', 'lines'], 'The purchase request could not be created.'))
@@ -1884,7 +1908,7 @@ function NewRequestDialog({
       <DialogPopup className="sm:max-w-2xl">
         <Form errors={errors} onSubmit={save} className="flex min-h-0 flex-col">
           <DialogHeader>
-            <DialogTitle>New purchase request</DialogTitle>
+            <DialogTitle>{editing ? `Edit ${editing.number}` : 'New purchase request'}</DialogTitle>
             <DialogDescription>
               Ask for items and quantities. A different permitted person approves it before purchasing turns it into an order.
             </DialogDescription>
@@ -2068,6 +2092,7 @@ function RequestDetailDialog({
   onClose,
   onChanged,
   onOrder,
+  onEdit,
 }: {
   gymId: number
   request: PurchaseRequest
@@ -2080,6 +2105,7 @@ function RequestDetailDialog({
   onClose: () => void
   onChanged: (request: PurchaseRequest) => void
   onOrder: (request: PurchaseRequest) => void
+  onEdit: (request: PurchaseRequest) => void
 }) {
   const [mode, setMode] = useState<'approve' | 'reject' | 'cancel' | null>(null)
   const [reason, setReason] = useState('')
@@ -2285,6 +2311,11 @@ function RequestDetailDialog({
               {pending && canManage && (
                 <Button variant="destructive-outline" onClick={() => setMode('cancel')}>
                   Cancel request
+                </Button>
+              )}
+              {pending && canManage && (isRequester || canApprove) && (
+                <Button variant="outline" onClick={() => onEdit(request)}>
+                  Edit
                 </Button>
               )}
               {showDecision && (

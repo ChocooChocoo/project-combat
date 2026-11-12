@@ -239,6 +239,7 @@ export function StaffBookingList({ bookings, canApprove, canManage, onAction, on
         {booking.athlete.name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part.charAt(0)).join('').toUpperCase()}
       </span>
       <span className="min-w-0 font-medium wrap-anywhere">{booking.athlete.name}</span>
+      {booking.restricted && <Badge variant="warning" title="Has an open injury. Ask staff with health access for details.">Restricted</Badge>}
     </div>
   )
   const fee = (booking: StaffBooking) => {

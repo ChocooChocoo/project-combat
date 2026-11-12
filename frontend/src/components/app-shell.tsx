@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Building2, CalendarDays, ChartColumn, Check, CreditCard, ChevronsUpDown, ClipboardCheck, FilePlus2, FileText, House, IdCard, LogOut, Medal, UserRound } from 'lucide-react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { BrandLogo } from '@/components/brand-logo'
@@ -25,17 +26,9 @@ import {
 } from '@/components/ui/sidebar'
 import { useNotifications } from '@/lib/notifications'
 import { useAuth, type GymAccess } from '@/lib/auth'
-import { approvedGym, canOpenWorkspace } from '@/lib/gym-access'
+import { approvedGym, gymEntry, rememberGym } from '@/lib/gym-access'
 
 type Item = { to: string; label: string; icon: React.ComponentType; end?: boolean }
-
-/** Where a gym's card in the switcher leads: workspace when allowed, public page otherwise. */
-function gymEntry(gym: GymAccess): string {
-  if (canOpenWorkspace(gym)) return `/gyms/${gym.id}/manage`
-  if (gym.roles.includes('employee')) return `/gyms/${gym.id}/manage/my-work`
-  if (gym.roles.includes('member')) return `/gyms/${gym.id}/my-record`
-  return `/gyms/${gym.id}`
-}
 
 function NavGroup({ label, items }: { label?: string; items: Item[] }) {
   const { pathname } = useLocation()
@@ -169,6 +162,9 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
 
   const approvedGyms = user?.gyms.filter((gym) => gym.status === 'approved') ?? []
   const currentGym = approvedGym(user, Number(pathname.match(/^\/gyms\/(\d+)(?:\/|$)/)?.[1]))
+  useEffect(() => {
+    if (user && currentGym) rememberGym(user.id, currentGym.id)
+  }, [user, currentGym])
   const roleLabel = user?.is_platform_admin
     ? 'Platform administrator'
     : currentGym
@@ -185,6 +181,7 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
     general.push({ to: '/dashboard', label: 'My dashboard', icon: ChartColumn })
     general.push({ to: '/memberships', label: 'My memberships', icon: IdCard })
     general.push({ to: '/bookings', label: 'My bookings', icon: CalendarDays })
+    if (user?.account_type === 'member') general.push({ to: '/coach-applications', label: 'Coach applications', icon: ClipboardCheck })
   }
   // R-106: staff self-service is part of HR, so it hides when the gym's plan locks HR.
   if (currentGym?.roles.includes('employee') && !currentGym.subscription?.locked_modules.includes('hr')) general.push(myDashboardNav(currentGym.id), myWorkNav(currentGym.id))

@@ -377,3 +377,14 @@ export function chartCoordinates(values: (number | null)[]): { baseline: number;
   const y = (value: number) => 100 - (value - low) / span * 100
   return { baseline: y(0), points: values.map((value, index) => value === null ? null : { x: values.length < 2 ? 50 : index / (values.length - 1) * 100, y: y(value) }) }
 }
+
+export const NO_RANGE: Range = { from: '', to: '' }
+
+/** R-112: `from`/`to` query part for history lists; empty dates add nothing (no filter). */
+export function rangeQuery(range: Range, join: '?' | '&' = '&'): string {
+  const query = new URLSearchParams()
+  if (range.from) query.set('from', range.from)
+  if (range.to) query.set('to', range.to)
+  const text = query.toString()
+  return text ? `${join}${text}` : ''
+}

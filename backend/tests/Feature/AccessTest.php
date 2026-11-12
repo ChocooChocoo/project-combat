@@ -141,7 +141,7 @@ class AccessTest extends TestCase
         $this->give($this->employee, $this->role(['finance.payments.view'], name: 'Cashier'));
         $this->actingAs($this->employee)->getJson('/api/me')->assertOk()
             ->assertJsonPath('data.gyms.0.permissions', ['finance.payments.view']);
-        $this->assertCount(67, $this->actingAs($this->owner)->getJson('/api/me')->json('data.gyms.0.permissions'));
+        $this->assertCount(75, $this->actingAs($this->owner)->getJson('/api/me')->json('data.gyms.0.permissions'));
     }
 
     public function test_a_role_still_given_to_employees_cannot_be_deleted(): void

@@ -23,6 +23,7 @@ import GymPublic from '@/pages/GymPublic'
 import EmployeeRecord from '@/pages/gym/EmployeeRecord'
 import GymApplications from '@/pages/gym/GymApplications'
 import GymAnnouncements from '@/pages/gym/GymAnnouncements'
+import GymOffers from '@/pages/gym/GymOffers'
 import GymBookings from '@/pages/gym/GymBookings'
 import GymCheckIn from '@/pages/gym/GymCheckIn'
 import GymAttendance from '@/pages/gym/GymAttendance'
@@ -52,6 +53,8 @@ import MyDashboard from '@/pages/gym/MyDashboard'
 import MyWork from '@/pages/gym/MyWork'
 import PurchaseOrder from '@/pages/gym/PurchaseOrder'
 import MembershipApply from '@/pages/member/MembershipApply'
+import CoachApply, { MyCoachApplications } from '@/pages/member/CoachApplications'
+import GymCoachApplications from '@/pages/gym/GymCoachApplications'
 import MyMembership, { MyMembershipList } from '@/pages/member/MyMemberships'
 import MyRecord from '@/pages/member/MyRecord'
 import MyBookings from '@/pages/member/MyBookings'
@@ -185,6 +188,8 @@ export default function App() {
           </Route>
           <Route element={<AccountOnly type="member" />}>
             <Route path="/gyms/:gymId/apply" element={<MembershipApply />} />
+            <Route path="/gyms/:gymId/coach-apply" element={<CoachApply />} />
+            <Route path="/coach-applications" element={<MyCoachApplications />} />
           </Route>
           <Route path="/memberships" element={<MyMembershipList />} />
           <Route path="/bookings" element={<MyBookings />} />
@@ -210,6 +215,7 @@ export default function App() {
               <Route path="payroll" element={<GymPayroll />} />
               <Route path="payroll/:runId" element={<GymPayrollRun />} />
               <Route path="leave" element={<GymLeave />} />
+              <Route path="coach-applications" element={<GymCoachApplications />} />
               <Route path="services" element={<GymServices />} />
               <Route path="plans" element={<GymPlans />} />
               <Route path="applications" element={<GymApplications />} />
@@ -218,6 +224,7 @@ export default function App() {
               <Route path="members/:membershipId" element={<MemberRecord />} />
               <Route path="customers" element={<GymCustomers />} />
               <Route path="customers/:customerId" element={<CustomerRecord />} />
+              <Route path="offers" element={<GymOffers />} />
               <Route path="finance" element={<GymFinance />} />
               <Route path="dashboard" element={<GymDashboard />} />
               <Route path="decision-support" element={<GymDecisionSupport />} />

@@ -59,6 +59,11 @@ class MembershipApplicationController extends Controller
         }
 
         $plan = MembershipPlan::findOrFail($data['plan_id']);
+        $terms = (int) ($data['prepaid_terms'] ?? 1);
+
+        if ($terms > max(1, (int) $plan->max_prepay_terms)) {
+            throw ValidationException::withMessages(['prepaid_terms' => 'This plan can be prepaid for up to '.max(1, (int) $plan->max_prepay_terms).' terms.']);
+        }
 
         $membership = new Membership([
             'user_id' => $user->id,
@@ -74,6 +79,9 @@ class MembershipApplicationController extends Controller
             'signed_on' => today()->toDateString(),
         ]);
         $membership->status = MembershipStatus::Applied;
+        $membership->prepaid_terms = $terms;
+        // R-111: checked when the gym approves, since the voucher must still be valid then.
+        $membership->voucher_code = filled($data['voucher_code'] ?? null) ? strtoupper(trim($data['voucher_code'])) : null;
 
         if ($request->hasFile('medical_file')) {
             $file = $request->file('medical_file');
@@ -125,6 +133,8 @@ class MembershipApplicationController extends Controller
             ],
             'waivers' => ['required', 'array'],
             'signature_name' => ['required', 'string', 'max:150'],
+            'prepaid_terms' => ['sometimes', 'integer', 'min:1', 'max:24'],
+            'voucher_code' => ['nullable', 'string', 'max:40'],
         ];
 
         foreach (array_keys(config('membership.health_questions')) as $key) {

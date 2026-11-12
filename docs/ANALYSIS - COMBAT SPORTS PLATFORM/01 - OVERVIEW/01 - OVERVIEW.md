@@ -59,3 +59,7 @@ All of these come from the spec, page 4.
 - [04 - DIAGRAMS](../04%20-%20DIAGRAMS/04%20-%20DIAGRAMS.md): pictures of the main journeys.
 - [05 - ROADMAP](../05%20-%20ROADMAP/05%20-%20ROADMAP.md): what to build, in what order.
 - [06 - SCREENS BY ROLE](../06%20-%20SCREENS%20BY%20ROLE/06%20-%20SCREENS%20BY%20ROLE.md): what each kind of user sees.
+
+## Added after P09 (12 November 2026)
+
+Gyms can now sell prepaid plans that keep the member's price, run approved promos and vouchers, filter history by date, attach receipt photos to purchase orders, take coach applications from members, track training goals, injuries and equipment safety checks, and get notices about inactive members, staff absences and due safety checks. See [PHASE 11](../05%20-%20ROADMAP/phase-11/PHASE%2011.md).

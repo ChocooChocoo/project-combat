@@ -1,5 +1,7 @@
 import { ChevronLeft, ChevronRight, Plus, Trash2, X } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
+import { RangePicker } from '@/components/decision-support/range-picker'
+import { NO_RANGE, rangeQuery } from '@/lib/decision-support'
 import { Link, useNavigate, useParams } from 'react-router'
 import { TextField } from '@/components/text-field'
 import { Alert, AlertAction, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -91,6 +93,7 @@ export default function GymPayroll() {
   const [runsMeta, setRunsMeta] = useState<PayrollPageMeta | null>(null)
   const [runsError, setRunsError] = useState('')
   const [runsPage, setRunsPage] = useState(1)
+  const [range, setRange] = useState(NO_RANGE)
   const [runsVersion, setRunsVersion] = useState(0)
 
   const [settings, setSettings] = useState<PayrollSettings | null>(null)
@@ -109,7 +112,7 @@ export default function GymPayroll() {
     let live = true
     setRuns(null)
     setRunsError('')
-    api<Record<string, unknown>>(`/gyms/${gymId}/payroll/runs?page=${runsPage}`)
+    api<Record<string, unknown>>(`/gyms/${gymId}/payroll/runs?page=${runsPage}${rangeQuery(range)}`)
       .then((payload) => {
         if (!live) return
         const result = readRuns(payload)
@@ -125,7 +128,7 @@ export default function GymPayroll() {
     return () => {
       live = false
     }
-  }, [gymId, canView, runsPage, runsVersion])
+  }, [gymId, canView, runsPage, runsVersion, range])
 
   useEffect(() => {
     if (!gymId || !canView) return
@@ -218,7 +221,8 @@ export default function GymPayroll() {
           <TabsTab className="min-h-11" value="rates">Rates</TabsTab>
         </TabsList>
 
-        <TabsPanel value="runs" className="pt-6">
+        <TabsPanel value="runs" className="flex flex-col gap-4 pt-6">
+          <RangePicker optional name="payroll" value={range} onChange={(next) => { setRange(next); setRunsPage(1) }} />
           <RunsPanel
             gymId={gymId}
             runs={runs}

@@ -27,6 +27,8 @@ type PlanForm = {
   duration_months: string
   session_count: string
   total_fee: string
+  max_prepay_terms: string
+  prepay_discount_percent: string
   registration_included: boolean
   inclusions: string
   policy_validity: string
@@ -54,6 +56,8 @@ function fromPlan(plan: PublicPlan | null): PlanForm {
     duration_months: plan?.duration_months != null ? String(plan.duration_months) : '',
     session_count: plan?.session_count != null ? String(plan.session_count) : '',
     total_fee: plan?.total_fee != null ? String(plan.total_fee) : '',
+    max_prepay_terms: String(plan?.max_prepay_terms ?? 1),
+    prepay_discount_percent: String(Number(plan?.prepay_discount_percent ?? 0)),
     registration_included: plan?.registration_included ?? false,
     inclusions: (plan?.inclusions ?? []).join('\n'),
     policy_validity: plan?.policy_validity ?? '',
@@ -150,6 +154,9 @@ export function PlanEditor({
         duration_months: form.billing_type === 'time' ? numberOrNull(form.duration_months) : null,
         session_count: form.billing_type === 'sessions' ? numberOrNull(form.session_count) : null,
         total_fee: numberOrNull(form.total_fee),
+        // R-109: only time plans can be prepaid for more than one term.
+        max_prepay_terms: form.billing_type === 'time' ? numberOrNull(form.max_prepay_terms) ?? 1 : 1,
+        prepay_discount_percent: form.billing_type === 'time' ? numberOrNull(form.prepay_discount_percent) ?? 0 : 0,
         registration_included: form.registration_included,
         inclusions: lines(form.inclusions),
         policy_validity: form.policy_validity.trim(),
@@ -388,6 +395,39 @@ export function PlanEditor({
                   <FieldDescription>The one amount members pay for this plan.</FieldDescription>
                   <FieldError />
                 </Field>
+
+                {form.billing_type === 'time' && (
+                  <>
+                    <Field name="max_prepay_terms" className="w-full">
+                      <FieldLabel>Months you can prepay</FieldLabel>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="24"
+                        step="1"
+                        inputMode="numeric"
+                        value={form.max_prepay_terms}
+                        onChange={(event) => set('max_prepay_terms', event.target.value)}
+                      />
+                      <FieldDescription>Terms a member can pay for at once. 1 means no prepaying.</FieldDescription>
+                      <FieldError />
+                    </Field>
+                    <Field name="prepay_discount_percent" className="w-full">
+                      <FieldLabel>Prepay discount %</FieldLabel>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        inputMode="decimal"
+                        value={form.prepay_discount_percent}
+                        onChange={(event) => set('prepay_discount_percent', event.target.value)}
+                      />
+                      <FieldDescription>Taken off when a member pays for 2 or more terms at once.</FieldDescription>
+                      <FieldError />
+                    </Field>
+                  </>
+                )}
 
                 <Field name="registration_included" className="w-full">
                   <div className="flex w-full items-center justify-between gap-4 rounded-lg border px-3 py-2.5">

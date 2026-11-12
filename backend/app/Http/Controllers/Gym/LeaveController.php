@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Gym;
 
+use App\Support\DateRange;
 use App\Enums\GymPersonType;
 use App\Enums\LeaveRequestStatus;
 use App\Http\Controllers\Controller;
@@ -31,12 +32,13 @@ class LeaveController extends Controller
     {
         $data = $request->validate([
             'status' => ['nullable', Rule::enum(LeaveRequestStatus::class)],
+            ...DateRange::rules(),
         ]);
 
         $viewer = $request->user();
         $canSeeAll = $viewer->hasPermission($gym, 'hr.leave.view', 'hr.leave.manage');
 
-        $query = $gym->leaveRequests()->with(['user', 'decidedBy']);
+        $query = DateRange::overlap($gym->leaveRequests()->with(['user', 'decidedBy']), $data, 'starts_on', 'ends_on');
 
         if (! $canSeeAll) {
             $query->where('user_id', $viewer->id);

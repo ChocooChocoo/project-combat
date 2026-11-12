@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Gym;
 
+use App\Support\DateRange;
 use App\Enums\BookingStatus;
 use App\Enums\MembershipStatus;
 use App\Enums\PaymentMethod;
@@ -28,9 +29,12 @@ class PaymentController extends Controller
     {
         $data = $request->validate([
             'membership_id' => ['nullable', 'integer'],
+            ...DateRange::rules(),
         ]);
 
         $query = $gym->payments()->with(['user', 'receivedBy']);
+
+        DateRange::apply($query, $data, 'paid_at');
 
         if (! empty($data['membership_id'])) {
             $query->where('membership_id', $data['membership_id']);

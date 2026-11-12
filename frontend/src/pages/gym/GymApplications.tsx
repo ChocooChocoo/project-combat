@@ -17,7 +17,8 @@ import { toastManager } from '@/components/ui/toast'
 import { api, apiFile, ApiError, formValues, type FieldErrors } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { approvedGym, can } from '@/lib/gym-access'
-import { dateLabel, money, type Membership, type MembershipForm } from '@/lib/membership'
+import { dateLabel, money, type Membership, type MembershipForm, type PricePreview } from '@/lib/membership'
+import { TextField } from '@/components/text-field'
 
 type Filter = 'applied' | 'rejected' | 'all'
 const FILTERS: { value: Filter; label: string }[] = [
@@ -48,6 +49,9 @@ export default function GymApplications() {
   const [action, setAction] = useState<'approve' | 'reject' | null>(null)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [busy, setBusy] = useState(false)
+  const [voucher, setVoucher] = useState('')
+  const [preview, setPreview] = useState<PricePreview | null>(null)
+  const [previewError, setPreviewError] = useState('')
 
   useEffect(() => {
     let live = true
@@ -70,10 +74,29 @@ export default function GymApplications() {
     api<MembershipForm>('/membership-form').then(setForm).catch(() => undefined)
   }, [])
 
+  // R-111: the server works out the real price (prepay + promo or voucher) before staff approve.
+  const approving = open && action === 'approve' ? open.id : null
+  useEffect(() => {
+    if (approving === null) return
+    let live = true
+    setPreview(null)
+    setPreviewError('')
+    const timer = setTimeout(() => {
+      api<{ price: PricePreview }>(`/gyms/${gymId}/memberships/${approving}/price-preview?voucher_code=${encodeURIComponent(voucher.trim())}`)
+        .then((result) => live && setPreview(result.price))
+        .catch((failure) => live && setPreviewError(failure instanceof ApiError ? (failure.errors.voucher_code?.[0] ?? failure.message) : 'Could not work out the price.'))
+    }, 400)
+    return () => {
+      live = false
+      clearTimeout(timer)
+    }
+  }, [gymId, approving, voucher])
+
   if (!gym) return null
 
   async function review(row: Membership) {
     setAction(null)
+    setVoucher(row.voucher_code ?? '')
     setErrors({})
     setOpen(row)
     try {
@@ -88,14 +111,15 @@ export default function GymApplications() {
   async function decide(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!open || !action) return
-    const reason = formValues(event).reason?.trim() ?? ''
+    const values = formValues(event)
+    const reason = values.reason?.trim() ?? ''
     if (action === 'reject' && !reason) {
       setErrors({ reason: ['Give the applicant a reason.'] })
       return
     }
     setBusy(true)
     try {
-      await api(`/gyms/${gymId}/memberships/${open.id}/decision`, { body: { decision: action, reason: reason || null } })
+      await api(`/gyms/${gymId}/memberships/${open.id}/decision`, { body: { decision: action, reason: reason || null, ...(action === 'approve' ? { voucher_code: values.voucher_code?.trim() || null } : {}) } })
       toastManager.add({ title: action === 'approve' ? 'Application approved. The member can now pay.' : 'Application rejected.', type: 'success' })
       setOpen(null)
       setVersion((v) => v + 1)
@@ -314,11 +338,24 @@ export default function GymApplications() {
                   </Field>
                 )}
                 {action === 'approve' && (
-                  <Alert variant="info">
-                    <AlertDescription>
-                      Approving adds {open.member.name} as a member and asks them to pay {money(open.plan?.total_fee)}. Taking the payment is a separate step.
-                    </AlertDescription>
-                  </Alert>
+                  <>
+                    <Alert variant="info">
+                      <AlertDescription>
+                        Approving adds {open.member.name} as a member and asks them to pay{' '}
+                        {preview ? <strong>{money(preview.payable)}</strong> : previewError ? 'the plan price' : '…'}
+                        {open.prepaid_terms > 1 && ` for ${open.prepaid_terms} terms`}. Taking the payment is a separate step.
+                        {preview && (preview.prepay_discount > 0 || preview.offer_discount > 0) && (
+                          <span className="mt-1 block">
+                            Price {money(preview.base)}
+                            {preview.prepay_discount > 0 && `, prepay discount −${money(preview.prepay_discount)}`}
+                            {preview.offer_discount > 0 && `, ${preview.offer_name ?? 'offer'} −${money(preview.offer_discount)}`}.
+                          </span>
+                        )}
+                        {previewError && <span className="mt-1 block text-destructive-foreground">{previewError}</span>}
+                      </AlertDescription>
+                    </Alert>
+                    <TextField name="voucher_code" label="Voucher code (optional)" value={voucher} onChange={(event) => setVoucher(event.target.value)} maxLength={40} description="Leave empty to use the best promo, if any. A code that is not valid stops the approval." />
+                  </>
                 )}
               </DialogPanel>
               <DialogFooter>

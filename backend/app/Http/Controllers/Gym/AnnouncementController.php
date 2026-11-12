@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Gym;
 
+use App\Support\DateRange;
 use App\Enums\AnnouncementAudience as AudienceType;
 use App\Enums\AnnouncementKind;
 use App\Enums\BookingStatus;
@@ -30,8 +31,8 @@ class AnnouncementController extends Controller
 
     public function index(Request $request, Gym $gym): JsonResponse
     {
-        $data = $request->validate(['audience_type' => ['sometimes', Rule::enum(AudienceType::class)]]);
-        $page = Announcement::where('gym_id', $gym->id)->with(['session', 'group', 'createdBy'])
+        $data = $request->validate(['audience_type' => ['sometimes', Rule::enum(AudienceType::class)], ...DateRange::rules()]);
+        $page = DateRange::apply(Announcement::where('gym_id', $gym->id), $data, 'created_at')->with(['session', 'group', 'createdBy'])
             ->when($data['audience_type'] ?? null, fn ($query, $type) => $query->where('audience_type', $type))
             ->orderByDesc('created_at')->orderByDesc('id')->paginate(20);
 

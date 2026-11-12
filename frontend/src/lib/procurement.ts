@@ -1,3 +1,4 @@
+import { api } from '@/lib/api'
 // Shapes, labels and defensive readers for restock, requests, orders, suppliers and payables (R-75 to R-79, R-66).
 
 import { STOCK_UNIT } from '@/lib/inventory'
@@ -435,4 +436,26 @@ function titleWords(value: unknown): string {
   if (typeof value !== 'string' || value.trim() === '') return ''
   const words = value.replaceAll('_', ' ').trim()
   return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+export type Proof = {
+  id: number
+  goods_receipt_id: number | null
+  original_name: string
+  mime: string
+  size: number
+  is_image: boolean
+  uploaded_by: string | null
+  uploaded_at: string | null
+}
+
+export const PROOF_ACCEPT = '.jpg,.jpeg,.png,.webp,.pdf'
+
+/** R-114: send proof files for an order; used by the gallery and after receiving goods. */
+export async function uploadProofs(gymId: number, orderId: number, files: File[], receiptId?: number | null): Promise<Proof[]> {
+  const body = new FormData()
+  files.forEach((file) => body.append('files[]', file))
+  if (receiptId) body.append('goods_receipt_id', String(receiptId))
+  const result = await api<{ proofs: Proof[] }>(`/gyms/${gymId}/purchase-orders/${orderId}/proofs`, { body })
+  return result.proofs
 }

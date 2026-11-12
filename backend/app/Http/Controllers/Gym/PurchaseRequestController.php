@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Gym;
 
+use App\Support\DateRange;
 use App\Enums\PurchaseRequestStatus;
 use App\Enums\SupplyNeedStatus;
 use App\Http\Controllers\Controller;
@@ -27,10 +28,11 @@ class PurchaseRequestController extends Controller
         $data = $request->validate([
             'status' => ['nullable', Rule::in([...array_column(PurchaseRequestStatus::cases(), 'value'), 'all'])],
             'page' => ['nullable', 'integer', 'min:1'],
+            ...DateRange::rules(),
         ]);
         $status = ($data['status'] ?? null) === 'all' ? null : ($data['status'] ?? null);
 
-        $page = $gym->purchaseRequests()
+        $page = DateRange::apply($gym->purchaseRequests(), $data, 'created_at')
             ->with(['lines.stockItem', 'requestedBy', 'decidedBy', 'order'])
             ->when($status, fn ($query, $value) => $query->where('status', $value))
             ->orderByDesc('id')
@@ -47,18 +49,9 @@ class PurchaseRequestController extends Controller
         ]);
     }
 
-    public function store(Request $request, Gym $gym): JsonResponse
+    public function store(Request $request, Gym $gym, Notifier $notifier): JsonResponse
     {
-        $data = $request->validate([
-            'needed_by' => ['nullable', 'date_format:Y-m-d'],
-            'note' => ['nullable', 'string', 'max:5000'],
-            'lines' => ['required', 'array', 'min:1'],
-            'lines.*.stock_item_id' => ['required', 'integer', Rule::exists('stock_items', 'id')
-                ->where('gym_id', $gym->id)->where('status', 'active')],
-            'lines.*.quantity' => ['required', 'integer', 'min:1', 'max:1000000'],
-            'lines.*.est_unit_cost' => ['nullable', 'numeric', 'min:0', 'max:9999999999.99', 'decimal:0,2'],
-            'lines.*.supply_need_id' => ['nullable', 'integer', Rule::exists('supply_needs', 'id')->where('gym_id', $gym->id)],
-        ]);
+        $data = $request->validate($this->rules($gym));
 
         $purchaseRequest = DB::transaction(function () use ($request, $gym, $data) {
             $row = $gym->purchaseRequests()->create([
@@ -69,33 +62,82 @@ class PurchaseRequestController extends Controller
                 'note' => $data['note'] ?? null,
             ]);
             $row->forceFill(['number' => sprintf('PR-%d-%06d', $gym->id, $row->id)])->save();
-
-            $needIds = [];
-
-            foreach ($data['lines'] as $line) {
-                $row->lines()->create([
-                    'stock_item_id' => $line['stock_item_id'],
-                    'quantity' => $line['quantity'],
-                    'est_unit_cost' => isset($line['est_unit_cost'])
-                        ? number_format((float) $line['est_unit_cost'], 2, '.', '')
-                        : null,
-                    'supply_need_id' => $line['supply_need_id'] ?? null,
-                ]);
-
-                if (! empty($line['supply_need_id'])) {
-                    $needIds[] = $line['supply_need_id'];
-                }
-            }
-
-            if ($needIds !== []) {
-                SupplyNeed::query()->whereIn('id', array_values(array_unique($needIds)))
-                    ->update(['status' => SupplyNeedStatus::Requested->value]);
-            }
+            $this->writeLines($row, $data['lines']);
 
             return $row->fresh(['lines.stockItem', 'requestedBy', 'decidedBy', 'order']);
         });
 
+        $notifier->requestSubmitted($gym, $purchaseRequest, $request->user());
+
         return response()->json(['request' => $this->requestPayload($purchaseRequest)], 201);
+    }
+
+    /** R-113: the requester (or an approver) can change a request while it is still pending. */
+    public function update(Request $request, Gym $gym, int $purchaseRequest): JsonResponse
+    {
+        $row = $gym->purchaseRequests()->findOrFail($purchaseRequest);
+        $user = $request->user();
+
+        abort_unless(
+            (int) $row->requested_by === (int) $user->id || $user->hasPermission($gym, 'procurement.requests.approve'),
+            403,
+            'Only the requester or an approver can edit this request.',
+        );
+
+        $data = $request->validate($this->rules($gym));
+
+        $row = DB::transaction(function () use ($row, $data) {
+            $locked = $row->newQuery()->lockForUpdate()->findOrFail($row->id);
+            abort_unless($locked->isPending(), 409, 'Only a pending request can be edited.');
+
+            $locked->forceFill(['needed_by' => $data['needed_by'] ?? null, 'note' => $data['note'] ?? null])->save();
+            $this->reopenNeeds($locked);
+            $locked->lines()->delete();
+            $this->writeLines($locked, $data['lines']);
+
+            return $locked->fresh(['lines.stockItem', 'requestedBy', 'decidedBy', 'order']);
+        });
+
+        return response()->json(['request' => $this->requestPayload($row)]);
+    }
+
+    private function rules(Gym $gym): array
+    {
+        return [
+            'needed_by' => ['nullable', 'date_format:Y-m-d'],
+            'note' => ['nullable', 'string', 'max:5000'],
+            'lines' => ['required', 'array', 'min:1'],
+            'lines.*.stock_item_id' => ['required', 'integer', Rule::exists('stock_items', 'id')
+                ->where('gym_id', $gym->id)->where('status', 'active')],
+            'lines.*.quantity' => ['required', 'integer', 'min:1', 'max:1000000'],
+            'lines.*.est_unit_cost' => ['nullable', 'numeric', 'min:0', 'max:9999999999.99', 'decimal:0,2'],
+            'lines.*.supply_need_id' => ['nullable', 'integer', Rule::exists('supply_needs', 'id')->where('gym_id', $gym->id)],
+        ];
+    }
+
+    private function writeLines(PurchaseRequest $row, array $lines): void
+    {
+        $needIds = [];
+
+        foreach ($lines as $line) {
+            $row->lines()->create([
+                'stock_item_id' => $line['stock_item_id'],
+                'quantity' => $line['quantity'],
+                'est_unit_cost' => isset($line['est_unit_cost'])
+                    ? number_format((float) $line['est_unit_cost'], 2, '.', '')
+                    : null,
+                'supply_need_id' => $line['supply_need_id'] ?? null,
+            ]);
+
+            if (! empty($line['supply_need_id'])) {
+                $needIds[] = $line['supply_need_id'];
+            }
+        }
+
+        if ($needIds !== []) {
+            SupplyNeed::query()->whereIn('id', array_values(array_unique($needIds)))
+                ->update(['status' => SupplyNeedStatus::Requested->value]);
+        }
     }
 
     public function decide(Request $request, Gym $gym, int $purchaseRequest, Notifier $notifier): JsonResponse

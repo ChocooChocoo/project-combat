@@ -62,6 +62,9 @@ class DatabaseSeederTest extends TestCase
             $this->assertEqualsCanonicalizing(['title', 'message', 'notice_id'], array_keys($payload));
         }
 
+        $this->assertGreaterThan(0, DB::table('inactivity_notices')->count());
+        $this->assertSame(5, DB::table('notifications')->where('data', 'like', '%safety check%due%')->count());
+
         foreach (Gym::where('status', 'approved')->get() as $gym) {
             app(CurrentGym::class)->set($gym);
             $announcements = DB::table('announcements')->where('gym_id', $gym->id)->get();
@@ -113,6 +116,30 @@ class DatabaseSeederTest extends TestCase
             $this->assertNotNull($released);
             $this->assertGreaterThan(0, DB::table('payroll_lines')->where('payroll_run_id', $released->id)->count());
             $this->assertSame(2, DB::table('expenses')->where('source_type', 'payroll_run')->where('source_id', $released->id)->count());
+            // P09: items waiting for a decision, safety records and a free payroll period.
+            foreach (['pending', 'approved', 'rejected'] as $status) {
+                $this->assertDatabaseHas('offers', ['gym_id' => $gym->id, 'status' => $status]);
+            }
+            foreach (['pending', 'rejected', 'withdrawn'] as $status) {
+                $this->assertDatabaseHas('coach_applications', ['gym_id' => $gym->id, 'status' => $status]);
+            }
+            $this->assertSame(2, DB::table('purchase_requests')->where('gym_id', $gym->id)->where('status', 'pending')->count());
+            $this->assertGreaterThan(0, DB::table('purchase_order_proofs')->where('gym_id', $gym->id)->count());
+            foreach (['active', 'achieved'] as $status) {
+                $this->assertDatabaseHas('training_goals', ['gym_id' => $gym->id, 'status' => $status]);
+            }
+            foreach (['active', 'recovering', 'cleared'] as $status) {
+                $this->assertDatabaseHas('injuries', ['gym_id' => $gym->id, 'status' => $status]);
+            }
+            foreach (['needs_repair', 'unsafe'] as $result) {
+                $this->assertDatabaseHas('stock_items', ['gym_id' => $gym->id, 'safety_status' => $result]);
+            }
+            $this->assertGreaterThan(0, DB::table('equipment_checks')->where('gym_id', $gym->id)->count());
+            $this->assertSame(0, DB::table('memberships')->where('gym_id', $gym->id)->whereIn('status', ['active', 'awaiting_payment', 'frozen'])->whereNull('locked_fee')->count());
+            $lastRun = DB::table('payroll_runs')->where('gym_id', $gym->id)->min('starts_on');
+            $freeStart = Carbon::parse($lastRun)->subMonthNoOverflow()->startOfMonth();
+            $this->assertSame(0, DB::table('payroll_runs')->where('gym_id', $gym->id)->where('starts_on', '<=', $freeStart->copy()->endOfMonth())->count());
+            $this->assertGreaterThan(0, DB::table('staff_attendance')->where('gym_id', $gym->id)->whereBetween('work_date', [$freeStart->toDateString(), $freeStart->copy()->endOfMonth()->toDateString()])->count());
             $this->assertSame(3, DB::table('budgets')->where('gym_id', $gym->id)->pluck('month')->unique()->count());
             $this->assertDatabaseHas('budgets', [
                 'gym_id' => $gym->id, 'kind' => 'income', 'category' => 'membership',

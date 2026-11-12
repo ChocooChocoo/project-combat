@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\PlatformStatsController;
 use App\Http\Controllers\Admin\SubscriptionPlanController;
 use App\Http\Controllers\Admin\PlatformNoticeController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\CoachApplicationController;
 use App\Http\Controllers\DiscoveryController;
 use App\Http\Controllers\GeoController;
 use App\Http\Controllers\Gym\AthleteRecordController;
@@ -29,6 +30,11 @@ use App\Http\Controllers\Gym\HolidayController;
 use App\Http\Controllers\Gym\IncomeController;
 use App\Http\Controllers\Gym\LeaveController;
 use App\Http\Controllers\Gym\MembershipController;
+use App\Http\Controllers\Gym\EquipmentSafetyController;
+use App\Http\Controllers\Gym\InjuryController;
+use App\Http\Controllers\Gym\OfferController;
+use App\Http\Controllers\Gym\PurchaseOrderProofController;
+use App\Http\Controllers\Gym\TrainingGoalController;
 use App\Http\Controllers\Gym\MyAttendanceController;
 use App\Http\Controllers\Gym\OvertimeController;
 use App\Http\Controllers\Gym\PayableController;
@@ -139,6 +145,10 @@ Route::middleware('auth:sanctum')->group(function () {
             // application below stays member-only.
             Route::get('membership-form', [MembershipApplicationController::class, 'form']);
             Route::post('gyms/{gym}/membership-applications', [MembershipApplicationController::class, 'store'])->whereNumber('gym')->middleware('account:member');
+            // R-117: members apply to coach; the applicant is not staff there yet.
+            Route::post('gyms/{gym}/coach-applications', [CoachApplicationController::class, 'store'])->whereNumber('gym')->middleware('account:member');
+            Route::get('me/coach-applications', [CoachApplicationController::class, 'mine']);
+            Route::post('me/coach-applications/{application}/withdraw', [CoachApplicationController::class, 'withdraw'])->whereNumber('application');
             Route::get('my-memberships', [MyMembershipController::class, 'index']);
             Route::get('my-balance', [ReceivableController::class, 'mine']);
             Route::get('my-bookings', [MyBookingController::class, 'index']);
@@ -265,6 +275,8 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::put('staff/{user}/schedule', [ScheduleController::class, 'update'])->middleware('permission:hr.schedules.manage');
 
                 // Leave (R-25, R-26). Own requests are open; HR sees all. The controller checks.
+                Route::get('coach-applications', [CoachApplicationController::class, 'index'])->middleware('permission:hr.coach_applications.view,hr.coach_applications.approve');
+                Route::post('coach-applications/{application}/decision', [CoachApplicationController::class, 'decide'])->whereNumber('application')->middleware('permission:hr.coach_applications.approve');
                 Route::get('leave-requests', [LeaveController::class, 'index'])->middleware('plan:hr');
                 Route::post('leave-requests', [LeaveController::class, 'store'])->middleware('plan:hr');
                 Route::get('leave-requests/{leave}', [LeaveController::class, 'show'])->whereNumber('leave')->middleware('plan:hr');
@@ -337,6 +349,7 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('memberships', [MembershipController::class, 'index']);
                 Route::get('memberships/{membership}', [MembershipController::class, 'show'])->whereNumber('membership')->middleware('permission:members.memberships.view');
                 Route::get('memberships/{membership}/medical-file', [MembershipController::class, 'medicalFile'])->whereNumber('membership');
+                Route::get('memberships/{membership}/price-preview', [MembershipController::class, 'pricePreview'])->whereNumber('membership')->middleware('permission:members.memberships.approve');
                 Route::post('memberships/{membership}/decision', [MembershipController::class, 'decide'])->whereNumber('membership')->middleware('permission:members.memberships.approve');
                 Route::middleware('permission:members.memberships.manage')->group(function () {
                     Route::post('memberships/{membership}/renew', [MembershipController::class, 'renew'])->whereNumber('membership');
@@ -374,6 +387,10 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('stock-items/{item}', [StockItemController::class, 'show'])->whereNumber('item')->middleware('permission:inventory.items.view');
                 Route::put('stock-items/{item}', [StockItemController::class, 'update'])->whereNumber('item')->middleware('permission:inventory.items.manage');
                 Route::post('stock-items/{item}/archive', [StockItemController::class, 'archive'])->whereNumber('item')->middleware('permission:inventory.items.manage');
+                // R-120: equipment and protective gear safety checks.
+                Route::get('equipment-safety', [EquipmentSafetyController::class, 'index'])->middleware('permission:inventory.safety.view,inventory.safety.manage');
+                Route::put('equipment-safety/{item}', [EquipmentSafetyController::class, 'updateSchedule'])->whereNumber('item')->middleware('permission:inventory.safety.manage');
+                Route::post('equipment-safety/{item}/checks', [EquipmentSafetyController::class, 'check'])->whereNumber('item')->middleware('permission:inventory.safety.manage');
                 Route::get('stock-items/{item}/movements', [StockMovementController::class, 'index'])->whereNumber('item')->middleware('permission:inventory.items.view');
                 Route::post('stock-items/{item}/movements', [StockMovementController::class, 'store'])->whereNumber('item')->middleware('permission:inventory.movements.manage');
 
@@ -384,6 +401,7 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::delete('supply-needs/{need}', [SupplyNeedController::class, 'destroy'])->whereNumber('need')->middleware('permission:procurement.requests.manage');
                 Route::get('purchase-requests', [PurchaseRequestController::class, 'index'])->middleware('permission:procurement.requests.view');
                 Route::post('purchase-requests', [PurchaseRequestController::class, 'store'])->middleware('permission:procurement.requests.manage');
+                Route::put('purchase-requests/{purchaseRequest}', [PurchaseRequestController::class, 'update'])->whereNumber('purchaseRequest')->middleware('permission:procurement.requests.manage');
                 Route::post('purchase-requests/{purchaseRequest}/decision', [PurchaseRequestController::class, 'decide'])->whereNumber('purchaseRequest')->middleware('permission:procurement.requests.approve');
                 Route::post('purchase-requests/{purchaseRequest}/cancel', [PurchaseRequestController::class, 'cancel'])->whereNumber('purchaseRequest')->middleware('permission:procurement.requests.manage');
                 Route::get('suppliers', [SupplierController::class, 'index'])->middleware('permission:procurement.suppliers.view');
@@ -395,6 +413,11 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::post('purchase-orders/direct', [PurchaseOrderController::class, 'direct'])->middleware('permission:procurement.orders.manage');
                 Route::post('purchase-orders/{order}/cancel', [PurchaseOrderController::class, 'cancel'])->whereNumber('order')->middleware('permission:procurement.orders.manage');
                 Route::post('purchase-orders/{order}/close', [PurchaseOrderController::class, 'closeShort'])->whereNumber('order')->middleware('permission:procurement.orders.manage');
+                // R-114: receipt and delivery proof files.
+                Route::get('purchase-orders/{order}/proofs', [PurchaseOrderProofController::class, 'index'])->whereNumber('order')->middleware('permission:procurement.orders.view');
+                Route::post('purchase-orders/{order}/proofs', [PurchaseOrderProofController::class, 'store'])->whereNumber('order')->middleware('permission:procurement.receipts.manage');
+                Route::get('purchase-orders/{order}/proofs/{proof}', [PurchaseOrderProofController::class, 'show'])->whereNumber(['order', 'proof'])->middleware('permission:procurement.orders.view');
+                Route::delete('purchase-orders/{order}/proofs/{proof}', [PurchaseOrderProofController::class, 'destroy'])->whereNumber(['order', 'proof'])->middleware('permission:procurement.orders.view');
                 Route::post('purchase-orders/{order}/receipts', [ReceivingController::class, 'store'])->whereNumber('order')->middleware('permission:procurement.receipts.manage');
                 Route::get('finance/payables', [PayableController::class, 'index'])->middleware('permission:finance.payables.view');
                 Route::get('finance/payables/{supplier}', [PayableController::class, 'show'])->whereNumber('supplier')->middleware('permission:finance.payables.view');
@@ -413,6 +436,12 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::post('customers/{customer}/follow-ups', [FollowUpController::class, 'store'])->whereNumber('customer')->middleware('permission:customers.records.manage');
                 Route::put('follow-ups/{followUp}', [FollowUpController::class, 'update'])->whereNumber('followUp')->middleware('permission:customers.records.manage');
                 Route::post('customers/{customer}/link-membership', [CustomerController::class, 'linkMembership'])->whereNumber('customer')->middleware('permission:customers.records.manage');
+                // R-111: promos and vouchers on membership plans.
+                Route::get('offers', [OfferController::class, 'index'])->middleware('permission:customers.offers.view');
+                Route::post('offers', [OfferController::class, 'store'])->middleware('permission:customers.offers.manage');
+                Route::put('offers/{offer}', [OfferController::class, 'update'])->whereNumber('offer')->middleware('permission:customers.offers.manage');
+                Route::post('offers/{offer}/decision', [OfferController::class, 'decide'])->whereNumber('offer')->middleware('permission:customers.offers.approve');
+                Route::post('offers/{offer}/archive', [OfferController::class, 'archive'])->whereNumber('offer')->middleware('permission:customers.offers.manage');
                 Route::get('customer-groups', [CustomerGroupController::class, 'index'])->middleware('permission:customers.records.view');
                 Route::post('customer-groups', [CustomerGroupController::class, 'store'])->middleware('permission:customers.groups.manage');
                 Route::put('customer-groups/{group}', [CustomerGroupController::class, 'update'])->whereNumber('group')->middleware('permission:customers.groups.manage');
@@ -424,6 +453,18 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('athletes/{user}/medical-file', [AthleteRecordController::class, 'medicalFile']);
                 Route::post('athletes/{user}/entries', [AthleteRecordController::class, 'storeEntry'])->middleware('permission:training.athletes.manage');
                 Route::put('athletes/{user}/level', [AthleteRecordController::class, 'updateLevel'])->middleware('permission:training.athletes.manage');
+                // R-118: goals and milestones; the controller lets athletes edit only their own.
+                Route::get('athletes/{user}/goals', [TrainingGoalController::class, 'index']);
+                Route::post('athletes/{user}/goals', [TrainingGoalController::class, 'store']);
+                Route::put('goals/{goal}', [TrainingGoalController::class, 'update'])->whereNumber('goal');
+                Route::delete('goals/{goal}', [TrainingGoalController::class, 'destroy'])->whereNumber('goal');
+                Route::post('goals/{goal}/milestones', [TrainingGoalController::class, 'storeMilestone'])->whereNumber('goal');
+                Route::put('goal-milestones/{milestone}', [TrainingGoalController::class, 'updateMilestone'])->whereNumber('milestone');
+                Route::delete('goal-milestones/{milestone}', [TrainingGoalController::class, 'destroyMilestone'])->whereNumber('milestone');
+                // R-119: injuries; the athlete reads and reports their own, the controller checks the rest.
+                Route::get('athletes/{user}/injuries', [InjuryController::class, 'index']);
+                Route::post('athletes/{user}/injuries', [InjuryController::class, 'store']);
+                Route::put('injuries/{injury}', [InjuryController::class, 'update'])->whereNumber('injury')->middleware('permission:health_records.injuries.manage');
                 Route::get('my-record', [AthleteRecordController::class, 'mine']);
                 // POST as well as PUT: browsers send file uploads as POST.
                 Route::put('my-record/health', [AthleteRecordController::class, 'updateMyHealth']);

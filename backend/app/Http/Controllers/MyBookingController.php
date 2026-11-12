@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\DateRange;
 use App\Enums\BookingStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\SessionStatus;
@@ -26,6 +27,7 @@ class MyBookingController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $data = $request->validate(DateRange::rules());
         $bookings = SessionBooking::withoutGlobalScope('gym')->where('user_id', $request->user()->id)
             ->with(['gym', 'session' => fn ($q) => $q->withoutGlobalScope('gym')->with([
                 'coach', 'room' => fn ($rooms) => $rooms->withoutGlobalScope('gym'),
@@ -39,7 +41,10 @@ class MyBookingController extends Controller
 
         return response()->json([
             'upcoming' => $bookings->filter(fn ($b) => $b->session->starts_at->gte(now()) && $b->status->isLive())->map($payload)->values(),
-            'past' => $bookings->filter(fn ($b) => $b->session->starts_at->lt(now()) || ! $b->status->isLive())->reverse()->map($payload)->values(),
+            'past' => $bookings->filter(fn ($b) => $b->session->starts_at->lt(now()) || ! $b->status->isLive())
+                ->filter(fn ($b) => (empty($data['from']) || $b->session->starts_at->toDateString() >= $data['from'])
+                    && (empty($data['to']) || $b->session->starts_at->toDateString() <= $data['to']))
+                ->reverse()->map($payload)->values(),
         ]);
     }
 
