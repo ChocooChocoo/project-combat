@@ -2071,7 +2071,7 @@ function NewRequestDialog({
               Cancel
             </Button>
             <Button type="submit" loading={busy} disabled={blocked}>
-              Send request
+              {editing ? 'Save changes' : 'Send request'}
             </Button>
           </DialogFooter>
         </Form>

@@ -1,5 +1,6 @@
 import { FileText, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { AlertDialog, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogPopup, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toastManager } from '@/components/ui/toast'
@@ -27,6 +28,7 @@ function Thumbnail({ path, name }: { path: string; name: string }) {
 export function ProofGallery({ gymId, orderId, canUpload, version }: { gymId: number; orderId: number; canUpload: boolean; version: number }) {
   const [proofs, setProofs] = useState<Proof[] | null>(null)
   const [busy, setBusy] = useState(false)
+  const [removing, setRemoving] = useState<Proof | null>(null)
   const base = `/gyms/${gymId}/purchase-orders/${orderId}/proofs`
 
   useEffect(() => {
@@ -56,6 +58,7 @@ export function ProofGallery({ gymId, orderId, canUpload, version }: { gymId: nu
       toastManager.add({ title: proofError(failure, 'The file could not be removed.'), type: 'error' })
     } finally {
       setBusy(false)
+      setRemoving(null)
     }
   }
 
@@ -98,7 +101,7 @@ export function ProofGallery({ gymId, orderId, canUpload, version }: { gymId: nu
                   <p className="truncate text-muted-foreground">{[proof.uploaded_by, proof.uploaded_at ? dateTimeLabel(proof.uploaded_at) : null].filter(Boolean).join(' · ')}</p>
                 </div>
                 {canUpload && (
-                  <Button size="icon-xs" variant="ghost" disabled={busy} onClick={() => remove(proof)} aria-label={`Remove ${proof.original_name}`}>
+                  <Button size="icon-xs" variant="ghost" disabled={busy} onClick={() => setRemoving(proof)} aria-label={`Remove ${proof.original_name}`}>
                     <Trash2 aria-hidden />
                   </Button>
                 )}
@@ -107,6 +110,18 @@ export function ProofGallery({ gymId, orderId, canUpload, version }: { gymId: nu
           ))}
         </ul>
       )}
+      <AlertDialog open={Boolean(removing)} onOpenChange={(open) => !open && !busy && setRemoving(null)}>
+        <AlertDialogPopup>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="break-words">Remove this proof?</AlertDialogTitle>
+            <AlertDialogDescription>{removing ? `${removing.original_name} will be deleted from this order. This cannot be undone.` : ''}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="outline" disabled={busy} onClick={() => setRemoving(null)}>Cancel</Button>
+            <Button variant="destructive" loading={busy} onClick={() => removing && remove(removing)}>Remove proof</Button>
+          </AlertDialogFooter>
+        </AlertDialogPopup>
+      </AlertDialog>
     </section>
   )
 }
