@@ -51,7 +51,15 @@ class EmployeeProfileController extends Controller
             }
         }
 
-        $data = $request->validate($rules);
+        $messages = [];
+        if ($hrManage) {
+            // R-121: government IDs, digits only.
+            $this->cleanGovernmentIds($request);
+            $rules += $this->governmentIdRules();
+            $messages = $this->governmentIdMessages();
+        }
+
+        $data = $request->validate($rules, $messages);
         $profile = $this->editableProfile($gym, $user);
 
         if ($request->hasFile('photo')) {
@@ -65,7 +73,9 @@ class EmployeeProfileController extends Controller
         $profile->fill(collect($data)->except('photo')->all())->save();
 
         return response()->json([
-            'employee' => $this->employeePayload($gym, $user, $viewer->canViewCompensation($gym)),
+            'employee' => $this->employeePayload(
+                $gym, $user, $viewer->canViewCompensation($gym), $viewer->canViewGovernmentIds($gym) || $isSelf,
+            ),
         ]);
     }
 }

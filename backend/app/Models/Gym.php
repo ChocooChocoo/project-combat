@@ -21,7 +21,7 @@ use Illuminate\Support\Str;
     'contact_phone', 'contact_email', 'operating_hours', 'disciplines', 'services', 'facilities',
     'activity_types', 'custom_activity_types', 'working_days', 'policies',
     'booking_approval', 'late_grace_minutes', 'cancel_cutoff_hours', 'session_reminder_minutes',
-    'membership_reminder_days', 'inactivity_days',
+    'membership_reminder_days', 'inactivity_days', 'attendance_radius_m',
     'payroll_frequency', 'payroll_steps', 'staff_grace_minutes', 'overtime_min_minutes',
 ])]
 #[UsePolicy(GymApplicationPolicy::class)]
@@ -100,6 +100,7 @@ class Gym extends Model
             'session_reminder_minutes' => 'integer',
             'membership_reminder_days' => 'array',
             'inactivity_days' => 'integer',
+            'attendance_radius_m' => 'integer',
             'payroll_steps' => 'array',
             'staff_grace_minutes' => 'integer',
             'overtime_min_minutes' => 'integer',

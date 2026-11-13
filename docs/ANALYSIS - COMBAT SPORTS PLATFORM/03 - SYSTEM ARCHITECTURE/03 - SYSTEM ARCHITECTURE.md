@@ -121,3 +121,21 @@ The proposed diagram in [04 - DIAGRAMS](../04%20-%20DIAGRAMS/04%20-%20DIAGRAMS.m
 **New permissions** (catalog now 75 keys): `customers.offers.view|manage|approve`, `hr.coach_applications.view|approve`, `health_records.injuries.manage`, `inventory.safety.view|manage`. The HR starter role gets `hr.coach_applications.view` only; approving coach applications and offers stays with the owner unless granted.
 
 Details per item: [PHASE 11](../05%20-%20ROADMAP/phase-11/PHASE%2011.md).
+
+## Added after the feature change list, section A (13 November 2026)
+
+**New columns:** `employee_profiles.sss_number`, `philhealth_number`, `pagibig_number` (R-121; stored encrypted with the app key and saved as digits only); `gyms.attendance_radius_m` (R-122; empty means no check); `staff_attendance.clock_in_latitude`, `clock_in_longitude`, `clock_in_distance_m` (R-122; only the distance is sent to screens); `training_sessions.thumbnail_path` (R-125). No new tables. Migrations are `2026_11_26_090000`, `2026_11_26_100000` and `2026_11_26_110000`.
+
+**New helpers in `App\Support`:** `Geo::distanceKm` (the one map-distance formula, now used by gym search, recommendations and the clock-in check) and `Paging` (`rules()` and `rows()`; R-123).
+
+**Opt-in paging.** An endpoint pages only when the request includes `?page=N`: 25 rows and a `meta` block (`current_page`, `last_page`, `per_page`, `total`). Without `page`, the answer is the same full list as before, so screens that need every row (the payment dialog's member list, the leave calendar, the owing-bookings list) keep working. Counts on paged screens use `meta.total`.
+
+**Who sees full government IDs.** Anyone with `hr.staff.manage` or `payroll.runs.view`, and the employee on their own record. `finance.payments.view` does not. Others see `****` plus the last 4 digits. Only `hr.staff.manage` can change them. Both the staff update and the employee-record update validate the three numbers.
+
+**Thumbnail files.** Session pictures sit on the public disk under `training-sessions/{gym}`. A file is deleted only when no session still uses it. They use their own upload and remove routes, like service covers.
+
+**New dependency:** `jsqr` (frontend). It is loaded only when the browser has no QR reader of its own.
+
+**No new permissions and no new scheduled jobs.** Keep the app key: the three ID columns cannot be read if it changes (see `docs/SETUPS/DEPLOY-HOSTINGER.md`).
+
+Details per item: [PHASE 12](../05%20-%20ROADMAP/phase-12/PHASE%2012.md).

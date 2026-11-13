@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'user_id', 'work_date', 'scheduled_start', 'scheduled_end', 'clock_in_at', 'clock_out_at',
     'status', 'late_minutes', 'undertime_minutes', 'worked_minutes', 'missing_clock_out',
     'source', 'explanation', 'recorded_by',
+    'clock_in_latitude', 'clock_in_longitude', 'clock_in_distance_m',
 ])]
 class StaffAttendance extends Model
 {

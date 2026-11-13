@@ -28,6 +28,7 @@ trait PresentsAttendance
             'worked_minutes' => $row->worked_minutes,
             'missing_clock_out' => $row->missing_clock_out,
             'source' => $row->source->value,
+            'clock_in_distance_m' => $row->clock_in_distance_m, // R-122
             'explanation' => $row->explanation,
             'recorded_by_name' => $this->personName($row->recordedBy),
             'changes_count' => $row->changes_count ?? null,

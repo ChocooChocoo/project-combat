@@ -15,6 +15,7 @@ use App\Models\WorkSchedule;
 use App\Notifications\OvertimeRequested;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * R-56 and R-57: the only place a staff attendance row is written.
@@ -40,8 +41,28 @@ class StaffAttendanceBook
         return ['start' => null, 'end' => null];
     }
 
-    public function clockIn(Gym $gym, User $employee): StaffAttendance
+    /**
+     * R-122: with a radius and a map pin set, clock-in must come from near the gym.
+     * ponytail: the location comes from the browser and can be faked.
+     */
+    public function clockIn(Gym $gym, User $employee, ?float $lat = null, ?float $lng = null): StaffAttendance
     {
+        $hasPin = $gym->latitude !== null && $gym->longitude !== null;
+        $distance = null;
+
+        if ($hasPin && $lat !== null && $lng !== null) {
+            $distance = (int) round(Geo::distanceKm($lat, $lng, (float) $gym->latitude, (float) $gym->longitude) * 1000);
+        }
+
+        if ($gym->attendance_radius_m !== null && $hasPin) {
+            if ($distance === null) {
+                throw ValidationException::withMessages(['location' => 'Share your location to clock in. This gym checks that you are on site.']);
+            }
+            if ($distance > $gym->attendance_radius_m) {
+                throw ValidationException::withMessages(['location' => "You are about {$distance} m from the gym. Clock in within {$gym->attendance_radius_m} m."]);
+            }
+        }
+
         $date = today();
         $this->assertNoRow($gym, $employee, $date);
 
@@ -59,6 +80,9 @@ class StaffAttendanceBook
             'late_minutes' => $derived['late_minutes'],
             'worked_minutes' => 0,
             'source' => AttendanceSource::Self->value,
+            'clock_in_latitude' => $lat,
+            'clock_in_longitude' => $lng,
+            'clock_in_distance_m' => $distance,
         ]);
     }
 

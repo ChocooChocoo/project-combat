@@ -15,6 +15,7 @@ export type StaffAttendance = {
   clock_out_time: string | null
   clock_in_at: string | null
   clock_out_at: string | null
+  clock_in_distance_m?: number | null
   status: AttendanceStatus
   late_minutes: number
   undertime_minutes: number
@@ -65,7 +66,7 @@ export type MyAttendanceData = {
   attendance: StaffAttendance[]
   today: StaffAttendance | null
   overtime: OvertimeRequest[]
-  settings: { grace_minutes: number; overtime_min_minutes: number }
+  settings: { grace_minutes: number; overtime_min_minutes: number; location_check: boolean; radius_m: number | null }
 }
 
 export const ATTENDANCE_STATUS: Record<AttendanceStatus, { label: string; variant: 'success' | 'warning' | 'error' }> = {

@@ -435,3 +435,19 @@ Source: `docs/prompts/P09.md`, drawn from `gavins lists of changes.md` items 1 t
 | Injury and equipment safety | None | R-119, R-120 |
 
 Status and checks are in [PHASE 11](../05%20-%20ROADMAP/phase-11/PHASE%2011.md).
+
+## Your client's feature change list, section A (13 November 2026)
+
+Source: the feature change list, section A items 3 to 9 (items 1, 2 and 10 to 21 were built as part of P09; all of section B is out of scope). What the code showed before building, and the item each request became:
+
+| Request | What the rebuild had | Became |
+|---|---|---|
+| Store SSS, PhilHealth and Pag-IBIG numbers on the employee record | The three bodies were only worked out as pay deductions; no ID numbers were stored | R-121 |
+| Check where staff clock in | Clock-in sent no location; gyms already had a map pin | R-122 |
+| Page through long lists | Payments, members, applications, bookings, staff, leave, overtime, offers and coach applications returned every row | R-123 |
+| Pick a session's sport from a list | Free text, up to 40 characters | R-124 |
+| A picture on a session | Only services had cover photos | R-125 |
+| QR check-in in every browser | The camera button hid itself where the browser had no built-in QR reader | R-126 |
+| Pay right after approving an application | Approval showed a message and closed | R-127 |
+
+Status and checks are in [PHASE 12](../05%20-%20ROADMAP/phase-12/PHASE%2012.md).

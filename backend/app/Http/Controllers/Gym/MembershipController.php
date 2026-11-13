@@ -14,6 +14,7 @@ use App\Models\Membership;
 use App\Support\MembershipLedger;
 use App\Support\MembershipPricing;
 use App\Support\OfferApplier;
+use App\Support\Paging;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -41,6 +42,7 @@ class MembershipController extends Controller
         $data = $request->validate([
             'view' => ['nullable', Rule::in(['applications', 'members'])],
             'status' => ['nullable', Rule::enum(MembershipStatus::class)],
+            ...Paging::rules(),
         ]);
 
         $query = $gym->memberships()->with(['gym', 'user', 'decidedBy']);
@@ -55,14 +57,14 @@ class MembershipController extends Controller
             $query->where('status', $data['status']);
         }
 
-        $rows = $query->orderByDesc('created_at')->orderByDesc('id')->get();
+        [$rows, $meta] = Paging::rows($query->orderByDesc('created_at')->orderByDesc('id'), $request);
         // R-119: the restricted flag only, no injury details.
         $restricted = Injury::restrictedAmong($gym->id, $rows->pluck('user_id'));
         $memberships = $rows
             ->map(fn (Membership $membership) => [...$this->membershipPayload($membership, false), 'restricted' => isset($restricted[$membership->user_id])])
             ->values();
 
-        return response()->json(['memberships' => $memberships]);
+        return response()->json(['memberships' => $memberships, ...($meta ? ['meta' => $meta] : [])]);
     }
 
     public function show(Request $request, Gym $gym, int $membership): JsonResponse

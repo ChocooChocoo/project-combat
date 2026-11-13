@@ -51,6 +51,7 @@ trait PresentsBookings
             'id' => $session->id, 'name' => $session->name, 'type' => $session->type,
             'type_label' => $session->gym->activityTypeLabel($session->type),
             'discipline' => $session->discipline,
+            'thumbnail_url' => $session->thumbnailUrl(), // R-125
             'discipline_label' => config("verification.disciplines.{$session->discipline}", $session->discipline),
             'level' => $session->level,
             'level_label' => config("offer.levels.{$session->level}", $session->level),

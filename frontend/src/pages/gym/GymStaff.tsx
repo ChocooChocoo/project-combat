@@ -22,6 +22,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs'
 import { toastManager } from '@/components/ui/toast'
 import { api, ApiError } from '@/lib/api'
+import { PageControls } from '@/components/page-controls'
+import { pageMetaFrom, type PageMeta } from '@/lib/pagination'
 import { useAuth } from '@/lib/auth'
 import { approvedGym, can } from '@/lib/gym-access'
 import {
@@ -73,19 +75,27 @@ export default function GymStaff() {
   const [roleDialog, setRoleDialog] = useState<{ role: GymRole | null } | null>(null)
   const [roleDelete, setRoleDelete] = useState<GymRole | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [page, setPage] = useState(1) // (R-123)
+  const [meta, setMeta] = useState<PageMeta | null>(null)
 
   useEffect(() => {
     if (!gymId || (!canView && !canViewRoles)) return
     let live = true
     setLoadError('')
     Promise.all([
-      canView ? api<StaffList>(`/gyms/${gymId}/staff`) : Promise.resolve({ staff: [], owner: null }),
+      canView ? api<StaffList>(`/gyms/${gymId}/staff?page=${page}`) : Promise.resolve({ staff: [], owner: null }),
       canViewRoles ? api<{ roles: GymRole[] }>(`/gyms/${gymId}/roles`) : Promise.resolve({ roles: [] }),
       api<PermissionCatalog>('/permissions/catalog'),
     ])
       .then(([staffResult, rolesResult, templatesResult]) => {
         if (!live) return
+        // A removal can empty the last page; step back one.
+        if (staffResult.staff.length === 0 && page > 1) {
+          setPage(page - 1)
+          return
+        }
         setStaff(staffResult.staff)
+        setMeta(pageMetaFrom(staffResult, staffResult.staff.length))
         setOwner(staffResult.owner)
         setRoles(rolesResult.roles)
         setTemplates(templatesResult)
@@ -96,7 +106,7 @@ export default function GymStaff() {
     return () => {
       live = false
     }
-  }, [gymId, canView, canViewRoles, version])
+  }, [gymId, canView, canViewRoles, version, page])
 
   const employeeActions = (employee: StaffMember, isOwner: boolean, own: boolean) => {
     if (isOwner || own) {
@@ -207,7 +217,7 @@ export default function GymStaff() {
         {staff && (
           <div>
             <p className="text-muted-foreground text-xs">Employees</p>
-            <p className="mt-1 font-semibold text-2xl tabular-nums">{staff.length}</p>
+            <p className="mt-1 font-semibold text-2xl tabular-nums">{meta?.total ?? staff.length}</p>
           </div>
         )}
       </header>
@@ -236,16 +246,16 @@ export default function GymStaff() {
       ) : (
         <Tabs value={!canView ? 'roles' : !canViewRoles ? 'employees' : tab} onValueChange={(value) => setTab(value as 'employees' | 'roles')}>
           <TabsList variant="underline" aria-label="Staff sections">
-            {canView && <TabsTab value="employees">Employees {staff.length}</TabsTab>}
+            {canView && <TabsTab value="employees">Employees {meta?.total ?? staff.length}</TabsTab>}
             {canViewRoles && <TabsTab value="roles">Roles {roles.length}</TabsTab>}
           </TabsList>
 
           {canView && <TabsPanel value="employees" keepMounted className="flex flex-col gap-4 pt-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-muted-foreground text-sm">
-                {staff.length === 0
+                {(meta?.total ?? staff.length) === 0
                   ? 'No employees yet.'
-                  : `${staff.length} ${staff.length === 1 ? 'employee' : 'employees'}`}
+                  : `${meta?.total ?? staff.length} ${(meta?.total ?? staff.length) === 1 ? 'employee' : 'employees'}`}
                 {owner && ` · Owner: ${owner.first_name} ${owner.last_name}`}
               </p>
               {canManage && (
@@ -385,6 +395,8 @@ export default function GymStaff() {
                     </TableBody>
                   </Table>
                 </div>
+
+                <PageControls meta={meta} label="Employees" onPage={setPage} />
 
                 {staff.length === 0 && (
                   <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed px-4 py-3">

@@ -89,9 +89,9 @@ export default function GymCheckIn() {
     <form className="flex flex-col gap-3 sm:max-w-xl" onSubmit={(e) => { e.preventDefault(); void submit({ code: code.trim() }) }}>
       <TextField ref={field} name="code" label="Check-in code" description="USB scanners type into this field. Press Enter to submit." value={code} onChange={(e) => setCode(e.target.value)} autoFocus autoComplete="off" maxLength={200} required />
       <div className="flex flex-wrap gap-3"><Button type="submit" disabled={busy || !code.trim()} loading={busy}>Check in</Button>
-        {'BarcodeDetector' in window && <Button type="button" variant="outline" disabled={busy} onClick={() => setCamera(true)}>Scan with camera</Button>}
+        {!!navigator.mediaDevices?.getUserMedia && <Button type="button" variant="outline" disabled={busy} onClick={() => setCamera(true)}>Scan with camera</Button>}
       </div>
-      {!('BarcodeDetector' in window) && <p className="text-muted-foreground text-sm">Camera scanning is unavailable in this browser. Typing the code works.</p>}
+      {!navigator.mediaDevices?.getUserMedia && <p className="text-muted-foreground text-sm">Camera scanning is unavailable (no camera, or the page is not secure). Typing the code works.</p>}
     </form>
     {camera && <CameraScanner onRead={scanned} onClose={() => { setCamera(false); field.current?.focus() }} />}
     <p role="status" aria-live="polite" aria-atomic="true" className="text-sm font-medium">{message}</p>

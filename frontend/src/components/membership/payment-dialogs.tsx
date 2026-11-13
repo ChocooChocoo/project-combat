@@ -100,6 +100,9 @@ export function RecordPaymentDialog({
                 <FieldError />
               </Field>
             )}
+            {kind === 'membership' && memberships.length === 1 && Number(memberships[0].discount_amount) > 0 && (
+              <p className="text-muted-foreground text-xs">Includes {memberships[0].offer_name ?? 'discount'}: −{money(memberships[0].discount_amount)}</p>
+            )}
             {chosen && <p className="text-muted-foreground text-sm">Still owed: {money(chosen.balance)}</p>}
             <TextField
               name="amount"

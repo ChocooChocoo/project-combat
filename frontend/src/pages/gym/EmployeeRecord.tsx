@@ -257,6 +257,11 @@ function EmploymentSection({
   const [payBasis, setPayBasis] = useState<PayBasis | 'none'>(profile?.pay_basis ?? 'none')
   const [monthlyRate, setMonthlyRate] = useState(profile?.monthly_rate ?? '')
   const [sessionRate, setSessionRate] = useState(profile?.per_session_rate ?? '')
+  const [ids, setIds] = useState({
+    sss_number: profile?.sss_number ?? '',
+    philhealth_number: profile?.philhealth_number ?? '',
+    pagibig_number: profile?.pagibig_number ?? '',
+  })
   const [errors, setErrors] = useState<FieldErrors>({})
   const [busy, setBusy] = useState(false)
 
@@ -275,6 +280,12 @@ function EmploymentSection({
           job_title: jobTitle || null,
           started_on: startedOn || null,
           pay_basis: payBasis === 'none' ? null : payBasis,
+          // R-121: masked values are read-only and never sent back.
+          ...Object.fromEntries(
+            Object.entries(ids)
+              .filter(([, value]) => !value.startsWith('****'))
+              .map(([key, value]) => [key, value.trim() || null]),
+          ),
           ...(showPay
             ? {
                 monthly_rate: monthlyRate === '' ? null : monthlyRate,
@@ -395,6 +406,39 @@ function EmploymentSection({
               />
             </div>
           )}
+
+          {/* R-121: government IDs; others only see the last 4 digits. */}
+          <div className="flex flex-col gap-3">
+            <h3 className="font-medium text-sm">Government IDs</h3>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {(
+                [
+                  ['sss_number', 'SSS number'],
+                  ['philhealth_number', 'PhilHealth number'],
+                  ['pagibig_number', 'Pag-IBIG number'],
+                ] as const
+              ).map(([key, label]) =>
+                ids[key].startsWith('****') ? (
+                  <div key={key} className="flex flex-col gap-1">
+                    <span className="text-sm font-medium">{label}</span>
+                    <span className="text-muted-foreground font-mono text-sm">{ids[key]}</span>
+                  </div>
+                ) : (
+                  <TextField
+                    key={key}
+                    name={key}
+                    label={label}
+                    inputMode="numeric"
+                    maxLength={20}
+                    description="Numbers only; dashes are fine"
+                    value={ids[key]}
+                    onChange={(e) => setIds((current) => ({ ...current, [key]: e.target.value }))}
+                    disabled={!canEdit}
+                  />
+                ),
+              )}
+            </div>
+          </div>
 
           {!canEdit && <p className="text-muted-foreground text-sm">Only someone with HR management can change employment details.</p>}
 

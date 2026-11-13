@@ -14,6 +14,7 @@ use App\Models\SessionBooking;
 use App\Models\SessionNote;
 use App\Models\TrainingSession;
 use App\Support\BookingDesk;
+use App\Support\Paging;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -66,13 +67,14 @@ class BookingController extends Controller
 
     public function index(Request $request, Gym $gym): JsonResponse
     {
-        $data = $request->validate(['status' => ['sometimes', Rule::enum(BookingStatus::class)], ...DateRange::rules()]);
+        $data = $request->validate(['status' => ['sometimes', Rule::enum(BookingStatus::class)], ...DateRange::rules(), ...Paging::rules()]);
         $bookings = SessionBooking::with(['session.coach', 'session.room', 'user', 'gym'])
             ->where('status', $data['status'] ?? BookingStatus::Requested)
             ->when(filled($data['from'] ?? null) || filled($data['to'] ?? null), fn ($query) => $query->whereHas('session', fn ($session) => DateRange::apply($session, $data, 'starts_at')))
-            ->orderBy('created_at')->orderBy('id')->get();
+            ->orderBy('created_at')->orderBy('id');
+        [$bookings, $meta] = Paging::rows($bookings, $request);
 
-        return response()->json(['bookings' => $bookings->map(fn ($booking) => $this->staffPayload($booking, $request))]);
+        return response()->json(['bookings' => $bookings->map(fn ($booking) => $this->staffPayload($booking, $request)), ...($meta ? ['meta' => $meta] : [])]);
     }
 
     public function decide(Request $request, Gym $gym, int $booking, BookingDesk $desk): JsonResponse

@@ -7,6 +7,7 @@ These are words that could not be avoided, because they are real names of real t
 | Word | What it means here | Where it comes up |
 |---|---|---|
 | Barangay | The smallest local government unit in the Philippines; a barangay clearance is a permit from it | [02 - FINDINGS](../02%20-%20FINDINGS/02%20-%20FINDINGS.md), [PHASE 2](../05%20-%20ROADMAP/phase-2/PHASE%202.md) |
+| Clock-in distance | How far from the gym's map pin a staff member was when they clocked in, in metres; the gym can set a limit | [PHASE 12](../05%20-%20ROADMAP/phase-12/PHASE%2012.md) |
 | CombatPro | The name the old system's screens give the platform | [01 - OVERVIEW](../01%20-%20OVERVIEW/01%20-%20OVERVIEW.md), [02 - FINDINGS](../02%20-%20FINDINGS/02%20-%20FINDINGS.md) |
 | coss UI | A ready-made set of screen parts you chose for building the new screens | [03 - SYSTEM ARCHITECTURE](../03%20-%20SYSTEM%20ARCHITECTURE/03%20-%20SYSTEM%20ARCHITECTURE.md), [04 - DIAGRAMS](../04%20-%20DIAGRAMS/04%20-%20DIAGRAMS.md) |
 | DTI | Department of Trade and Industry; registers the business names of sole owners | [02 - FINDINGS](../02%20-%20FINDINGS/02%20-%20FINDINGS.md), [PHASE 2](../05%20-%20ROADMAP/phase-2/PHASE%202.md) |
@@ -17,6 +18,7 @@ These are words that could not be avoided, because they are real names of real t
 | Inactivity | No gym visit and no attended session for the number of days the gym sets (default 14) | [PHASE 11](../05%20-%20ROADMAP/phase-11/PHASE%2011.md) |
 | Laravel | Ready-made building blocks for the part that does the work behind the screens; used by the old system and chosen for the new one | [02 - FINDINGS](../02%20-%20FINDINGS/02%20-%20FINDINGS.md), [03 - SYSTEM ARCHITECTURE](../03%20-%20SYSTEM%20ARCHITECTURE/03%20-%20SYSTEM%20ARCHITECTURE.md) |
 | MariaDB, MySQL | Two closely related programs that keep stored information. The old system used MariaDB; you chose MySQL for the new one. | [02 - FINDINGS](../02%20-%20FINDINGS/02%20-%20FINDINGS.md), [03 - SYSTEM ARCHITECTURE](../03%20-%20SYSTEM%20ARCHITECTURE/03%20-%20SYSTEM%20ARCHITECTURE.md) |
+| Masked ID | A government ID number shown as `****` and its last 4 digits to staff who may view the record but not the full number | [PHASE 12](../05%20-%20ROADMAP/phase-12/PHASE%2012.md) |
 | Median.co | A service that wraps a website so it can be installed as a phone app | [01 - OVERVIEW](../01%20-%20OVERVIEW/01%20-%20OVERVIEW.md), [PHASE 7](../05%20-%20ROADMAP/phase-7/PHASE%207.md) |
 | Mermaid | The way the pictures in [04 - DIAGRAMS](../04%20-%20DIAGRAMS/04%20-%20DIAGRAMS.md) are written so viewers can draw them | [04 - DIAGRAMS](../04%20-%20DIAGRAMS/04%20-%20DIAGRAMS.md) |
 | OpenStreetMap, Nominatim | A free world map and its address finder; the old screens use them to show and find gym locations | [02 - FINDINGS](../02%20-%20FINDINGS/02%20-%20FINDINGS.md), [03 - SYSTEM ARCHITECTURE](../03%20-%20SYSTEM%20ARCHITECTURE/03%20-%20SYSTEM%20ARCHITECTURE.md) |
@@ -34,6 +36,7 @@ These are words that could not be avoided, because they are real names of real t
 | Spatie Permission | The ready-made part the old system uses to store roles and permissions | [02 - FINDINGS](../02%20-%20FINDINGS/02%20-%20FINDINGS.md), [03 - SYSTEM ARCHITECTURE](../03%20-%20SYSTEM%20ARCHITECTURE/03%20-%20SYSTEM%20ARCHITECTURE.md) |
 | Subscription plan | What a gym pays the platform for (planned names: Starter, Pro, Elite). Each plan lists the modules a gym on it may use. Not the same as a membership plan, which a member pays a gym for. | [PHASE 10](../05%20-%20ROADMAP/phase-10/PHASE%2010.md) |
 | Tailwind | Ready-made styling rules the old screens use for their look | [02 - FINDINGS](../02%20-%20FINDINGS/02%20-%20FINDINGS.md) |
+| Thumbnail | A small picture on a training session, shown in the schedule and to members | [PHASE 12](../05%20-%20ROADMAP/phase-12/PHASE%2012.md) |
 | Tier | The spec's word for a checking level: Tier 1 is papers only; Tier 2 adds proof the gym and owner are real | [02 - FINDINGS](../02%20-%20FINDINGS/02%20-%20FINDINGS.md), [PHASE 2](../05%20-%20ROADMAP/phase-2/PHASE%202.md) |
 | TRAIN tax | The Philippine income tax brackets, named after the law that set them; deducted from pay | [02 - FINDINGS](../02%20-%20FINDINGS/02%20-%20FINDINGS.md), [PHASE 6](../05%20-%20ROADMAP/phase-6/PHASE%206.md) |
 | VAWC leave | Philippine paid leave for victims of violence against women and their children | [PHASE 3](../05%20-%20ROADMAP/phase-3/PHASE%203.md) |

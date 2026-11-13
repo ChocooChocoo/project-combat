@@ -213,6 +213,7 @@ export default function GymSchedule() {
                   </div>
 
                   <div className="flex min-w-0 flex-col gap-2">
+                    {session.thumbnail_url && <img src={session.thumbnail_url} alt="" loading="lazy" className="aspect-video w-28 max-w-full rounded-md border object-cover" />}
                     <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1.5">
                       <Link to={`/gyms/${gymId}/manage/schedule/${session.id}`} className="font-medium text-sm leading-snug wrap-anywhere underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">{session.name}</Link>
                       <div className="flex flex-wrap gap-1.5">

@@ -63,3 +63,7 @@ All of these come from the spec, page 4.
 ## Added after P09 (12 November 2026)
 
 Gyms can now sell prepaid plans that keep the member's price, run approved promos and vouchers, filter history by date, attach receipt photos to purchase orders, take coach applications from members, track training goals, injuries and equipment safety checks, and get notices about inactive members, staff absences and due safety checks. See [PHASE 11](../05%20-%20ROADMAP/phase-11/PHASE%2011.md).
+
+## Added after the feature change list, section A (13 November 2026)
+
+HR can store each employee's SSS, PhilHealth and Pag-IBIG numbers, with other staff seeing them masked. A gym can set a distance limit for staff clock-in. Long lists show 25 rows a page. A session's sport is picked from a list, and a session can have a thumbnail picture. Camera check-in now also works in browsers without a built-in QR reader. After approving an application, front desk staff go straight to recording the payment. See [PHASE 12](../05%20-%20ROADMAP/phase-12/PHASE%2012.md).

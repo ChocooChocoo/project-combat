@@ -6,6 +6,7 @@ use App\Enums\GymStatus;
 use App\Models\Gym;
 use App\Models\GymPreference;
 use App\Models\MembershipPlan;
+use App\Support\Geo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -63,7 +64,7 @@ class DiscoveryController extends Controller
             $distance = null;
 
             if ($hasLocation && $gym->latitude !== null && $gym->longitude !== null) {
-                $distance = round($this->distanceKm($lat, $lng, $gym->latitude, $gym->longitude), 1);
+                $distance = round(Geo::distanceKm($lat, $lng, $gym->latitude, $gym->longitude), 1);
                 $factor = $cap > 0 ? max(0, 1 - $distance / $cap) : 0;
 
                 if ($factor > 0) {
@@ -159,16 +160,5 @@ class DiscoveryController extends Controller
             'max_price' => $preference?->max_price,
             'preferred_times' => $preference?->preferred_times ?? [],
         ];
-    }
-
-    private function distanceKm(float $lat, float $lng, float $gymLat, float $gymLng): float
-    {
-        $earthKm = 6371.0;
-        $latDelta = deg2rad($gymLat - $lat);
-        $lngDelta = deg2rad($gymLng - $lng);
-        $a = sin($latDelta / 2) ** 2
-            + cos(deg2rad($lat)) * cos(deg2rad($gymLat)) * sin($lngDelta / 2) ** 2;
-
-        return $earthKm * 2 * atan2(sqrt($a), sqrt(1 - $a));
     }
 }

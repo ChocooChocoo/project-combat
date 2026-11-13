@@ -18,6 +18,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -54,7 +55,10 @@ class SessionController extends Controller
 
     public function options(Gym $gym): JsonResponse
     {
+        $all = config('verification.disciplines'); // R-124
         return response()->json(['options' => [
+            'disciplines' => collect(array_unique([...array_intersect($gym->disciplines ?? [], array_keys($all)), ...array_keys($all)]))
+                ->map(fn ($key) => ['value' => $key, 'label' => $all[$key]])->values(),
             'coaches' => $this->coaches($gym)->map(fn ($user) => ['id' => $user->id, 'name' => trim("{$user->first_name} {$user->last_name}")])->values(),
             'rooms' => $gym->rooms()->active()->orderBy('name')->get(['id', 'name']),
             'services' => $gym->gymServices()->orderBy('name')->get([
@@ -62,6 +66,7 @@ class SessionController extends Controller
             ]),
             'plans' => $gym->membershipPlans()->orderBy('name')->get(['id', 'name']),
             'activity_types' => $gym->activityTypeOptions(), 'levels' => config('offer.levels'),
+            'thumbnail_max_kb' => config('offer.service_photos.max_kb'), // R-125
         ]]);
     }
 
@@ -122,7 +127,7 @@ class SessionController extends Controller
             Gym::whereKey($gym->id)->lockForUpdate()->firstOrFail();
             $model = TrainingSession::lockForUpdate()->findOrFail($session);
             abort_if($model->status === SessionStatus::Cancelled, 409, 'Cancelled sessions cannot be edited.');
-            $data = $this->validated($request, $gym, true);
+            $data = $this->validated($request, $gym, true, $model->discipline);
             $start = Carbon::parse($data['starts_at'])->setTimezone(config('app.timezone'));
             $end = Carbon::parse($data['ends_at'])->setTimezone(config('app.timezone'));
             $timeChanged = ! $start->eq($model->starts_at) || ! $end->eq($model->ends_at);
@@ -228,6 +233,47 @@ class SessionController extends Controller
         return response()->json(['session' => $this->payload($model)]);
     }
 
+    /** R-125: set a picture on this session, and on later scheduled ones in its series when asked. */
+    public function thumbnail(Request $request, Gym $gym, int $session): JsonResponse
+    {
+        $request->validate([
+            'photo' => ['required', 'image', 'max:'.config('offer.service_photos.max_kb')],
+            'apply_to_series' => ['nullable', 'boolean'],
+        ], ['photo.max' => 'The photo must be '.(config('offer.service_photos.max_kb') / 1024).' MB or smaller.']);
+
+        return $this->changeThumbnail($request, $session, $request->file('photo')->store("training-sessions/{$gym->id}", 'public'));
+    }
+
+    public function destroyThumbnail(Request $request, Gym $gym, int $session): JsonResponse
+    {
+        $request->validate(['apply_to_series' => ['nullable', 'boolean']]);
+
+        return $this->changeThumbnail($request, $session, null);
+    }
+
+    private function changeThumbnail(Request $request, int $session, ?string $path): JsonResponse
+    {
+        $model = TrainingSession::findOrFail($session);
+        if ($model->status === SessionStatus::Cancelled) {
+            if ($path) {
+                Storage::disk('public')->delete($path);
+            }
+            abort(409, 'Cancelled sessions cannot be edited.');
+        }
+        $targets = TrainingSession::whereKey($model->id)
+            ->when($request->boolean('apply_to_series') && $model->series_id, fn ($query) => $query->orWhere(fn ($q) => $q
+                ->where('series_id', $model->series_id)->where('status', SessionStatus::Scheduled)->where('starts_at', '>=', now())));
+        $old = (clone $targets)->pluck('thumbnail_path')->filter()->unique();
+        $targets->update(['thumbnail_path' => $path]);
+        foreach ($old as $file) {
+            if ($file !== $path && TrainingSession::where('thumbnail_path', $file)->doesntExist()) {
+                Storage::disk('public')->delete($file);
+            }
+        }
+
+        return response()->json(['session' => $this->payload($model->fresh())]);
+    }
+
     private function notifyChange(TrainingSession $session, string $type, string $message, ?int $oldCoach = null): void
     {
         $ids = $session->bookings()->whereIn('status', ['requested', 'booked', 'waitlisted'])->pluck('user_id')
@@ -237,7 +283,7 @@ class SessionController extends Controller
         }
     }
 
-    private function validated(Request $request, Gym $gym, bool $updating = false): array
+    private function validated(Request $request, Gym $gym, bool $updating = false, ?string $currentDiscipline = null): array
     {
         if (! $request->exists('capacity') && $request->input('type') === 'private_coaching') {
             $request->merge(['capacity' => 1]);
@@ -246,7 +292,7 @@ class SessionController extends Controller
         $data = $request->validate([
             'gym_service_id' => ['nullable', 'integer', $inGym('gym_services')],
             'type' => ['required', Rule::in(array_keys($gym->activityTypeOptions()))],
-            'name' => ['required', 'string', 'max:120'], 'discipline' => ['nullable', 'string', 'max:40'],
+            'name' => ['required', 'string', 'max:120'], 'discipline' => ['nullable', 'string', Rule::in([...array_keys(config('verification.disciplines')), ...array_filter([$currentDiscipline])])], // R-124
             'level' => ['required', Rule::in(array_keys(config('offer.levels')))],
             'coach_id' => ['required', 'integer', Rule::in($this->coaches($gym)->pluck('id')->all())],
             'room_id' => ['required', 'integer', $inGym('rooms')->where('is_active', true)],
@@ -285,6 +331,7 @@ class SessionController extends Controller
             'starts_at' => $session->starts_at->format('Y-m-d H:i:s'),
             'ends_at' => $session->ends_at->format('Y-m-d H:i:s'),
             'phase' => $session->phase(),
+            'thumbnail_url' => $session->thumbnailUrl(), // R-125
             'coach' => ['id' => $session->coach->id, 'name' => trim("{$session->coach->first_name} {$session->coach->last_name}")],
             'room' => ['id' => $session->room->id, 'name' => $session->room->name],
             'service' => $session->service ? ['id' => $session->service->id, 'name' => $session->service->name] : null,

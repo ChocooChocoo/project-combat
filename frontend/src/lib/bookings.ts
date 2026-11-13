@@ -18,6 +18,7 @@ export type SessionSummary = {
   type: SessionType
   type_label: string
   discipline: string | null
+  thumbnail_url: string | null
   discipline_label: string | null
   level: SessionLevel
   level_label: string

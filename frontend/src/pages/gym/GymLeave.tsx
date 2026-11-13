@@ -4,7 +4,9 @@ import { RangePicker } from '@/components/decision-support/range-picker'
 import { NO_RANGE, rangeQuery } from '@/lib/decision-support'
 import { useParams } from 'react-router'
 import { LeaveCalendar, formatDateRange, formatDay, isoDay } from '@/components/leave-calendar'
+import { PageControls } from '@/components/page-controls'
 import { PageHeader } from '@/components/page-header'
+import { pageMetaFrom, type PageMeta } from '@/lib/pagination'
 import { TextField } from '@/components/text-field'
 import { Alert, AlertAction, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -159,6 +161,8 @@ export default function GymLeave() {
   const [year, setYear] = useState(CURRENT_YEAR)
   const [month, setMonth] = useState(() => new Date(CURRENT_YEAR, new Date().getMonth(), 1))
   const [version, setVersion] = useState(0)
+  const [page, setPage] = useState(1) // (R-123)
+  const [meta, setMeta] = useState<PageMeta | null>(null)
 
   const [decision, setDecision] = useState<{ request: RequestRow; action: 'approve' | 'reject' } | null>(null)
   const [decisionErrors, setDecisionErrors] = useState<FieldErrors>({})
@@ -181,10 +185,18 @@ export default function GymLeave() {
     let live = true
     setRequests(null)
     setRequestsError('')
-    const query = filter === 'all' ? rangeQuery(range, '?') : `?status=${filter}${rangeQuery(range)}`
+    const query = `?page=${page}${filter === 'all' ? '' : `&status=${filter}`}${rangeQuery(range)}`
     api<{ requests: RequestRow[] }>(`/gyms/${gymId}/leave-requests${query}`)
       .then((result) => {
-        if (live) setRequests(result.requests ?? [])
+        if (!live) return
+        const rows = result.requests ?? []
+        // A decision can empty the last page; step back one.
+        if (rows.length === 0 && page > 1) {
+          setPage(page - 1)
+          return
+        }
+        setRequests(rows)
+        setMeta(pageMetaFrom(result, rows.length))
       })
       .catch((error) => {
         if (!live) return
@@ -194,7 +206,7 @@ export default function GymLeave() {
     return () => {
       live = false
     }
-  }, [gymId, filter, version, range])
+  }, [gymId, filter, version, range, page])
 
   useEffect(() => {
     let live = true
@@ -405,14 +417,14 @@ export default function GymLeave() {
                   <Skeleton className="mr-auto h-4 w-20" aria-label="Loading requests" />
                 ) : (
                   <p className="mr-auto text-muted-foreground text-sm">
-                    {requests.length} {requests.length === 1 ? 'request' : 'requests'}
+                    {meta?.total ?? requests.length} {(meta?.total ?? requests.length) === 1 ? 'request' : 'requests'}
                   </p>
                 )}
-                <RangePicker optional name="leave" value={range} onChange={setRange} />
+                <RangePicker optional name="leave" value={range} onChange={(next) => { setRange(next); setPage(1) }} />
                 <Select
                   items={STATUS_ITEMS}
                   value={filter}
-                  onValueChange={(next) => setFilter((next as StatusFilter) ?? 'all')}
+                  onValueChange={(next) => { setFilter((next as StatusFilter) ?? 'all'); setPage(1) }}
                 >
                   <SelectTrigger size="sm" className="w-40" aria-label="Filter requests by status">
                     <SelectValue />
@@ -529,6 +541,7 @@ export default function GymLeave() {
                   </div>
                 </>
               )}
+              <PageControls meta={meta} label="Leave requests" onPage={setPage} />
             </CardPanel>
           </Card>
         </TabsPanel>

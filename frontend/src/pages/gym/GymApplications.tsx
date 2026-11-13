@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { HealthSummary } from '@/components/membership/athlete-record-view'
 import { MembershipStatusBadge } from '@/components/membership/membership-parts'
+import { RecordPaymentDialog } from '@/components/membership/payment-dialogs'
+import { PageControls } from '@/components/page-controls'
 import { Alert, AlertAction, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -17,6 +19,7 @@ import { toastManager } from '@/components/ui/toast'
 import { api, apiFile, ApiError, formValues, type FieldErrors } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { approvedGym, can } from '@/lib/gym-access'
+import { pageMetaFrom, type PageMeta } from '@/lib/pagination'
 import { dateLabel, money, type Membership, type MembershipForm, type PricePreview } from '@/lib/membership'
 import { TextField } from '@/components/text-field'
 
@@ -43,7 +46,11 @@ export default function GymApplications() {
   const [rows, setRows] = useState<Membership[] | null>(null)
   const [error, setError] = useState('')
   const [version, setVersion] = useState(0)
+  const [page, setPage] = useState(1) // (R-123)
+  const [meta, setMeta] = useState<PageMeta | null>(null)
   const [form, setForm] = useState<MembershipForm | null>(null)
+  const [paying, setPaying] = useState<Membership | null>(null)
+  const canPay = gym ? can(gym, 'finance.payments.manage') : false
 
   const [open, setOpen] = useState<Membership | null>(null)
   const [action, setAction] = useState<'approve' | 'reject' | null>(null)
@@ -58,8 +65,17 @@ export default function GymApplications() {
     setRows(null)
     setError('')
     const status = filter === 'all' ? '' : `&status=${filter}`
-    api<{ memberships: Membership[] }>(`/gyms/${gymId}/memberships?view=applications${status}`)
-      .then((result) => live && setRows(result.memberships))
+    api<{ memberships: Membership[] }>(`/gyms/${gymId}/memberships?view=applications&page=${page}${status}`)
+      .then((result) => {
+        if (!live) return
+        // A decision can empty the last page; step back one.
+        if (result.memberships.length === 0 && page > 1) {
+          setPage(page - 1)
+          return
+        }
+        setRows(result.memberships)
+        setMeta(pageMetaFrom(result, result.memberships.length))
+      })
       .catch((failure) => {
         if (!live) return
         setRows([])
@@ -68,7 +84,7 @@ export default function GymApplications() {
     return () => {
       live = false
     }
-  }, [gymId, filter, version])
+  }, [gymId, filter, version, page])
 
   useEffect(() => {
     api<MembershipForm>('/membership-form').then(setForm).catch(() => undefined)
@@ -119,8 +135,18 @@ export default function GymApplications() {
     }
     setBusy(true)
     try {
-      await api(`/gyms/${gymId}/memberships/${open.id}/decision`, { body: { decision: action, reason: reason || null, ...(action === 'approve' ? { voucher_code: values.voucher_code?.trim() || null } : {}) } })
-      toastManager.add({ title: action === 'approve' ? 'Application approved. The member can now pay.' : 'Application rejected.', type: 'success' })
+      const result = await api<{ membership: Membership }>(`/gyms/${gymId}/memberships/${open.id}/decision`, { body: { decision: action, reason: reason || null, ...(action === 'approve' ? { voucher_code: values.voucher_code?.trim() || null } : {}) } })
+      if (action === 'reject') {
+        toastManager.add({ title: 'Application rejected.', type: 'success' })
+      } else if (Number(result.membership.balance) <= 0) {
+        toastManager.add({ title: 'Application approved.', type: 'success' })
+      } else if (canPay) {
+        // (R-127) go straight to taking the payment
+        setPaying(result.membership)
+        toastManager.add({ title: 'Application approved. Record the payment now.', type: 'success' })
+      } else {
+        toastManager.add({ title: 'Application approved. Ask the front desk to record the payment.', type: 'success' })
+      }
       setOpen(null)
       setVersion((v) => v + 1)
     } catch (failure) {
@@ -160,7 +186,7 @@ export default function GymApplications() {
           {rows && (
             <div>
               <p className="text-muted-foreground text-xs">In view</p>
-              <p className="mt-1 font-semibold text-2xl tabular-nums">{rows.length}</p>
+              <p className="mt-1 font-semibold text-2xl tabular-nums">{meta?.total ?? rows.length}</p>
             </div>
           )}
         </div>
@@ -172,7 +198,10 @@ export default function GymApplications() {
             <h2 id="applications-list" className="font-medium text-sm">Applications</h2>
             <p className="mt-1 max-w-prose text-muted-foreground text-xs leading-relaxed">{canDecide ? 'You cannot decide your own application.' : 'You can view applications. Deciding needs membership approval access.'}</p>
           </div>
-          <Select items={FILTERS} value={filter} onValueChange={(next) => setFilter((next as Filter) ?? 'applied')}>
+          <Select items={FILTERS} value={filter} onValueChange={(next) => {
+            setFilter((next as Filter) ?? 'applied')
+            setPage(1)
+          }}>
             <SelectTrigger size="sm" className="w-48" aria-label="Filter applications">
               <SelectValue />
             </SelectTrigger>
@@ -269,6 +298,9 @@ export default function GymApplications() {
               </div>
             </>
           )}
+          <div className="mt-4">
+            <PageControls meta={meta} label="Applications" onPage={setPage} />
+          </div>
         </div>
       </section>
 
@@ -389,6 +421,7 @@ export default function GymApplications() {
           )}
         </DialogPopup>
       </Dialog>
+      {paying && <RecordPaymentDialog gymId={gymId} open memberships={[paying]} onClose={() => setPaying(null)} onSaved={() => { setPaying(null); setVersion((v) => v + 1) }} />}
     </div>
   )
 }

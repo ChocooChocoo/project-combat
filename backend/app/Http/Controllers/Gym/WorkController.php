@@ -33,7 +33,7 @@ class WorkController extends Controller
 
         return response()->json([
             'work' => [
-                'profile' => $this->profilePayload($this->profileFor($gym, $user), $user->canViewCompensation($gym)),
+                'profile' => $this->profilePayload($this->profileFor($gym, $user), $user->canViewCompensation($gym), true),
                 'schedule' => $this->scheduleWeek($gym, $user),
                 'balances' => $this->leaveBalanceTypes($gym, $user, $year),
                 'requests' => $requests,

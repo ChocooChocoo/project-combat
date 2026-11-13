@@ -77,6 +77,7 @@ export default function SessionDetails() {
               <Badge variant="outline">{session.level_label}</Badge>
               {mine && <BookingBadge status={mine.status} />}
             </div>
+            {session.thumbnail_url && <img src={session.thumbnail_url} alt="" loading="lazy" className="aspect-video w-full max-w-md rounded-lg border object-cover" />}
             <h1 className="font-semibold text-3xl tracking-tight wrap-anywhere sm:text-4xl">{session.name}</h1>
             <p className="text-muted-foreground text-sm tabular-nums">
               {dayLabel(session.starts_at)} · {sessionTime(session.starts_at)}–{sessionTime(session.ends_at)}

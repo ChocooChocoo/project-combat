@@ -14,6 +14,7 @@ use App\Models\SessionBooking;
 use App\Models\TrainingSession;
 use App\Support\BookingLedger;
 use App\Support\MembershipLedger;
+use App\Support\Paging;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +31,7 @@ class PaymentController extends Controller
         $data = $request->validate([
             'membership_id' => ['nullable', 'integer'],
             ...DateRange::rules(),
+            ...Paging::rules(),
         ]);
 
         $query = $gym->payments()->with(['user', 'receivedBy']);
@@ -40,11 +42,10 @@ class PaymentController extends Controller
             $query->where('membership_id', $data['membership_id']);
         }
 
-        $payments = $query->orderByDesc('paid_at')->orderByDesc('id')->limit(500)->get()
-            ->map(fn (Payment $payment) => $this->paymentPayload($payment))
-            ->values();
+        [$rows, $meta] = Paging::rows($query->orderByDesc('paid_at')->orderByDesc('id'), $request, 500);
+        $payments = $rows->map(fn (Payment $payment) => $this->paymentPayload($payment))->values();
 
-        return response()->json(['payments' => $payments]);
+        return response()->json(['payments' => $payments, ...($meta ? ['meta' => $meta] : [])]);
     }
 
     public function owedBookings(Gym $gym, BookingLedger $ledger): JsonResponse

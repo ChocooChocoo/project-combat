@@ -57,6 +57,10 @@ export type EmployeeProfile = {
   pay_basis: PayBasis | null
   monthly_rate?: string | null
   per_session_rate?: string | null
+  /** R-121: full number, or "****1234" when the viewer may only see the end. */
+  sss_number?: string | null
+  philhealth_number?: string | null
+  pagibig_number?: string | null
   coach_photo_url: string | null
   coach_experience: string | null
   coach_rank: string | null
@@ -227,6 +231,7 @@ export type WorkspaceSetup = {
   session_reminder_minutes: number
   membership_reminder_days: number[]
   inactivity_days: number
+  attendance_radius_m: number | null
   services: string[]
   facilities: string[]
   options?: WorkspaceOptions

@@ -16,6 +16,7 @@ import { toastManager } from '@/components/ui/toast'
 import { TextField } from '@/components/text-field'
 import { isoDay } from '@/components/leave-calendar'
 import { api, ApiError, type FieldErrors } from '@/lib/api'
+import { currentPosition } from '@/lib/geolocation'
 import {
   ATTENDANCE_STATUS,
   OVERTIME_KIND,
@@ -64,7 +65,13 @@ export function MyAttendance({ gymId, shift = null }: { gymId: number; shift?: T
   async function clock(action: 'clock-in' | 'clock-out') {
     setBusy(action)
     try {
-      await api(`/gyms/${gymId}/my-attendance/${action}`, { method: 'POST' })
+      // R-122: when the gym checks distance, send where the person is.
+      let body: { latitude: number; longitude: number } | undefined
+      if (action === 'clock-in' && data?.settings.location_check) {
+        const here = await currentPosition()
+        body = { latitude: here.lat, longitude: here.lng }
+      }
+      await api(`/gyms/${gymId}/my-attendance/${action}`, { method: 'POST', ...(body ? { body } : {}) })
       refresh()
       toastManager.add({ title: action === 'clock-in' ? 'Clocked in.' : 'Clocked out.', type: 'success' })
     } catch (reason) {
@@ -111,6 +118,7 @@ export function MyAttendance({ gymId, shift = null }: { gymId: number; shift?: T
         today={today}
         shift={shift}
         graceMinutes={data.settings.grace_minutes}
+        radiusM={data.settings.location_check ? data.settings.radius_m : null}
         busy={busy}
         onClockIn={() => clock('clock-in')}
         onClockOut={() => clock('clock-out')}
@@ -269,6 +277,7 @@ function ClockHero({
   today,
   shift,
   graceMinutes,
+  radiusM,
   busy,
   onClockIn,
   onClockOut,
@@ -276,6 +285,7 @@ function ClockHero({
   today: StaffAttendance | null
   shift: TodayShift | null
   graceMinutes: number
+  radiusM: number | null
   busy: string
   onClockIn: () => void
   onClockOut: () => void
@@ -316,6 +326,9 @@ function ClockHero({
                 </Button>
               )}
               <p className="text-muted-foreground text-xs sm:text-center">Grace is {graceMinutes} minutes.</p>
+              {radiusM !== null && state.action === 'clock-in' && (
+                <p className="text-muted-foreground text-xs sm:text-center">Clock-in checks you are within {radiusM} m of the gym.</p>
+              )}
             </>
           )}
         </div>

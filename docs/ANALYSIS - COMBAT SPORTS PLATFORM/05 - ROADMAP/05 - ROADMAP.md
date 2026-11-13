@@ -35,6 +35,7 @@ The plan draws on these sources:
 | 9 | Staff time and access rules are tightened | Phase 6 (R-56, R-59, R-62) | R-99 to R-101 | ✅ Finished | [PHASE 9](phase-9/PHASE%209.md) |
 | 10 | Gyms subscribe to the platform | Phases 2 and 4 (R-18, R-35); R-101 | R-102 to R-107 | ✅ Finished | [PHASE 10](phase-10/PHASE%2010.md) |
 | 11 | Gyms get offers, safer training and clearer monitoring (P09) | Phases 3 to 10 | R-108 to R-120 | 🟨 Built, browser check pending | [PHASE 11](phase-11/PHASE%2011.md) |
+| 12 | Staff IDs, clock-in location, paging, session sport and picture, QR fallback, pay after approval (feature change list, section A) | Phases 3 to 11 | R-121 to R-127 | 🟨 Built, browser check pending | [PHASE 12](phase-12/PHASE%2012.md) |
 
 A phase is ✅ only when every item in it is ✅, 🔵 or ⬜. It is 🟨 once any item is being worked on, ❌ if it cannot start or continue, and ⭕ otherwise. The order is drawn as diagram 10 in [04 - DIAGRAMS](../04%20-%20DIAGRAMS/04%20-%20DIAGRAMS.md).
 
@@ -73,6 +74,7 @@ Every module of the spec, and the old-system extras, are accounted for.
 | 1. Sidebar shows only what a role allows (client request, 9 November 2026) | [PHASE 9](phase-9/PHASE%209.md) | Already there: R-101 |
 | 7. Subscription plans, plan features, free trial, paying and limits after the trial (client request, 9 November 2026) | [PHASE 10](phase-10/PHASE%2010.md) | Planned: R-102 to R-107 |
 | P09 items 1 to 8: sidebar and last gym, prepay and price lock, promos and vouchers, date filters, purchase edits and receipt proof, reminders and monitoring, coach applications, goals, injuries and equipment safety (client request, 12 November 2026) | [PHASE 11](phase-11/PHASE%2011.md) | Built: R-108 to R-120. Item 9 (tournaments) out of scope. |
+| Feature change list, section A items 3 to 9: staff government IDs, clock-in location check, paging, session sport and thumbnail, QR fallback, pay after approval (client request, 13 November 2026) | [PHASE 12](phase-12/PHASE%2012.md) | Built: R-121 to R-127. Section B out of scope. |
 | Old-system extras kept | Phases 1, 3, 4, 6 | R-06, R-26, R-27, R-32, R-38 (divisions), R-57, R-60. PayMongo (R-35) is now a core requirement. |
 | Old-system extras not decided | — | Left out until answered (see below) |
 

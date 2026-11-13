@@ -8,6 +8,7 @@ use App\Models\Gym;
 use App\Models\Offer;
 use App\Models\User;
 use App\Notifications\GymNotice;
+use App\Support\Paging;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,15 +20,17 @@ use Illuminate\Validation\Rule;
  */
 class OfferController extends Controller
 {
-    public function index(Gym $gym): JsonResponse
+    public function index(Request $request, Gym $gym): JsonResponse
     {
-        $offers = Offer::with(['plans', 'createdBy', 'decidedBy'])
+        $request->validate(Paging::rules());
+        [$offers, $meta] = Paging::rows(Offer::with(['plans', 'createdBy', 'decidedBy'])
             ->orderByRaw("case when status = 'pending' then 0 when status = 'approved' then 1 else 2 end")
-            ->orderByDesc('id')->get();
+            ->orderByDesc('id'), $request);
 
         return response()->json([
             'offers' => $offers->map(fn (Offer $offer) => $this->payload($offer))->values(),
             'plans' => $gym->membershipPlans()->orderBy('name')->get(['id', 'name', 'total_fee']),
+            ...($meta ? ['meta' => $meta] : []),
         ]);
     }
 

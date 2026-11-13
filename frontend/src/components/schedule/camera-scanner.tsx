@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 
 type Detector = { detect: (source: HTMLVideoElement) => Promise<{ rawValue: string }[]> }
-type DetectorWindow = Window & { BarcodeDetector: new (options: { formats: string[] }) => Detector }
+type DetectorWindow = Window & { BarcodeDetector: (new (options: { formats: string[] }) => Detector) & { getSupportedFormats: () => Promise<string[]> } }
 
-/** R-52: native camera scanning only; typing remains available in every browser. */
+/** R-52: native camera scanning, with a jsQR fallback for browsers without it (R-126). Typing works everywhere. */
 export function CameraScanner({ onRead, onClose }: { onRead: (code: string) => void; onClose: () => void }) {
   const video = useRef<HTMLVideoElement>(null)
   const [error, setError] = useState('')
@@ -14,7 +14,22 @@ export function CameraScanner({ onRead, onClose }: { onRead: (code: string) => v
     let timer: ReturnType<typeof setTimeout>
     async function start() {
       try {
-        const detector = new (window as unknown as DetectorWindow).BarcodeDetector({ formats: ['qr_code'] })
+        // R-126: use the native reader only if it can read QR codes; otherwise load jsQR on demand
+        const Native = 'BarcodeDetector' in window ? (window as unknown as DetectorWindow).BarcodeDetector : null
+        const detector = Native && (await Native.getSupportedFormats()).includes('qr_code') ? new Native({ formats: ['qr_code'] }) : null
+        const fallback = detector ? null : await import('@/lib/qr-scan')
+        const canvas = document.createElement('canvas')
+        const read = async (el: HTMLVideoElement): Promise<string | undefined> => {
+          if (detector) return (await detector.detect(el))[0]?.rawValue
+          if (!el.videoWidth) return undefined
+          canvas.width = Math.min(640, el.videoWidth)
+          canvas.height = Math.round(el.videoHeight * canvas.width / el.videoWidth)
+          const ctx = canvas.getContext('2d', { willReadFrequently: true })
+          if (!ctx) return undefined
+          ctx.drawImage(el, 0, 0, canvas.width, canvas.height)
+          const image = ctx.getImageData(0, 0, canvas.width, canvas.height)
+          return fallback?.decodeQr(image.data, image.width, image.height) ?? undefined
+        }
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
         if (!live) { stream.getTracks().forEach((track) => track.stop()); return }
         if (!video.current) return
@@ -23,9 +38,9 @@ export function CameraScanner({ onRead, onClose }: { onRead: (code: string) => v
         async function scan() {
           if (!live || !video.current) return
           try {
-            const codes = await detector.detect(video.current)
+            const code = await read(video.current)
             if (!live) return
-            if (codes[0]?.rawValue) { onRead(codes[0].rawValue); return }
+            if (code) { onRead(code); return }
             timer = setTimeout(scan, 250)
           } catch {
             if (live) setError('Camera scanning failed. Type the short code instead.')

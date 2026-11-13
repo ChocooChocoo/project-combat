@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 /** R-42: one occurrence; series_id groups repeats without coupling their edits. */
 #[Fillable([
@@ -27,6 +28,12 @@ class TrainingSession extends Model
             'capacity' => 'integer', 'allowed_plan_ids' => 'array', 'bring' => 'array',
             'fee' => 'decimal:2', 'needs_approval' => 'boolean', 'status' => SessionStatus::class,
         ];
+    }
+
+    /** R-125 */
+    public function thumbnailUrl(): ?string
+    {
+        return $this->thumbnail_path ? Storage::disk('public')->url($this->thumbnail_path) : null;
     }
 
     public function coach(): BelongsTo

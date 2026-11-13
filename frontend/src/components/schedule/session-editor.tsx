@@ -10,6 +10,7 @@ import { CheckboxGroup } from '@/components/ui/checkbox-group'
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 import { Fieldset, FieldsetLegend } from '@/components/ui/fieldset'
 import { Form } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { toastManager } from '@/components/ui/toast'
@@ -21,6 +22,83 @@ function endTime(start: string, duration: number): string {
   const [hour, minute] = start.split(':').map(Number)
   const total = hour * 60 + minute + duration
   return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
+}
+
+/** R-125: picture upload runs on its own endpoint, so it needs a saved session. */
+function ThumbnailCard({ gymId, session, maxKb }: { gymId: string; session: TrainingSession | null; maxKb: number }) {
+  const [url, setUrl] = useState(session?.thumbnail_url ?? null)
+  const [series, setSeries] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  async function send(file: File | null) {
+    if (!session) return
+    if (file && file.size > maxKb * 1024) {
+      setError(`This photo is too big. The largest size is ${Math.round(maxKb / 1024)} MB.`)
+      return
+    }
+    setBusy(true)
+    setError('')
+    try {
+      const path = `/gyms/${gymId}/sessions/${session.id}/thumbnail`
+      let result: { session: TrainingSession }
+      if (file) {
+        const body = new FormData()
+        body.append('photo', file)
+        if (series) body.append('apply_to_series', '1')
+        result = await api<{ session: TrainingSession }>(path, { body })
+      } else {
+        result = await api<{ session: TrainingSession }>(path, { method: 'DELETE', body: { apply_to_series: series } })
+      }
+      setUrl(result.session.thumbnail_url)
+      toastManager.add({ title: file ? 'Thumbnail saved.' : 'Thumbnail removed.', type: 'success' })
+    } catch (e) {
+      setError(e instanceof ApiError ? (e.errors.photo?.[0] ?? e.message) : 'The thumbnail could not be saved.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle render={<h2 />}>Thumbnail</CardTitle>
+        <CardDescription>A picture shown with the session in lists and details.</CardDescription>
+      </CardHeader>
+      <CardPanel className="flex flex-col gap-4">
+        {!session ? (
+          <p className="text-sm text-muted-foreground">Save the session first, then add a thumbnail.</p>
+        ) : (
+          <>
+            {url && <img src={url} alt="" loading="lazy" className="aspect-video w-full max-w-sm rounded-lg border object-cover" />}
+            <Input
+              type="file"
+              accept="image/*"
+              disabled={busy}
+              aria-label="Upload thumbnail"
+              onChange={(event) => {
+                const file = event.target.files?.[0] ?? null
+                event.target.value = ''
+                if (file) void send(file)
+              }}
+            />
+            {session.series_id && (
+              <label className="flex min-h-11 items-center gap-2 text-sm">
+                <Checkbox checked={series} onCheckedChange={(checked) => setSeries(checked === true)} />
+                Use for upcoming sessions in this series
+              </label>
+            )}
+            {url && (
+              <div>
+                <Button type="button" variant="outline" disabled={busy} onClick={() => void send(null)}>Remove</Button>
+              </div>
+            )}
+            {error && <p role="alert" className="text-sm text-destructive-foreground">{error}</p>}
+          </>
+        )}
+      </CardPanel>
+    </Card>
+  )
 }
 
 /** R-42, R-43: edit one occurrence; the server checks every repeated date before saving. */
@@ -109,7 +187,7 @@ export function SessionEditor({
           gym_service_id: form.gym_service_id ? Number(form.gym_service_id) : null,
           name: form.name.trim(),
           type: form.type,
-          discipline: form.discipline.trim() || null,
+          discipline: form.discipline || null,
           level: form.level,
           coach_id: Number(form.coach_id),
           room_id: Number(form.room_id),
@@ -187,9 +265,16 @@ export function SessionEditor({
                 }}
                 items={Object.entries(options.activity_types).map(([value, label]) => ({ value, label }))}
               />
-              <TextField
-                name="discipline" label="Combat sport" maxLength={40}
-                value={form.discipline} onChange={(e) => set('discipline', e.target.value)}
+              {/* R-124: pick from the platform list; keep an old typed value so edits do not lose it. */}
+              <ChoiceField
+                name="discipline" label="Combat sport" value={form.discipline} onChange={(value) => set('discipline', value)}
+                items={[
+                  { value: '', label: 'Not specified' },
+                  ...(session?.discipline && !options.disciplines.some((item) => item.value === session.discipline)
+                    ? [{ value: session.discipline, label: `${session.discipline} (old entry)` }]
+                    : []),
+                  ...options.disciplines,
+                ]}
               />
               <ChoiceField
                 name="coach_id" label="Coach" value={form.coach_id} required onChange={(value) => set('coach_id', value)}
@@ -204,6 +289,7 @@ export function SessionEditor({
               )}
             </CardPanel>
           </Card>
+          <ThumbnailCard gymId={gymId} session={session} maxKb={options.thumbnail_max_kb} />
           <Card>
             <CardHeader>
               <CardTitle render={<h2 />}>Time and places</CardTitle>

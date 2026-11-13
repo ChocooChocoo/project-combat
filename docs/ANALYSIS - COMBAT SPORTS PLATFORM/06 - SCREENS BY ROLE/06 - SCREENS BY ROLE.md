@@ -221,3 +221,16 @@ The old system gets these cells wrong:
 | S-51 | Stock → Safety | Staff with safety access | Check schedule, record pass / needs repair / unsafe, recent checks | R-120 |
 
 Changed screens: the sidebar groups (R-108); date filters on payments, bookings, payroll runs, leave, overtime, purchasing, stock history, follow-ups, announcements, notifications, my bookings, my attendance and membership history (R-112); prepay and price fields on plans, the application and the member record (R-109, R-110); voucher field on the application and approval (R-111); edit and receipt proof on purchasing (R-113, R-114); reminder and inactivity days on Setup (R-115); Goals and Injuries on the member record and My record (R-118, R-119); a *Restricted* badge on the members list and session rosters (R-119).
+
+## Added after the feature change list, section A (13 November 2026)
+
+No new screens. Changed screens:
+
+- **Employee record, Employment** (R-121): a *Government IDs* group with SSS, PhilHealth and Pag-IBIG. Staff with `hr.staff.manage` edit them. Staff with `payroll.runs.view`, and the employee on their own record, see the full numbers. Other staff who can open the record see them masked (`****` and the last 4 digits).
+- **My attendance** (R-122): a line under the clock button, "Clock-in checks you are within N m of the gym", when the gym sets a limit. If location is blocked, an error message appears and nothing is sent.
+- **Gym settings** (R-122): *Staff clock-in distance (metres)* next to the map pin; empty means staff can clock in from anywhere.
+- **Staff attendance** (R-122): "N m from gym" beside the clock-in time when it was saved.
+- **Payments, Members, Applications, Bookings (requested), Staff, Leave, Overtime tab, Offers, Coach applications** (R-123): 25 rows a page with next and previous. Changing a filter or date range goes back to page 1. If the last row of a page is removed, the screen steps back one page.
+- **Session editor** (R-124, R-125): *Combat sport* is a list (the gym's sports first; an old typed value shows as "(old entry)"). A *Thumbnail* card lets staff upload or remove a picture, with an option to use it for upcoming sessions in the series. The picture shows on the schedule, the session page, and the member timetable and session details.
+- **Check-in** (R-126): *Scan with camera* shows in any browser that can open the camera.
+- **Applications** (R-127): after approval, staff with `finance.payments.manage` get the payment dialog straight away (with the discount line when there is one); others see a toast to ask the front desk.

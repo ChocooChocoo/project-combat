@@ -137,6 +137,11 @@ Then create the app secret key:
 /opt/alt/php84/usr/bin/php artisan key:generate
 ```
 
+**Keep this key.** Employee government ID numbers (SSS, PhilHealth, Pag-IBIG) are saved encrypted with `APP_KEY`.
+If the key changes or is lost, those numbers can no longer be read. Do not run `key:generate` again on a live site.
+To rotate the key on purpose, put the old key in `APP_PREVIOUS_KEYS` (comma-separated if more than one) before
+setting the new `APP_KEY`, so old values still open. Back up the `.env` file.
+
 ## Step 6: Set up the database and app
 
 ```bash

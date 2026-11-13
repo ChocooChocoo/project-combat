@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { PaymentsList } from '@/components/membership/membership-parts'
 import { CorrectPaymentDialog, RecordPaymentDialog } from '@/components/membership/payment-dialogs'
+import { PageControls } from '@/components/page-controls'
 import { PageHeader } from '@/components/page-header'
 import { RangePicker } from '@/components/decision-support/range-picker'
 import { NO_RANGE, rangeQuery } from '@/lib/decision-support'
@@ -12,6 +13,7 @@ import { Card, CardDescription, CardHeader, CardPanel, CardTitle } from '@/compo
 import { Skeleton } from '@/components/ui/skeleton'
 import { api, ApiError } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
+import { pageMetaFrom, type PageMeta } from '@/lib/pagination'
 import { approvedGym, can } from '@/lib/gym-access'
 import { correctable, money, type Membership, type Payment } from '@/lib/membership'
 import type { OwedBooking } from '@/lib/bookings'
@@ -33,13 +35,19 @@ export default function GymPayments() {
   const [recording, setRecording] = useState(false)
   const [correcting, setCorrecting] = useState<Payment | null>(null)
   const [range, setRange] = useState(NO_RANGE)
+  const [page, setPage] = useState(1) // (R-123)
+  const [meta, setMeta] = useState<PageMeta | null>(null)
 
   useEffect(() => {
     let live = true
     setPayments(null)
     setError('')
-    api<{ payments: Payment[] }>(`/gyms/${gymId}/payments${rangeQuery(range, '?')}`)
-      .then((result) => live && setPayments(result.payments))
+    api<{ payments: Payment[] }>(`/gyms/${gymId}/payments?page=${page}${rangeQuery(range)}`)
+      .then((result) => {
+        if (!live) return
+        setPayments(result.payments)
+        setMeta(pageMetaFrom(result, result.payments.length))
+      })
       .catch((failure) => {
         if (!live) return
         setPayments([])
@@ -57,7 +65,7 @@ export default function GymPayments() {
     return () => {
       live = false
     }
-  }, [gymId, version, canRecord, range])
+  }, [gymId, version, canRecord, range, page])
 
   if (!gym) return null
   const refresh = () => setVersion((v) => v + 1)
@@ -105,7 +113,10 @@ export default function GymPayments() {
         <CardHeader>
           <CardTitle render={<h2 />}>Payment history</CardTitle>
           <CardDescription>Payments cannot be edited. A mistake is fixed with a correction entry, so the history stays complete.</CardDescription>
-          <RangePicker optional name="payments" value={range} onChange={setRange} />
+          <RangePicker optional name="payments" value={range} onChange={(next) => {
+              setRange(next)
+              setPage(1)
+            }} />
         </CardHeader>
         <CardPanel>
           {error ? (
@@ -139,6 +150,7 @@ export default function GymPayments() {
             />
           )}
         </CardPanel>
+        <PageControls meta={meta} label="Payments" onPage={setPage} />
       </Card>
 
       {recording && <RecordPaymentDialog

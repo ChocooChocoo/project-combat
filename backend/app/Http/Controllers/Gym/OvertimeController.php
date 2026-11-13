@@ -12,6 +12,7 @@ use App\Models\OvertimeRequest;
 use App\Notifications\OvertimeDecided;
 use App\Notifications\OvertimeRequested;
 use App\Support\PayrollLock;
+use App\Support\Paging;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -28,17 +29,17 @@ class OvertimeController extends Controller
         $data = $request->validate([
             'status' => ['nullable', Rule::enum(OvertimeStatus::class)],
             ...DateRange::rules(),
+            ...Paging::rules(),
         ]);
 
-        $rows = DateRange::apply($gym->overtimeRequests(), $data, 'work_date')
+        $query = DateRange::apply($gym->overtimeRequests(), $data, 'work_date')
             ->with(['user', 'decidedBy'])
             ->when($data['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
             ->orderByDesc('work_date')
-            ->orderByDesc('id')
-            ->limit(200)
-            ->get();
+            ->orderByDesc('id');
+        [$rows, $meta] = Paging::rows($query, $request, 200);
 
-        return response()->json(['requests' => $rows->map(fn (OvertimeRequest $row) => $this->overtimePayload($row))]);
+        return response()->json(['requests' => $rows->map(fn (OvertimeRequest $row) => $this->overtimePayload($row)), ...($meta ? ['meta' => $meta] : [])]);
     }
 
     public function store(Request $request, Gym $gym): JsonResponse

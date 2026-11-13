@@ -13,6 +13,7 @@ use App\Models\WorkSchedule;
 use App\Notifications\GymNotice;
 use App\Support\CoachScheduleConflicts;
 use App\Support\CurrentGym;
+use App\Support\Paging;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -97,12 +98,13 @@ class CoachApplicationController extends Controller
     }
 
     /** Staff: applications at this gym, waiting first, each with a fresh conflict check. */
-    public function index(Gym $gym): JsonResponse
+    public function index(Request $request, Gym $gym): JsonResponse
     {
-        $rows = CoachApplication::with(['user', 'decidedBy'])
-            ->orderByRaw("case when status = 'pending' then 0 else 1 end")->orderByDesc('id')->get();
+        $request->validate(Paging::rules());
+        [$rows, $meta] = Paging::rows(CoachApplication::with(['user', 'decidedBy'])
+            ->orderByRaw("case when status = 'pending' then 0 else 1 end")->orderByDesc('id'), $request);
 
-        return response()->json(['applications' => $rows->map(fn (CoachApplication $row) => $this->payload($row, $gym, true))->values()]);
+        return response()->json(['applications' => $rows->map(fn (CoachApplication $row) => $this->payload($row, $gym, true))->values(), ...($meta ? ['meta' => $meta] : [])]);
     }
 
     public function decide(Request $request, Gym $gym, int $application): JsonResponse

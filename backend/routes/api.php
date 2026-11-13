@@ -260,6 +260,8 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('sessions/{session}', [SessionController::class, 'show'])->whereNumber('session')->middleware('permission:training.sessions.view');
                 Route::post('sessions', [SessionController::class, 'store'])->middleware('permission:training.sessions.manage');
                 Route::put('sessions/{session}', [SessionController::class, 'update'])->whereNumber('session')->middleware('permission:training.sessions.manage');
+                Route::post('sessions/{session}/thumbnail', [SessionController::class, 'thumbnail'])->whereNumber('session')->middleware('permission:training.sessions.manage'); // R-125
+                Route::delete('sessions/{session}/thumbnail', [SessionController::class, 'destroyThumbnail'])->whereNumber('session')->middleware('permission:training.sessions.manage');
                 Route::post('sessions/{session}/cancel', [SessionController::class, 'cancel'])->whereNumber('session')->middleware('permission:training.sessions.manage');
                 Route::post('sessions/{session}/clear-flag', [SessionController::class, 'clearFlag'])->whereNumber('session')->middleware('permission:training.sessions.manage');
                 Route::get('sessions/{session}/free-coaches', [SessionController::class, 'freeCoaches'])->whereNumber('session')->middleware('permission:training.sessions.view');

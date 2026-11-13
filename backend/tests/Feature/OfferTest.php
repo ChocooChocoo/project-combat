@@ -55,6 +55,7 @@ class OfferTest extends TestCase
         $this->approveWith('hello10')->assertOk()
             ->assertJsonPath('membership.amount_charged', '1350.00')
             ->assertJsonPath('membership.discount_amount', '150.00')
+            ->assertJsonPath('membership.balance', '1350.00') // (R-127) the desk pays this next
             ->assertJsonPath('membership.offer_name', 'Welcome');
         $this->assertSame(1, Offer::withoutGlobalScope('gym')->find($id)->uses);
     }

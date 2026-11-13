@@ -1,7 +1,9 @@
 import { Plus, TicketPercent } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
+import { PageControls } from '@/components/page-controls'
 import { PageHeader } from '@/components/page-header'
+import { pageMetaFrom, type PageMeta } from '@/lib/pagination'
 import { TextField } from '@/components/text-field'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -38,17 +40,29 @@ export default function GymOffers() {
   const [plans, setPlans] = useState<PlanChoice[]>([])
   const [error, setError] = useState('')
   const [version, setVersion] = useState(0)
+  const [page, setPage] = useState(1) // (R-123)
+  const [meta, setMeta] = useState<PageMeta | null>(null)
   const [editing, setEditing] = useState<Offer | 'new' | null>(null)
   const [deciding, setDeciding] = useState<Offer | null>(null)
 
   useEffect(() => {
     let live = true
     setError('')
-    api<{ offers: Offer[]; plans: PlanChoice[] }>(`/gyms/${gymId}/offers`)
-      .then((result) => { if (live) { setOffers(result.offers); setPlans(result.plans) } })
+    api<{ offers: Offer[]; plans: PlanChoice[] }>(`/gyms/${gymId}/offers?page=${page}`)
+      .then((result) => {
+        if (!live) return
+        // An action can empty the last page; step back one.
+        if (result.offers.length === 0 && page > 1) {
+          setPage(page - 1)
+          return
+        }
+        setOffers(result.offers)
+        setPlans(result.plans)
+        setMeta(pageMetaFrom(result, result.offers.length))
+      })
       .catch((failure) => live && setError(failure instanceof ApiError ? failure.message : 'Offers could not be loaded.'))
     return () => { live = false }
-  }, [gymId, version])
+  }, [gymId, version, page])
 
   if (!gym) return null
   const refresh = () => setVersion((value) => value + 1)
@@ -81,6 +95,7 @@ export default function GymOffers() {
           <EmptyTitle>No offers yet</EmptyTitle><EmptyDescription>Make a promo or voucher for one or more membership plans.</EmptyDescription>
         </EmptyHeader></Empty>
       ) : (
+        <>
         <ul className="flex flex-col gap-3">
           {offers.map((offer) => {
             const status = offerStatus[offer.status]
@@ -111,6 +126,8 @@ export default function GymOffers() {
             )
           })}
         </ul>
+        <PageControls meta={meta} label="Offers" onPage={setPage} />
+        </>
       )}
       {editing && <OfferDialog gymId={gym.id} offer={editing === 'new' ? null : editing} plans={plans} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); refresh() }} />}
       {deciding && <DecideDialog gymId={gym.id} offer={deciding} onClose={() => setDeciding(null)} onDone={() => { setDeciding(null); refresh() }} />}

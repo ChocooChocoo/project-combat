@@ -2,8 +2,10 @@ import { useCallback, useState } from 'react'
 import { RangePicker } from '@/components/decision-support/range-picker'
 import { NO_RANGE, rangeQuery } from '@/lib/decision-support'
 import { useParams } from 'react-router'
+import { PageControls } from '@/components/page-controls'
 import { BookingActionDialog, BookingEmpty, BookingError, BookingLoading, StaffBookingList, type BookingAction } from '@/components/schedule/booking-parts'
 import { api, ApiError } from '@/lib/api'
+import { pageMetaFrom, type PageMeta } from '@/lib/pagination'
 import { usePolling } from '@/hooks/use-polling'
 import { useAuth } from '@/lib/auth'
 import type { StaffBooking } from '@/lib/bookings'
@@ -24,16 +26,19 @@ export default function GymBookings() {
   const [paying, setPaying] = useState<StaffBooking | null>(null)
   const canPay = Boolean(gym && can(gym, 'finance.payments.manage'))
   const [range, setRange] = useState(NO_RANGE)
+  const [page, setPage] = useState(1) // (R-123)
+  const [meta, setMeta] = useState<PageMeta | null>(null)
   const load = useCallback(async (silent: boolean, isCurrent: () => boolean) => {
     if (!silent) setError('')
     try {
-      const result = await api<{ bookings: StaffBooking[] }>(`/gyms/${gymId}/bookings?status=requested${rangeQuery(range)}`)
+      const result = await api<{ bookings: StaffBooking[] }>(`/gyms/${gymId}/bookings?status=requested&page=${page}${rangeQuery(range)}`)
       const booked = await api<{ bookings: StaffBooking[] }>(`/gyms/${gymId}/bookings?status=booked${rangeQuery(range)}`)
-      if (isCurrent()) { setBookings(result.bookings); setOwing(booked.bookings.filter((b) => Number(b.balance) > 0)); setError('') }
+      if (isCurrent() && result.bookings.length === 0 && page > 1) { setPage(page - 1); return } // last page emptied
+      if (isCurrent()) { setBookings(result.bookings); setMeta(pageMetaFrom(result, result.bookings.length)); setOwing(booked.bookings.filter((b) => Number(b.balance) > 0)); setError('') }
     } catch (failure) {
       if (isCurrent() && !silent) setError(failure instanceof ApiError ? failure.message : 'Booking requests could not be loaded.')
     }
-  }, [gymId, range])
+  }, [gymId, range, page])
   usePolling(load, 15_000, Boolean(user && canView), version)
   if (!gym) return null
   if (!canView) return <BookingEmpty title="Bookings are not available" description="Your role does not include training access for this gym." />
@@ -44,11 +49,11 @@ export default function GymBookings() {
           <h1 className="font-semibold text-3xl tracking-tight sm:text-4xl">Bookings</h1>
           <p className="mt-3 max-w-prose text-muted-foreground text-sm leading-relaxed">Requested bookings reserve places until someone with approval access decides.</p>
         </div>
-        <RangePicker optional name="bookings" value={range} onChange={setRange} />
-        {bookings && bookings.length > 0 && (
+        <RangePicker optional name="bookings" value={range} onChange={(next) => { setRange(next); setPage(1) }} />
+        {bookings && (meta?.total ?? bookings.length) > 0 && (
           <div>
             <p className="text-muted-foreground text-xs">Waiting for a decision</p>
-            <p className="mt-1 font-semibold text-2xl tabular-nums">{bookings.length}</p>
+            <p className="mt-1 font-semibold text-2xl tabular-nums">{meta?.total ?? bookings.length}</p>
           </div>
         )}
       </header>
@@ -66,6 +71,7 @@ export default function GymBookings() {
           onAction={setTarget}
         />
       )}
+      <PageControls meta={meta} label="Booking requests" onPage={setPage} />
       {owing.length > 0 && gym && (
         <section className="flex flex-col gap-3">
           <h2 className="font-medium text-lg">Approved, payment owed</h2>

@@ -46,6 +46,9 @@ class MyAttendanceController extends Controller
             'settings' => [
                 'grace_minutes' => $gym->staff_grace_minutes,
                 'overtime_min_minutes' => $gym->overtime_min_minutes,
+                // R-122
+                'location_check' => $gym->attendance_radius_m !== null && $gym->latitude !== null && $gym->longitude !== null,
+                'radius_m' => $gym->attendance_radius_m,
             ],
         ]);
     }
@@ -53,7 +56,11 @@ class MyAttendanceController extends Controller
     public function clockIn(Request $request, Gym $gym, StaffAttendanceBook $book): JsonResponse
     {
         $this->ensureEmployee($request, $gym);
-        $row = $book->clockIn($gym, $request->user());
+        $data = $request->validate([
+            'latitude' => ['nullable', 'numeric', 'between:-90,90', 'required_with:longitude'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180', 'required_with:latitude'],
+        ]);
+        $row = $book->clockIn($gym, $request->user(), isset($data['latitude']) ? (float) $data['latitude'] : null, isset($data['longitude']) ? (float) $data['longitude'] : null);
 
         return response()->json(['today' => $this->attendancePayload($row->load('user'))], 201);
     }

@@ -15,7 +15,9 @@ use App\Models\User;
 use App\Models\WorkSchedule;
 use App\Support\CurrentGym;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Tests\Feature\Concerns\MembershipSetup;
 use Tests\TestCase;
 
@@ -148,6 +150,34 @@ class SessionTest extends TestCase
         $this->actingAs($this->owner)->postJson($this->url('sessions'), $this->payload(['coach_id' => $staff->id]))
             ->assertUnprocessable()->assertJsonValidationErrors(['room_id', 'coach_id']);
         $this->getJson($this->url('sessions/options'))->assertOk()->assertJsonCount(0, 'options.rooms')->assertJsonCount(1, 'options.coaches');
+    }
+
+    public function test_discipline_must_be_a_platform_sport_or_empty(): void // R-124
+    {
+        $this->actingAs($this->owner);
+        $this->postJson($this->url('sessions'), $this->payload(['discipline' => 'Boxing class']))
+            ->assertUnprocessable()->assertJsonValidationErrors('discipline');
+        $this->postJson($this->url('sessions'), $this->payload(['discipline' => 'judo']))->assertCreated();
+        $this->postJson($this->url('sessions'), $this->payload([
+            'discipline' => null, 'starts_at' => '2026-11-09 12:00:00', 'ends_at' => '2026-11-09 13:00:00',
+        ]))->assertCreated();
+    }
+
+    public function test_options_list_gym_sports_first_and_all_of_them(): void // R-124
+    {
+        $this->gym->forceFill(['disciplines' => ['bjj']])->save();
+        $list = $this->actingAs($this->owner)->getJson($this->url('sessions/options'))->assertOk()
+            ->assertJsonPath('options.disciplines.0.value', 'bjj')->json('options.disciplines');
+        $this->assertCount(count(config('verification.disciplines')), $list);
+    }
+
+    public function test_old_typed_discipline_can_be_kept_but_not_changed_to_new_text(): void // R-124
+    {
+        $id = $this->actingAs($this->owner)->postJson($this->url('sessions'), $this->payload())->assertCreated()->json('session.id');
+        TrainingSession::withoutGlobalScopes()->whereKey($id)->update(['discipline' => 'Old text']);
+        $this->putJson($this->url("sessions/{$id}"), $this->payload(['discipline' => 'Old text']))->assertOk();
+        $this->putJson($this->url("sessions/{$id}"), $this->payload(['discipline' => 'New text']))
+            ->assertUnprocessable()->assertJsonValidationErrors('discipline');
     }
 
     public function test_repeating_sessions_share_series_and_edit_one_occurrence_only(): void
@@ -289,5 +319,66 @@ class SessionTest extends TestCase
         TrainingSession::withoutGlobalScope('gym')->findOrFail($id)->update(['status' => 'cancelled']);
         $this->assertSame('cancelled', $phase('2026-11-09 10:30:00'));
         $this->getJson($this->url('sessions?from=2026-11-09&to=2026-11-09'))->assertJsonPath('sessions.0.phase', 'cancelled');
+    }
+
+    private function thumb(int $id, array $extra = [], ?User $as = null)
+    {
+        return $this->actingAs($as ?? $this->owner)
+            ->post($this->url("sessions/{$id}/thumbnail"), ['photo' => UploadedFile::fake()->createWithContent('a.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=')), ...$extra], ['Accept' => 'application/json']);
+    }
+
+    private function path(int $id): ?string
+    {
+        return TrainingSession::withoutGlobalScope('gym')->findOrFail($id)->thumbnail_path;
+    }
+
+    // R-125
+    public function test_thumbnail_upload_and_replace_delete_old_file(): void
+    {
+        Storage::fake('public');
+        $id = $this->createSession();
+        $this->thumb($id)->assertOk()->assertJsonPath('session.thumbnail_url', fn ($url) => $url !== null);
+        $first = $this->path($id);
+        Storage::disk('public')->assertExists($first);
+        $this->thumb($id)->assertOk();
+        Storage::disk('public')->assertMissing($first);
+        Storage::disk('public')->assertExists($this->path($id));
+        $this->actingAs($this->owner)->getJson($this->url("timetable/{$id}"))->assertJsonPath('session.thumbnail_url', fn ($url) => $url !== null);
+        $this->actingAs($this->owner)->getJson($this->url('sessions/options'))->assertJsonPath('options.thumbnail_max_kb', config('offer.service_photos.max_kb'));
+    }
+
+    public function test_thumbnail_apply_to_series_skips_past_and_cancelled(): void
+    {
+        Storage::fake('public');
+        app(CurrentGym::class)->set($this->gym);
+        $make = fn ($when, array $extra = []) => TrainingSession::create([
+            'type' => 'classes', 'name' => 'X', 'level' => 'all', 'coach_id' => $this->coach->id, 'room_id' => $this->room->id,
+            'starts_at' => $when, 'ends_at' => $when->copy()->addHour(), 'capacity' => 5, 'series_id' => 'series-1', ...$extra,
+        ])->id;
+        $first = $make(now()->addDays(1)->setTime(10, 0));
+        $future = $make(now()->addDays(2)->setTime(10, 0));
+        $past = $make(now()->subDays(2)->setTime(10, 0));
+        $cancelled = $make(now()->addDays(3)->setTime(10, 0), ['status' => 'cancelled']);
+        $this->thumb($first, ['apply_to_series' => true])->assertOk();
+        $this->assertNotNull($this->path($first));
+        $this->assertSame($this->path($first), $this->path($future));
+        $this->assertNull($this->path($past));
+        $this->assertNull($this->path($cancelled));
+        $file = $this->path($first);
+        $this->actingAs($this->owner)->deleteJson($this->url("sessions/{$future}/thumbnail"))->assertOk()->assertJsonPath('session.thumbnail_url', null);
+        Storage::disk('public')->assertExists($file);
+        $this->actingAs($this->owner)->deleteJson($this->url("sessions/{$first}/thumbnail"))->assertOk();
+        Storage::disk('public')->assertMissing($file);
+    }
+
+    public function test_thumbnail_rules(): void
+    {
+        Storage::fake('public');
+        $id = $this->createSession();
+        $this->actingAs($this->owner)->post($this->url("sessions/{$id}/thumbnail"), ['photo' => UploadedFile::fake()->create('a.pdf', 10, 'application/pdf')], ['Accept' => 'application/json'])
+            ->assertUnprocessable()->assertJsonValidationErrors('photo');
+        $this->thumb($id, [], $this->coach)->assertForbidden();
+        TrainingSession::withoutGlobalScope('gym')->findOrFail($id)->update(['status' => 'cancelled']);
+        $this->thumb($id)->assertStatus(409);
     }
 }

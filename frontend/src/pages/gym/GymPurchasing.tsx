@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { RangePicker } from '@/components/decision-support/range-picker'
 import { NO_RANGE, rangeQuery } from '@/lib/decision-support'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
-import { ChevronLeft, ChevronRight, Plus, Trash2, X } from 'lucide-react'
+import { Plus, Trash2, X } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { TextField } from '@/components/text-field'
 import { Alert, AlertAction, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { PageControls } from '@/components/page-controls'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogPanel, DialogPopup, DialogTitle } from '@/components/ui/dialog'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
@@ -1500,40 +1501,6 @@ function SuppliersPanel({
 
       <PageControls meta={meta} label="Suppliers" onPage={onPage} />
     </div>
-  )
-}
-
-function PageControls({
-  meta,
-  label,
-  onPage,
-}: {
-  meta: PageMeta | null
-  label: string
-  onPage: (page: number) => void
-}) {
-  if (!meta || meta.last_page <= 1) return null
-  return (
-    <nav aria-label={`${label} pages`} className="flex flex-wrap items-center justify-between gap-3">
-      <p className="text-muted-foreground text-sm" aria-live="polite">
-        Page {meta.current_page} of {meta.last_page} · {meta.total} {meta.total === 1 ? 'entry' : 'entries'}
-      </p>
-      <div className="flex gap-2">
-        <Button size="sm" variant="outline" disabled={meta.current_page <= 1} onClick={() => onPage(meta.current_page - 1)}>
-          <ChevronLeft aria-hidden />
-          Previous
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={meta.current_page >= meta.last_page}
-          onClick={() => onPage(meta.current_page + 1)}
-        >
-          Next
-          <ChevronRight aria-hidden />
-        </Button>
-      </div>
-    </nav>
   )
 }
 

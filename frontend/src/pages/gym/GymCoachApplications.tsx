@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
+import { PageControls } from '@/components/page-controls'
 import { PageHeader } from '@/components/page-header'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -13,6 +14,7 @@ import { useAuth } from '@/lib/auth'
 import { coachStatus, slotLabel, type CoachApplication } from '@/lib/coach'
 import { approvedGym, can } from '@/lib/gym-access'
 import { dateLabel } from '@/lib/membership'
+import { pageMetaFrom, type PageMeta } from '@/lib/pagination'
 
 /** R-117: members who applied to coach here, with their hours and a fresh clash check. */
 export default function GymCoachApplications() {
@@ -26,13 +28,25 @@ export default function GymCoachApplications() {
   const [reasons, setReasons] = useState<Record<number, string>>({})
   const [busy, setBusy] = useState<number | null>(null)
 
+  const [page, setPage] = useState(1) // (R-123)
+  const [meta, setMeta] = useState<PageMeta | null>(null)
+
   useEffect(() => {
     let live = true
-    api<{ applications: CoachApplication[] }>(`/gyms/${gymId}/coach-applications`)
-      .then((result) => live && setRows(result.applications))
+    api<{ applications: CoachApplication[] }>(`/gyms/${gymId}/coach-applications?page=${page}`)
+      .then((result) => {
+        if (!live) return
+        // A decision can empty the last page; step back one.
+        if (result.applications.length === 0 && page > 1) {
+          setPage(page - 1)
+          return
+        }
+        setRows(result.applications)
+        setMeta(pageMetaFrom(result, result.applications.length))
+      })
       .catch((failure) => live && setError(failure instanceof ApiError ? failure.message : 'Applications could not be loaded.'))
     return () => { live = false }
-  }, [gymId, version])
+  }, [gymId, version, page])
 
   if (!gym) return null
 
@@ -62,6 +76,7 @@ export default function GymCoachApplications() {
         : !rows ? <Skeleton className="h-24" />
         : rows.length === 0 ? <Empty className="rounded-xl border"><EmptyHeader><EmptyTitle>No coach applications</EmptyTitle><EmptyDescription>Members apply from your public gym page.</EmptyDescription></EmptyHeader></Empty>
         : (
+          <>
           <ul className="flex flex-col gap-3">
             {rows.map((row) => (
               <li key={row.id} className="flex flex-col gap-3 rounded-xl border p-4 text-sm">
@@ -92,6 +107,8 @@ export default function GymCoachApplications() {
               </li>
             ))}
           </ul>
+          <PageControls meta={meta} label="Coach applications" onPage={setPage} />
+          </>
         )}
     </div>
   )

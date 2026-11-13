@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { RangePicker } from '@/components/decision-support/range-picker'
 import { NO_RANGE, rangeQuery } from '@/lib/decision-support'
-import { Check, ChevronLeft, ChevronRight, History, Plus, X } from 'lucide-react'
+import { Check, History, Plus, X } from 'lucide-react'
 import { useParams } from 'react-router'
 import { PageHeader } from '@/components/page-header'
 import { TextField } from '@/components/text-field'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { PageControls } from '@/components/page-controls'
 import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogPanel, DialogPopup, DialogTitle } from '@/components/ui/dialog'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
@@ -66,6 +67,8 @@ export default function GymStaffAttendance() {
   const [todayList, setTodayList] = useState<StaffAttendance[] | null>(null)
   const [overtime, setOvertime] = useState<OvertimeRequest[] | null>(null)
   const [overtimeRange, setOvertimeRange] = useState(NO_RANGE)
+  const [overtimePage, setOvertimePage] = useState(1) // (R-123)
+  const [overtimeMeta, setOvertimeMeta] = useState<PageMeta | null>(null)
   const [employees, setEmployees] = useState<EmployeeChoice[]>([])
   const [error, setError] = useState('')
   const [version, setVersion] = useState(0)
@@ -86,8 +89,17 @@ export default function GymStaffAttendance() {
 
     // Overtime approvers without attendance access load only the overtime list.
     if (!canView) {
-      api<{ requests: OvertimeRequest[] }>(`/gyms/${gymId}/overtime-requests${rangeQuery(overtimeRange, '?')}`)
-        .then((result) => live && setOvertime(result.requests))
+      api<{ requests: OvertimeRequest[] }>(`/gyms/${gymId}/overtime-requests?page=${overtimePage}${rangeQuery(overtimeRange)}`)
+        .then((result) => {
+          if (!live) return
+          // A decision can empty the last page; step back one.
+          if (result.requests.length === 0 && overtimePage > 1) {
+            setOvertimePage(overtimePage - 1)
+            return
+          }
+          setOvertime(result.requests)
+          setOvertimeMeta(pageMetaFrom(result, result.requests.length))
+        })
         .catch((reason) => {
           if (live) setError(reason instanceof ApiError ? reason.message : 'Overtime requests could not be loaded.')
         })
@@ -103,11 +115,15 @@ export default function GymStaffAttendance() {
     Promise.all([
       api<Record<string, unknown>>(`/gyms/${gymId}/staff-attendance?${todayQuery.toString()}`),
       api<Record<string, unknown>>(`/gyms/${gymId}/staff-attendance?${query.toString()}`),
-      api<{ requests: OvertimeRequest[] }>(`/gyms/${gymId}/overtime-requests${rangeQuery(overtimeRange, '?')}`),
+      api<{ requests: OvertimeRequest[] }>(`/gyms/${gymId}/overtime-requests?page=${overtimePage}${rangeQuery(overtimeRange)}`),
       api<{ employees: EmployeeChoice[] }>(`/gyms/${gymId}/staff-attendance/employees`),
     ])
       .then(([todayResult, attendanceResult, overtimeResult, employeeResult]) => {
         if (!live) return
+        if (overtimeResult.requests.length === 0 && overtimePage > 1) {
+          setOvertimePage(overtimePage - 1)
+          return
+        }
         const todayRows = Array.isArray(todayResult.attendance) ? (todayResult.attendance as StaffAttendance[]) : []
         const recordRows = Array.isArray(attendanceResult.attendance)
           ? (attendanceResult.attendance as StaffAttendance[])
@@ -116,6 +132,7 @@ export default function GymStaffAttendance() {
         setRecords(recordRows)
         setRecordsMeta(pageMetaFrom(attendanceResult, recordRows.length))
         setOvertime(overtimeResult.requests)
+        setOvertimeMeta(pageMetaFrom(overtimeResult, overtimeResult.requests.length))
         setEmployees(employeeResult.employees)
       })
       .catch((reason) => {
@@ -125,7 +142,7 @@ export default function GymStaffAttendance() {
     return () => {
       live = false
     }
-  }, [gymId, canView, canManage, canApprove, from, to, employeeFilter, recordsPage, version, overtimeRange])
+  }, [gymId, canView, canManage, canApprove, from, to, employeeFilter, recordsPage, version, overtimeRange, overtimePage])
 
   useEffect(() => {
     if (!historyOf) return
@@ -207,8 +224,9 @@ export default function GymStaffAttendance() {
       <div className="flex flex-col gap-6">
         <PageHeader title="Staff attendance" description={`${gym.name}: overtime decisions.`} />
         {errorAlert}
-        <RangePicker optional name="overtime" value={overtimeRange} onChange={setOvertimeRange} />
+        <RangePicker optional name="overtime" value={overtimeRange} onChange={(next) => { setOvertimeRange(next); setOvertimePage(1) }} />
         {error ? unavailable : <OvertimePanel rows={overtime ?? []} loading={overtime === null} canApprove={canApprove} onDecide={setDeciding} />}
+        {!error && <PageControls meta={overtimeMeta} label="Overtime requests" onPage={setOvertimePage} />}
         {decisionDialog}
       </div>
     )
@@ -323,8 +341,9 @@ export default function GymStaffAttendance() {
         </TabsPanel>
 
         <TabsPanel value="overtime" className="flex flex-col gap-4 pt-4">
-          <RangePicker optional name="overtime" value={overtimeRange} onChange={setOvertimeRange} />
+          <RangePicker optional name="overtime" value={overtimeRange} onChange={(next) => { setOvertimeRange(next); setOvertimePage(1) }} />
           {error ? unavailable : <OvertimePanel rows={overtime ?? []} loading={overtime === null} canApprove={canApprove} onDecide={setDeciding} />}
+          {!error && <PageControls meta={overtimeMeta} label="Overtime requests" onPage={setOvertimePage} />}
         </TabsPanel>
       </Tabs>
 
@@ -472,32 +491,6 @@ function detailParts(row: StaffAttendance): string[] {
   return parts
 }
 
-function PageControls({ meta, label, onPage }: { meta: PageMeta | null; label: string; onPage: (page: number) => void }) {
-  if (!meta || meta.last_page <= 1) return null
-  return (
-    <nav aria-label={`${label} pages`} className="flex flex-wrap items-center justify-between gap-3">
-      <p className="text-muted-foreground text-sm" aria-live="polite">
-        Page {meta.current_page} of {meta.last_page} · {meta.total} {meta.total === 1 ? 'entry' : 'entries'}
-      </p>
-      <div className="flex gap-2">
-        <Button size="sm" variant="outline" disabled={meta.current_page <= 1} onClick={() => onPage(meta.current_page - 1)}>
-          <ChevronLeft aria-hidden />
-          Previous
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={meta.current_page >= meta.last_page}
-          onClick={() => onPage(meta.current_page + 1)}
-        >
-          Next
-          <ChevronRight aria-hidden />
-        </Button>
-      </div>
-    </nav>
-  )
-}
-
 function AttendanceTable({
   rows,
   loading,
@@ -635,6 +628,7 @@ function AttendanceTable({
                   <TableCell className="text-muted-foreground tabular-nums">{shiftLabel(row)}</TableCell>
                   <TableCell className="text-right tabular-nums">
                     {row.clock_in_time ? clockLabel(row.clock_in_time) : <span className="text-muted-foreground">None</span>}
+                    {row.clock_in_distance_m != null && <span className="text-muted-foreground block text-xs">{row.clock_in_distance_m} m from gym</span>}
                   </TableCell>
                   <TableCell className={cn('text-right tabular-nums', !row.clock_out_time && 'text-muted-foreground')}>{outLabel(row)}</TableCell>
                   <TableCell className="text-right font-medium tabular-nums">{minutesLabel(row.worked_minutes)}</TableCell>

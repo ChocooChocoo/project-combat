@@ -50,6 +50,7 @@ type FormState = {
   session_reminder_minutes: string
   membership_reminder_days: string
   inactivity_days: string
+  attendance_radius_m: string
 }
 
 function fromSetup(setup: WorkspaceSetup): FormState {
@@ -84,6 +85,7 @@ function fromSetup(setup: WorkspaceSetup): FormState {
     session_reminder_minutes: String(setup.session_reminder_minutes),
     membership_reminder_days: (setup.membership_reminder_days ?? []).join(', '),
     inactivity_days: String(setup.inactivity_days ?? 14),
+    attendance_radius_m: setup.attendance_radius_m == null ? '' : String(setup.attendance_radius_m),
   }
 }
 
@@ -218,6 +220,7 @@ export default function GymSettings() {
           // R-115: comma list of days, e.g. "7, 3, 1"; empty uses the default.
           membership_reminder_days: form.membership_reminder_days.split(',').map((day) => day.trim()).filter(Boolean).map(Number),
           inactivity_days: Number(form.inactivity_days),
+          attendance_radius_m: form.attendance_radius_m.trim() === '' ? null : Number(form.attendance_radius_m),
         },
       })
       setSetup(result.setup)
@@ -320,6 +323,14 @@ export default function GymSettings() {
                     <LocationPicker value={form.location} onChange={(value) => set('location', value)} />
                   </div>
                 </Fieldset>
+
+                {/* R-122: how close staff must be to clock in. */}
+                <TextField name="attendance_radius_m" label="Staff clock-in distance (metres)" type="number" min={50} max={5000} step={1}
+                  disabled={!canManage}
+                  value={form.attendance_radius_m} onChange={(e) => set('attendance_radius_m', e.target.value)}
+                  description={form.attendance_radius_m.trim() !== '' && !form.location
+                    ? 'Set the map pin above, or the check is skipped.'
+                    : 'Leave empty to let staff clock in from anywhere.'} />
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <TextField

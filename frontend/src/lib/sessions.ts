@@ -17,6 +17,7 @@ export type TrainingSession = {
   type: SessionType
   name: string
   discipline: string | null
+  thumbnail_url: string | null
   level: SessionLevel
   coach_id: number
   room_id: number
@@ -41,6 +42,8 @@ export type TrainingSession = {
 
 /** Type and level labels come from the existing offer configuration. */
 export type SessionOptions = {
+  disciplines: { value: string; label: string }[]
+  thumbnail_max_kb: number
   coaches: SessionChoice[]
   rooms: SessionChoice[]
   services: PublicService[]

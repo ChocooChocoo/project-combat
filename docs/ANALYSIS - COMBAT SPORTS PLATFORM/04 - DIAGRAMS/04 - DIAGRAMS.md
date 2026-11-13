@@ -510,3 +510,18 @@ flowchart LR
 ```
 
 **Reading this:** notices only; nothing is blocked (R-116). A new visit starts a new quiet spell, which can be told once more.
+
+## 16. Clocking in with a location check, built
+
+```mermaid
+flowchart LR
+    A[Employee taps Clock in] --> B{Gym has a radius and a map pin?}
+    B -- no --> E[Clock-in saved; any location sent is kept]
+    B -- yes --> C[Browser shares location]
+    C -- blocked or no answer --> X[Message shown; nothing sent]
+    C -- shared --> D{Within the radius?}
+    D -- no --> Y[Refused: about N m from the gym]
+    D -- yes --> F[Clock-in saved with the distance]
+```
+
+**Reading this:** the check runs only when the owner has set a distance and a map pin (R-122). Clock-out and desk entries made by HR are not checked. The location comes from the browser, so a determined person can fake it; the check discourages cheating but does not prove presence.

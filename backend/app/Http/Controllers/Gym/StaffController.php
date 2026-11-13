@@ -12,6 +12,7 @@ use App\Notifications\EmployeeAdded;
 use App\Support\GymRoleAssigner;
 use App\Support\OneTimeCodes;
 use App\Support\SessionFlagger;
+use App\Support\Paging;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -27,18 +28,20 @@ class StaffController extends Controller
 
     public function index(Request $request, Gym $gym): JsonResponse
     {
+        $request->validate(Paging::rules());
         $canViewCompensation = $request->user()->canViewCompensation($gym);
+        $canViewGovIds = $request->user()->canViewGovernmentIds($gym);
         $owner = $gym->people()
             ->wherePivot('role', GymPersonType::Owner->value)
             ->orderBy('id')
             ->first();
 
-        $staff = $gym->people()
+        [$rows, $meta] = Paging::rows($gym->people()
             ->wherePivot('role', GymPersonType::Employee->value)
             ->orderBy('first_name')
-            ->orderBy('last_name')
-            ->get()
-            ->map(fn (User $user) => $this->employeePayload($gym, $user, $canViewCompensation))
+            ->orderBy('last_name'), $request);
+        $staff = $rows
+            ->map(fn (User $user) => $this->employeePayload($gym, $user, $canViewCompensation, $canViewGovIds))
             ->values();
 
         return response()->json([
@@ -51,6 +54,7 @@ class StaffController extends Controller
                 'phone' => $owner->phone,
                 'photo_url' => $owner->photo_path ? Storage::disk('public')->url($owner->photo_path) : null,
             ] : null,
+            ...($meta ? ['meta' => $meta] : []),
         ]);
     }
 
@@ -125,7 +129,7 @@ class StaffController extends Controller
         });
 
         return response()->json([
-            'employee' => $this->employeePayload($gym, $user->fresh(), $request->user()->canViewCompensation($gym)),
+            'employee' => $this->employeePayload($gym, $user->fresh(), $request->user()->canViewCompensation($gym), $request->user()->canViewGovernmentIds($gym)),
         ], 201);
     }
 
@@ -134,7 +138,10 @@ class StaffController extends Controller
         $this->ensureEmployee($gym, $user);
         $this->ensureCanView($request->user(), $gym, $user);
 
-        $employee = $this->employeePayload($gym, $user, $request->user()->canViewCompensation($gym));
+        $viewer = $request->user();
+        $employee = $this->employeePayload(
+            $gym, $user, $viewer->canViewCompensation($gym), $viewer->canViewGovernmentIds($gym) || $viewer->is($user),
+        );
         $year = now()->year;
         $employee['balances'] = $this->leaveBalanceTypes($gym, $user, $year);
         $employee['approved_leave_dates'] = $this->approvedLeaveDates($gym, $user, $year);
@@ -162,13 +169,19 @@ class StaffController extends Controller
             ];
         }
 
-        $data = $request->validate($rules);
+        // R-121: the route needs hr.staff.manage, so the ID fields are always allowed here.
+        $this->cleanGovernmentIds($request);
+        $data = $request->validate($rules + $this->governmentIdRules(), $this->governmentIdMessages());
 
         $profile = $this->editableProfile($gym, $user);
         $profile->fill($data)->save();
 
+        $viewer = $request->user();
+
         return response()->json([
-            'employee' => $this->employeePayload($gym, $user, $request->user()->canViewCompensation($gym)),
+            'employee' => $this->employeePayload(
+                $gym, $user, $viewer->canViewCompensation($gym), $viewer->canViewGovernmentIds($gym) || $viewer->is($user),
+            ),
         ]);
     }
 

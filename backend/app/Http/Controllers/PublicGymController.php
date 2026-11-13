@@ -10,6 +10,7 @@ use App\Models\GymService;
 use App\Models\GymServicePhoto;
 use App\Models\MembershipPlan;
 use App\Models\MembershipPlanAddon;
+use App\Support\Geo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -92,7 +93,7 @@ class PublicGymController extends Controller
 
         $rows = $gyms->map(function (Gym $gym) use ($lat, $lng) {
             $distance = $lat !== null && $lng !== null && $gym->latitude !== null && $gym->longitude !== null
-                ? round($this->distanceKm($lat, $lng, $gym->latitude, $gym->longitude), 1)
+                ? round(Geo::distanceKm($lat, $lng, $gym->latitude, $gym->longitude), 1)
                 : null;
 
             return [
@@ -288,16 +289,5 @@ class PublicGymController extends Controller
         }
 
         return number_format((float) $fees->min(), 2, '.', '');
-    }
-
-    private function distanceKm(float $lat, float $lng, float $gymLat, float $gymLng): float
-    {
-        $earthKm = 6371.0;
-        $latDelta = deg2rad($gymLat - $lat);
-        $lngDelta = deg2rad($gymLng - $lng);
-        $a = sin($latDelta / 2) ** 2
-            + cos(deg2rad($lat)) * cos(deg2rad($gymLat)) * sin($lngDelta / 2) ** 2;
-
-        return $earthKm * 2 * atan2(sqrt($a), sqrt(1 - $a));
     }
 }

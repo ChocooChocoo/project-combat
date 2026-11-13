@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { MembershipStatusBadge } from '@/components/membership/membership-parts'
+import { PageControls } from '@/components/page-controls'
 import { PageHeader } from '@/components/page-header'
 import { Alert, AlertAction, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -11,6 +12,7 @@ import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '@/c
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { api, ApiError } from '@/lib/api'
+import { pageMetaFrom, type PageMeta } from '@/lib/pagination'
 import { money, periodLabel, STATUS_LABELS, type Membership, type MembershipStatus } from '@/lib/membership'
 
 type Filter = 'all' | Exclude<MembershipStatus, 'applied' | 'rejected'>
@@ -27,14 +29,20 @@ export default function GymMembers() {
   const [rows, setRows] = useState<Membership[] | null>(null)
   const [error, setError] = useState('')
   const [version, setVersion] = useState(0)
+  const [page, setPage] = useState(1) // (R-123)
+  const [meta, setMeta] = useState<PageMeta | null>(null)
 
   useEffect(() => {
     let live = true
     setRows(null)
     setError('')
     const status = filter === 'all' ? '' : `&status=${filter}`
-    api<{ memberships: Membership[] }>(`/gyms/${gymId}/memberships?view=members${status}`)
-      .then((result) => live && setRows(result.memberships))
+    api<{ memberships: Membership[] }>(`/gyms/${gymId}/memberships?view=members&page=${page}${status}`)
+      .then((result) => {
+        if (!live) return
+        setRows(result.memberships)
+        setMeta(pageMetaFrom(result, result.memberships.length))
+      })
       .catch((failure) => {
         if (!live) return
         setRows([])
@@ -43,7 +51,7 @@ export default function GymMembers() {
     return () => {
       live = false
     }
-  }, [gymId, filter, version])
+  }, [gymId, filter, version, page])
 
   const link = (row: Membership) => `/gyms/${gymId}/manage/members/${row.id}`
 
@@ -60,10 +68,13 @@ export default function GymMembers() {
               <Skeleton className="mr-auto h-4 w-20" />
             ) : (
               <p className="mr-auto text-muted-foreground text-sm">
-                {rows.length} {rows.length === 1 ? 'member' : 'members'}
+                {meta?.total ?? rows.length} {(meta?.total ?? rows.length) === 1 ? 'member' : 'members'}
               </p>
             )}
-            <Select items={FILTERS} value={filter} onValueChange={(next) => setFilter((next as Filter) ?? 'all')}>
+            <Select items={FILTERS} value={filter} onValueChange={(next) => {
+              setFilter((next as Filter) ?? 'all')
+              setPage(1)
+            }}>
               <SelectTrigger size="sm" className="w-48" aria-label="Filter members by status">
                 <SelectValue />
               </SelectTrigger>
@@ -155,6 +166,7 @@ export default function GymMembers() {
             </>
           )}
         </CardPanel>
+        <PageControls meta={meta} label="Members" onPage={setPage} />
       </Card>
     </div>
   )

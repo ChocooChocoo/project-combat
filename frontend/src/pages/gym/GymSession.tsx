@@ -61,6 +61,7 @@ export default function GymSession() {
       ) : (
         <>
           <PageHeader title={data.session.name} meta={<Badge variant={SESSION_PHASES[data.session.phase].variant}>{SESSION_PHASES[data.session.phase].label}</Badge>} actions={can(gym, 'training.sessions.manage') && data.session.status === 'scheduled' && <Button variant="destructive-outline" onClick={() => setCancelling(true)}>Cancel session</Button>} />
+          {data.session.thumbnail_url && <img src={data.session.thumbnail_url} alt="" loading="lazy" className="aspect-video w-full max-w-sm rounded-lg border object-cover" />}
           {data.session.flagged_at && <Alert variant="warning"><AlertTitle>Needs attention</AlertTitle><AlertDescription>
             {flagReasonLabel(data.session.flag_reason)}. Use Schedule to reassign, move or cancel, or keep it as planned once the coach is free again.
             {can(gym, 'training.sessions.manage') && <ClearFlagButton gymId={gym.id} sessionId={data.session.id} onSaved={() => setVersion((v) => v + 1)} />}

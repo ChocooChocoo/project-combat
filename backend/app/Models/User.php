@@ -160,6 +160,12 @@ class User extends Authenticatable
         return $this->hasPermission($gym, 'hr.staff.manage', 'payroll.runs.view', 'finance.payments.view');
     }
 
+    /** R-121: full SSS, PhilHealth and Pag-IBIG numbers. Finance alone does not unmask them. */
+    public function canViewGovernmentIds(Gym|int $gym): bool
+    {
+        return $this->hasPermission($gym, 'hr.staff.manage', 'payroll.runs.view');
+    }
+
     public function canApproveLeave(Gym|int $gym): bool
     {
         return $this->hasPermission($gym, 'hr.leave.manage');

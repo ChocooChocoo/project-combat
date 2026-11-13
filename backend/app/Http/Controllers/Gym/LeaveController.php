@@ -15,6 +15,7 @@ use App\Notifications\LeaveRequestSubmitted;
 use App\Support\PayrollLock;
 use App\Support\SessionFlagger;
 use App\Support\WorkingDays;
+use App\Support\Paging;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -33,6 +34,7 @@ class LeaveController extends Controller
         $data = $request->validate([
             'status' => ['nullable', Rule::enum(LeaveRequestStatus::class)],
             ...DateRange::rules(),
+            ...Paging::rules(),
         ]);
 
         $viewer = $request->user();
@@ -48,11 +50,10 @@ class LeaveController extends Controller
             $query->where('status', $data['status']);
         }
 
-        $requests = $query->orderByDesc('starts_on')->orderByDesc('id')->get()
-            ->map(fn (LeaveRequest $leave) => $this->leavePayload($gym, $leave))
-            ->values();
+        [$rows, $meta] = Paging::rows($query->orderByDesc('starts_on')->orderByDesc('id'), $request);
+        $requests = $rows->map(fn (LeaveRequest $leave) => $this->leavePayload($gym, $leave))->values();
 
-        return response()->json(['requests' => $requests]);
+        return response()->json(['requests' => $requests, ...($meta ? ['meta' => $meta] : [])]);
     }
 
     public function store(Request $request, Gym $gym): JsonResponse

@@ -83,6 +83,7 @@ export default function Timetable() {
                     <p className="text-muted-foreground text-xs">to {sessionTime(session.ends_at)}</p>
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col gap-2">
+                    {session.thumbnail_url && <img src={session.thumbnail_url} alt="" loading="lazy" className="aspect-video w-28 max-w-full rounded-md border object-cover" />}
                     <h3 className="font-semibold text-lg tracking-tight wrap-anywhere">{session.name}</h3>
                     <p className="text-muted-foreground text-xs">{session.type_label}</p>
                     <div className="mt-1 flex flex-wrap gap-x-5 gap-y-2 text-muted-foreground text-sm">

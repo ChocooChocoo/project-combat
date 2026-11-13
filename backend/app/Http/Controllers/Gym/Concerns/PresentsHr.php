@@ -10,6 +10,7 @@ use App\Models\LeaveRequest;
 use App\Models\User;
 use App\Support\NationalHolidays;
 use App\Support\WorkingDays;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -26,7 +27,7 @@ trait PresentsHr
     }
 
     /** One employee as the staff list and employee record show them. */
-    protected function employeePayload(Gym $gym, User $user, bool $canViewCompensation): array
+    protected function employeePayload(Gym $gym, User $user, bool $canViewCompensation, bool $canViewGovIds = false): array
     {
         $profile = $this->profileFor($gym, $user);
         $roles = $user->gymRoles($gym)->orderBy('name')->get();
@@ -40,12 +41,12 @@ trait PresentsHr
             'photo_url' => $user->photo_path ? Storage::disk('public')->url($user->photo_path) : null,
             'is_coach' => $profile?->isCoach() ?? false,
             'roles' => $roles->pluck('name')->values()->all(),
-            'profile' => $this->profilePayload($profile, $canViewCompensation),
+            'profile' => $this->profilePayload($profile, $canViewCompensation, $canViewGovIds),
             'schedule' => $this->scheduleRows($gym, $user),
         ];
     }
 
-    protected function profilePayload(?EmployeeProfile $profile, bool $canViewCompensation): ?array
+    protected function profilePayload(?EmployeeProfile $profile, bool $canViewCompensation, bool $canViewGovIds = false): ?array
     {
         if (! $profile) {
             return null;
@@ -65,6 +66,10 @@ trait PresentsHr
             'coach_specialisation' => $profile->coach_specialisation,
             'coach_bio' => $profile->coach_bio,
             'coach_public' => $profile->coach_public,
+            // R-121: full number for HR, payroll and the employee; others see the last 4 digits.
+            'sss_number' => $this->maskedId($profile->sss_number, $canViewGovIds),
+            'philhealth_number' => $this->maskedId($profile->philhealth_number, $canViewGovIds),
+            'pagibig_number' => $this->maskedId($profile->pagibig_number, $canViewGovIds),
         ];
 
         // R-23: pay details are omitted entirely when the viewer may not see them.
@@ -74,6 +79,44 @@ trait PresentsHr
         }
 
         return $data;
+    }
+
+    private function maskedId(?string $value, bool $full): ?string
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        return $full ? $value : '****'.substr($value, -4);
+    }
+
+    /** R-121: strip dashes and spaces from the ID fields that were sent. */
+    protected function cleanGovernmentIds(Request $request): void
+    {
+        foreach (['sss_number', 'philhealth_number', 'pagibig_number'] as $key) {
+            if (filled($request->input($key))) {
+                $request->merge([$key => preg_replace('/\D/', '', (string) $request->input($key))]);
+            }
+        }
+    }
+
+    /** R-121: rules and messages for the ID fields (HR manage only). */
+    protected function governmentIdRules(): array
+    {
+        return [
+            'sss_number' => ['nullable', 'digits:10'],
+            'philhealth_number' => ['nullable', 'digits:12'],
+            'pagibig_number' => ['nullable', 'digits:12'],
+        ];
+    }
+
+    protected function governmentIdMessages(): array
+    {
+        return [
+            'sss_number.digits' => 'Enter the 10-digit SSS number.',
+            'philhealth_number.digits' => 'Enter the 12-digit PhilHealth number.',
+            'pagibig_number.digits' => 'Enter the 12-digit Pag-IBIG number.',
+        ];
     }
 
     protected function profileFor(Gym $gym, User $user): ?EmployeeProfile

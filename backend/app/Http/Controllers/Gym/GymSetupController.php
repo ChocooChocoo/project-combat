@@ -91,6 +91,7 @@ class GymSetupController extends Controller
             // R-115 and R-116: empty reminder days mean the platform default.
             'membership_reminder_days' => $gym->membership_reminder_days ?? config('communication.membership_expiry_reminder_days'),
             'inactivity_days' => $gym->inactivity_days ?? 14,
+            'attendance_radius_m' => $gym->attendance_radius_m, // R-122
             'payroll_frequency' => $gym->payroll_frequency,
             'payroll_steps' => $gym->payrollSteps(),
             'staff_grace_minutes' => $gym->staff_grace_minutes,
@@ -162,6 +163,7 @@ class GymSetupController extends Controller
             'membership_reminder_days' => ['sometimes', 'nullable', 'array', 'max:5'],
             'membership_reminder_days.*' => ['integer', 'between:1,60', 'distinct'],
             'inactivity_days' => ['sometimes', 'required', 'integer', 'between:3,180'],
+            'attendance_radius_m' => ['sometimes', 'nullable', 'integer', 'between:50,5000'], // R-122
             // Payroll and staff attendance settings change only through payroll/settings (owner, R-59, R-61).
         ];
     }

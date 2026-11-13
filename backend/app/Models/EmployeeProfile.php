@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable([
     'job_title', 'started_on', 'ended_on', 'employment_type', 'pay_basis', 'monthly_rate', 'per_session_rate',
     'coach_photo_path', 'coach_experience', 'coach_rank', 'coach_specialisation', 'coach_bio', 'coach_public',
+    'sss_number', 'philhealth_number', 'pagibig_number',
 ])]
 class EmployeeProfile extends Model
 {
@@ -29,6 +30,10 @@ class EmployeeProfile extends Model
             'monthly_rate' => 'decimal:2',
             'per_session_rate' => 'decimal:2',
             'coach_public' => 'boolean',
+            // R-121: government ID numbers are encrypted at rest.
+            'sss_number' => 'encrypted',
+            'philhealth_number' => 'encrypted',
+            'pagibig_number' => 'encrypted',
         ];
     }
 
