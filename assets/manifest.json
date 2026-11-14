@@ -1,0 +1,435 @@
+{
+  "warning": "SPECIMEN",
+  "gym": "IRON FIST COMBAT ACADEMY",
+  "owner": "JUAN MIGUEL DELA CRUZ",
+  "member": "MARIA SANTOS REYES",
+  "address": "Unit 4, 218 Training Avenue, Barangay Poblacion, Taguig City, Metro Manila 1630",
+  "omitted": [
+    "MP4 video tour: not supplied",
+    "Owner selfie: illustration removed; replacement not supplied",
+    "Delivery photo: illustration removed; PDF delivery note available",
+    "Separate gym gallery: illustrations removed; facility images available"
+  ],
+  "assets": [
+    {
+      "file": "images/user-profile.jpg",
+      "purpose": "JUAN MIGUEL DELA CRUZ",
+      "bytes": 229170,
+      "limit_mb": 2,
+      "width": 1024,
+      "height": 1024,
+      "source": "user-provided: iron_fist_services_and_session/user-profile.jpg"
+    },
+    {
+      "file": "images/coach-photo.jpg",
+      "purpose": "SPECIMEN COACH",
+      "bytes": 501152,
+      "limit_mb": 2,
+      "width": 1200,
+      "height": 1600,
+      "source": "user-provided: iron_fist_services_and_session/coach-photo.jpg"
+    },
+    {
+      "file": "images/gym-cover.jpg",
+      "purpose": "Gym interior",
+      "bytes": 468094,
+      "limit_mb": 4,
+      "width": 1920,
+      "height": 1080,
+      "source": "user-provided: iron_fist_services_and_session/gym-cover.jpg"
+    },
+    {
+      "file": "images/service-cover.jpg",
+      "purpose": "Muay Thai training area",
+      "bytes": 261648,
+      "limit_mb": 4,
+      "width": 1600,
+      "height": 1200,
+      "source": "user-provided: iron_fist_services_and_session/service-cover.jpg"
+    },
+    {
+      "file": "images/session-thumbnail.jpg",
+      "purpose": "Supervised boxing session area",
+      "bytes": 191743,
+      "limit_mb": 4,
+      "width": 1600,
+      "height": 900,
+      "source": "user-provided: iron_fist_services_and_session/session-thumbnail.jpg"
+    },
+    {
+      "file": "images/facility-01.jpg",
+      "purpose": "Heavy bags / SPECIMEN view 01",
+      "bytes": 382889,
+      "limit_mb": 4,
+      "width": 1600,
+      "height": 1200,
+      "source": "user-provided: iron_fist_services_and_session/facility-01.jpg"
+    },
+    {
+      "file": "images/facility-02.jpg",
+      "purpose": "Boxing ring / SPECIMEN view 02",
+      "bytes": 278883,
+      "limit_mb": 4,
+      "width": 1600,
+      "height": 1200,
+      "source": "user-provided: iron_fist_services_and_session/facility-02.jpg"
+    },
+    {
+      "file": "images/facility-03.jpg",
+      "purpose": "Strength equipment / SPECIMEN view 03",
+      "bytes": 344258,
+      "limit_mb": 4,
+      "width": 1600,
+      "height": 1200,
+      "source": "user-provided: iron_fist_services_and_session/facility-03.jpg"
+    },
+    {
+      "file": "images/facility-04.jpg",
+      "purpose": "Changing area / SPECIMEN view 04",
+      "bytes": 320753,
+      "limit_mb": 4,
+      "width": 1600,
+      "height": 1200,
+      "source": "user-provided: iron_fist_services_and_session/facility-04.jpg"
+    },
+    {
+      "file": "images/facility-05.jpg",
+      "purpose": "Heavy bags / SPECIMEN view 05",
+      "bytes": 291321,
+      "limit_mb": 4,
+      "width": 1600,
+      "height": 1200,
+      "source": "user-provided: iron_fist_services_and_session/facility-05.jpg"
+    },
+    {
+      "file": "images/facility-06.jpg",
+      "purpose": "Boxing ring / SPECIMEN view 06",
+      "bytes": 333664,
+      "limit_mb": 4,
+      "width": 1600,
+      "height": 1200,
+      "source": "user-provided: iron_fist_services_and_session/facility-06.jpg"
+    },
+    {
+      "file": "images/facility-07.jpg",
+      "purpose": "Strength equipment / SPECIMEN view 07",
+      "bytes": 197340,
+      "limit_mb": 4,
+      "width": 1600,
+      "height": 1200,
+      "source": "user-provided: iron_fist_services_and_session/facility-07.jpg"
+    },
+    {
+      "file": "images/facility-08.jpg",
+      "purpose": "Changing area / SPECIMEN view 08",
+      "bytes": 223041,
+      "limit_mb": 4,
+      "width": 1600,
+      "height": 1200,
+      "source": "user-provided: iron_fist_services_and_session/facility-08.jpg"
+    },
+    {
+      "file": "images/facility-09.jpg",
+      "purpose": "Heavy bags / SPECIMEN view 09",
+      "bytes": 312172,
+      "limit_mb": 4,
+      "width": 1600,
+      "height": 1200,
+      "source": "user-provided: iron_fist_services_and_session/facility-09.jpg"
+    },
+    {
+      "file": "images/facility-10.jpg",
+      "purpose": "Boxing ring / SPECIMEN view 10",
+      "bytes": 341816,
+      "limit_mb": 4,
+      "width": 1600,
+      "height": 1200,
+      "source": "user-provided: iron_fist_services_and_session/facility-10.jpg"
+    },
+    {
+      "file": "images/service-gallery-01.jpg",
+      "purpose": "Heavy bags / SPECIMEN view 01",
+      "bytes": 250323,
+      "limit_mb": 4,
+      "width": 1600,
+      "height": 1200,
+      "source": "user-provided: iron_fist_services_and_session/service-gallery-01.jpg"
+    },
+    {
+      "file": "images/service-gallery-02.jpg",
+      "purpose": "Boxing ring / SPECIMEN view 02",
+      "bytes": 259648,
+      "limit_mb": 4,
+      "width": 1600,
+      "height": 1200,
+      "source": "user-provided: iron_fist_services_and_session/service-gallery-02.jpg"
+    },
+    {
+      "file": "images/service-gallery-03.jpg",
+      "purpose": "Strength equipment / SPECIMEN view 03",
+      "bytes": 237510,
+      "limit_mb": 4,
+      "width": 1600,
+      "height": 1200,
+      "source": "user-provided: iron_fist_services_and_session/service-gallery-03.jpg"
+    },
+    {
+      "file": "images/service-gallery-04.jpg",
+      "purpose": "Changing area / SPECIMEN view 04",
+      "bytes": 254394,
+      "limit_mb": 4,
+      "width": 1600,
+      "height": 1200,
+      "source": "user-provided: iron_fist_services_and_session/service-gallery-04.jpg"
+    },
+    {
+      "file": "images/service-gallery-05.jpg",
+      "purpose": "Heavy bags / SPECIMEN view 05",
+      "bytes": 211391,
+      "limit_mb": 4,
+      "width": 1600,
+      "height": 1200,
+      "source": "user-provided: iron_fist_services_and_session/service-gallery-05.jpg"
+    },
+    {
+      "file": "documents/dti-certificate.pdf",
+      "purpose": "Gym verification: dti-certificate",
+      "bytes": 201162,
+      "limit_mb": 5,
+      "pages": 1,
+      "selectable_text": true
+    },
+    {
+      "file": "images/dti-certificate-scan.png",
+      "purpose": "Image alternative: Gym verification: dti-certificate",
+      "bytes": 164157,
+      "limit_mb": 5,
+      "width": 1191,
+      "height": 1684
+    },
+    {
+      "file": "documents/sec-certificate.pdf",
+      "purpose": "Gym verification: sec-certificate",
+      "bytes": 163557,
+      "limit_mb": 5,
+      "pages": 1,
+      "selectable_text": true
+    },
+    {
+      "file": "images/sec-certificate-scan.png",
+      "purpose": "Image alternative: Gym verification: sec-certificate",
+      "bytes": 180121,
+      "limit_mb": 5,
+      "width": 1191,
+      "height": 1684
+    },
+    {
+      "file": "documents/mayors-permit.pdf",
+      "purpose": "Gym verification: mayors-permit",
+      "bytes": 114317,
+      "limit_mb": 5,
+      "pages": 1,
+      "selectable_text": true
+    },
+    {
+      "file": "images/mayors-permit-scan.png",
+      "purpose": "Image alternative: Gym verification: mayors-permit",
+      "bytes": 164424,
+      "limit_mb": 5,
+      "width": 1191,
+      "height": 1684
+    },
+    {
+      "file": "documents/barangay-clearance.pdf",
+      "purpose": "Gym verification: barangay-clearance",
+      "bytes": 163636,
+      "limit_mb": 5,
+      "pages": 1,
+      "selectable_text": true
+    },
+    {
+      "file": "images/barangay-clearance-scan.png",
+      "purpose": "Image alternative: Gym verification: barangay-clearance",
+      "bytes": 189449,
+      "limit_mb": 5,
+      "width": 1191,
+      "height": 1684
+    },
+    {
+      "file": "documents/utility-bill.pdf",
+      "purpose": "Gym verification: utility_bill",
+      "bytes": 113959,
+      "limit_mb": 5,
+      "pages": 1,
+      "selectable_text": true
+    },
+    {
+      "file": "images/utility-bill-scan.png",
+      "purpose": "Image alternative: Gym verification: utility_bill",
+      "bytes": 154415,
+      "limit_mb": 5,
+      "width": 1191,
+      "height": 1684
+    },
+    {
+      "file": "documents/owner-id.pdf",
+      "purpose": "Gym verification: owner_id",
+      "bytes": 113535,
+      "limit_mb": 5,
+      "pages": 1,
+      "selectable_text": true
+    },
+    {
+      "file": "images/owner-id-scan.png",
+      "purpose": "Image alternative: Gym verification: owner_id",
+      "bytes": 64114,
+      "limit_mb": 5,
+      "width": 1080,
+      "height": 680
+    },
+    {
+      "file": "documents/job-valid-id.pdf",
+      "purpose": "Job application: valid_id",
+      "bytes": 113530,
+      "limit_mb": 5,
+      "pages": 1,
+      "selectable_text": true
+    },
+    {
+      "file": "images/job-valid-id-scan.png",
+      "purpose": "Image alternative: Job application: valid_id",
+      "bytes": 65061,
+      "limit_mb": 5,
+      "width": 1080,
+      "height": 680
+    },
+    {
+      "file": "documents/medical-certificate.pdf",
+      "purpose": "Membership / athlete medical file",
+      "bytes": 201059,
+      "limit_mb": 5,
+      "pages": 1,
+      "selectable_text": true
+    },
+    {
+      "file": "images/medical-certificate-scan.png",
+      "purpose": "Image alternative: Membership / athlete medical file",
+      "bytes": 143932,
+      "limit_mb": 5,
+      "width": 1191,
+      "height": 1684
+    },
+    {
+      "file": "documents/leave-attachment.pdf",
+      "purpose": "Leave attachment",
+      "bytes": 201031,
+      "limit_mb": 5,
+      "pages": 1,
+      "selectable_text": true
+    },
+    {
+      "file": "images/leave-attachment-scan.png",
+      "purpose": "Image alternative: Leave attachment",
+      "bytes": 144316,
+      "limit_mb": 5,
+      "width": 1191,
+      "height": 1684
+    },
+    {
+      "file": "documents/job-credentials.pdf",
+      "purpose": "Job application: credentials",
+      "bytes": 113772,
+      "limit_mb": 5,
+      "pages": 1,
+      "selectable_text": true
+    },
+    {
+      "file": "images/job-credentials-scan.png",
+      "purpose": "Image alternative: Job application: credentials",
+      "bytes": 154133,
+      "limit_mb": 5,
+      "width": 1191,
+      "height": 1684
+    },
+    {
+      "file": "documents/purchase-receipt.pdf",
+      "purpose": "Purchase order proof",
+      "bytes": 113548,
+      "limit_mb": 5,
+      "pages": 1,
+      "selectable_text": true
+    },
+    {
+      "file": "images/purchase-receipt-scan.png",
+      "purpose": "Image alternative: Purchase order proof",
+      "bytes": 86775,
+      "limit_mb": 5,
+      "width": 540,
+      "height": 1400
+    },
+    {
+      "file": "documents/delivery-note.pdf",
+      "purpose": "Purchase order delivery proof",
+      "bytes": 114268,
+      "limit_mb": 5,
+      "pages": 1,
+      "selectable_text": true
+    },
+    {
+      "file": "images/delivery-note-scan.png",
+      "purpose": "Image alternative: Purchase order delivery proof",
+      "bytes": 168489,
+      "limit_mb": 5,
+      "width": 1191,
+      "height": 1684
+    },
+    {
+      "file": "documents/gym-policy.pdf",
+      "purpose": "Gym policy PDF",
+      "bytes": 113721,
+      "limit_mb": 5,
+      "pages": 1,
+      "selectable_text": true
+    },
+    {
+      "file": "images/gym-policy-scan.png",
+      "purpose": "Image alternative: Gym policy PDF",
+      "bytes": 143344,
+      "limit_mb": 5,
+      "width": 1191,
+      "height": 1684
+    },
+    {
+      "file": "documents/membership-policy.pdf",
+      "purpose": "Gym policy PDF",
+      "bytes": 113666,
+      "limit_mb": 5,
+      "pages": 1,
+      "selectable_text": true
+    },
+    {
+      "file": "images/membership-policy-scan.png",
+      "purpose": "Image alternative: Gym policy PDF",
+      "bytes": 136839,
+      "limit_mb": 5,
+      "width": 1191,
+      "height": 1684
+    },
+    {
+      "file": "documents/privacy-policy.pdf",
+      "purpose": "Gym policy PDF",
+      "bytes": 113696,
+      "limit_mb": 5,
+      "pages": 1,
+      "selectable_text": true
+    },
+    {
+      "file": "images/privacy-policy-scan.png",
+      "purpose": "Image alternative: Gym policy PDF",
+      "bytes": 140014,
+      "limit_mb": 5,
+      "width": 1191,
+      "height": 1684
+    }
+  ]
+}

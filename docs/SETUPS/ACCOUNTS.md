@@ -405,3 +405,37 @@ Sign in as the owner of Iron Will (`ramon.villanueva@ironwillboxing.ph`) or Kala
 | Training goals, injuries (one Restricted), equipment checks (needs repair, unsafe, overdue) | Member record, Stock, Safety | Update status, clear the injury |
 | Notices already in the bell | Owner: waiting offer and coach application, inactive members, safety checks due | Open each link |
 | Inactive members (last two active members of each center) | Bell and Members | Check the notice text |
+
+## Ready-to-test data (P10 and P11 seed)
+
+Seeding needs the repo-root `assets/` folder (sample images and PDFs). If a file is missing, `db:seed` stops with a "Demo asset missing" message.
+
+**New accounts** (password `Password_123`, all `@demo.combatplatform.ph`, all `member` type):
+
+- **Job applicants:** 20 people, 4 per approved center, in this order: Kevin Lacson, Princess Magbanua, Ronald Sarmiento, Hazel Quinto (Iron Will); Jerome Abad, Kristine Nepomuceno, Ariel Buenaventura, Shiela Cortez (Kalaw); Ramil Ilagan, Joanna Pacheco, Bryan Salonga, Mylene Dimaculangan (Bakunawa); Arnel Bustamante, Czarina Lim, Edgar Macaraeg, Faith Sumulong (Cordillera); Gilbert Tan, Irene Mangahas, Wilfredo Ponce, Lovely Guevarra (Davao). Email is first and last name with a dot, lower case, e.g. `kevin.lacson@demo.combatplatform.ph`. Per center the 4th person is the approved applicant and is now staff: Sports massage therapist (Sports Therapist role). The 1st and 3rd are waiting, the 2nd was rejected.
+- **Approved coach applicant (now a Coach, from day 3 ago):** the 8th active member of each center, listed as an active athlete above (Isabel Garcia, Enzo Estrada, Rochelle Vergara, Joshua Ramos, Elena Fontanilla). They now also have a staff link, so they can open the manage screens.
+- **Minor member with guardian:** the 9th active member of each center (Marco Torres, Mika Dizon, Jose Evangelista, Danica Rivera, Rafael Ocampo). Age 14 to 16, guardian name, phone, relationship and consent are filled.
+- **Walk-in visitors are customers, not accounts.** They appear under Customers (source walk-in) and in Check-in, "Today's walk-ins".
+- Every account now has a birthdate. Most have a middle name, city and province. Nestor Cabral and Daniel Villamor are "Jr."; Paolo Reyes is "III".
+
+**What each center has:**
+
+| What | Where | Detail |
+|---|---|---|
+| Offers | Business, Offers | Pending, approved, rejected and archived |
+| Coach applications | HR, Coach applications | Pending, rejected, withdrawn and approved |
+| Training goals | Member record | Active, achieved and dropped |
+| Equipment checks | Stock, Safety | Pass, needs repair and unsafe |
+| Purchase proofs | Purchasing, orders | One image and one PDF on the part-received order |
+| Government IDs | HR, employee record | SSS, PhilHealth, Pag-IBIG on staff, except the contractor (3rd staff) |
+| Clock-in radius | Gym settings, Attendance | Iron Will 150 m, Kalaw 200 m; staff there have self clock-ins with distance for the last 3 working days. Other centers: no check |
+| Session thumbnail | Sessions | One class service has a thumbnail on all its sessions |
+| Gym photos | Gym settings | Cover and 6 gallery photos |
+| Policy files | Gym settings | Iron Will 3, Kalaw 2, Bakunawa 1, Cordillera 0, Davao 0 |
+| Medical clearance | Members | Every membership has a PDF or scan |
+| Sparring profiles | Athletes | Mixed known and unknown weight, empty and real records |
+| Job postings | HR, Hiring | Front desk (open), assistant coach (open), sports massage therapist (closed) |
+| Job applications | HR, Hiring | Two pending, one approved, one rejected |
+| Walk-ins | Check-in | 3 today (1 paid), 1 yesterday and 1 three days ago (both paid); one answers "recent injury" |
+
+**Document review (admin, Applications):** Southside (submitted) has only the DTI opened. Visayas (under review) has every document opened, and the owner ID is flagged for an owner name mismatch. Tagum (returned) has an expired mayor's permit. Mindoro (rejected) has the DTI flagged for a gym name mismatch. Approved centers have every document opened. Northside (draft) has no review data.

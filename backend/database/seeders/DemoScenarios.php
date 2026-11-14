@@ -2,9 +2,12 @@
 
 namespace Database\Seeders;
 
+use App\Enums\GymPersonType;
 use App\Enums\PaymentMethod;
 use App\Models\Customer;
+use App\Models\EmployeeProfile;
 use App\Models\Gym;
+use App\Models\GymRole;
 use App\Models\Payment;
 use App\Models\SessionBooking;
 use App\Models\StockItem;
@@ -23,11 +26,44 @@ use App\Support\StaffAttendanceBook;
 use App\Support\StockLedger;
 use App\Support\WorkingDays;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /** Additional synthetic records for exercising real workflows without external services. */
 trait DemoScenarios
 {
+    /** Contents of a repo-root assets/ file (sample images and PDFs, see assets/README.md). Fails loudly when missing. */
+    private function demoAsset(string $file): string
+    {
+        $path = base_path('../assets/'.$file);
+        if (! is_file($path)) {
+            throw new \RuntimeException("Demo asset missing: assets/{$file}. Restore the repo-root assets folder (see assets/README.md) before seeding.");
+        }
+
+        return file_get_contents($path);
+    }
+
+    /** Copies an asset onto a disk and returns its size in bytes. */
+    private function putDemoAsset(string $disk, string $path, string $file): int
+    {
+        $contents = $this->demoAsset($file);
+        Storage::disk($disk)->put($path, $contents);
+
+        return strlen($contents);
+    }
+
+    /** Adds a person as staff the way an approved coach or job application does (R-117, R-138). */
+    private function hireMember(Gym $gym, User $user, array $profile, ?GymRole $role, Carbon $on): void
+    {
+        if (! $user->hasGymRole($gym, GymPersonType::Employee)) {
+            $gym->addPerson($user, GymPersonType::Employee);
+        }
+        $employee = new EmployeeProfile;
+        $employee->fill(['started_on' => $on->toDateString(), 'ended_on' => null, ...$profile]);
+        $employee->forceFill(['gym_id' => $gym->id, 'user_id' => $user->id])->save();
+        $role?->users()->syncWithoutDetaching([$user->id]);
+    }
+
     private function contactEmail(string $email): string
     {
         if (str_ends_with($email, '@gmail.com') || str_ends_with($email, '.test')) {

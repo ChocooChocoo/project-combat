@@ -60,6 +60,7 @@ class DatabaseSeeder extends Seeder
 {
     use DemoScenarios;
     use P09Scenarios;
+    use P10P11Scenarios;
 
     private const PASSWORD = 'Password_123';
 
@@ -135,6 +136,7 @@ class DatabaseSeeder extends Seeder
         $this->seedApplications($people, $admin);
         $this->seedPlatformNotice($admin);
         $this->seedSubscriptionStates();
+        $this->seedP10P11Platform();
     }
 
     private function seedPlatformNotice(User $admin): void
@@ -261,6 +263,7 @@ class DatabaseSeeder extends Seeder
         Storage::disk('local')->deleteDirectory('purchase-proofs');
         Storage::disk('local')->deleteDirectory('job-applications');
         Storage::disk('public')->deleteDirectory('gyms');
+        Storage::disk('public')->deleteDirectory('training-sessions');
     }
 
     /** @return array<string, User> */
@@ -478,6 +481,7 @@ class DatabaseSeeder extends Seeder
             $this->seedPayroll($gym, $owner, array_values($employees));
             $this->seedHrScenarios($gym, $owner, array_values($employees));
             $this->seedP09($gym, $owner, array_values($employees));
+            $this->seedP10P11($gym, $owner, array_values($employees));
 
             $owner->notify(new GymApplicationDecided($gym));
         }
@@ -1613,59 +1617,18 @@ SVG;
         $base = "gym-applications/{$gym->id}";
         $slug = Str::slug($gym->name);
         $ownerName = "{$owner->first_name} {$owner->last_name}";
-        $address = "{$gym->address_line}, {$gym->barangay}, {$gym->city}, {$gym->province}";
         $year = now()->year;
         $billMonth = now()->subMonthNoOverflow();
 
         return match ($type) {
-            'dti' => [
-                "{$base}/dti-certificate.pdf",
-                "DTI-Certificate-{$slug}.pdf",
-                'application/pdf',
-                $this->pdf('DTI Business Name Certificate', [
-                    "Business name: {$gym->name}",
-                    "Registered owner: {$ownerName}",
-                    "Business address: {$address}",
-                    'Certificate number: DTI-'.str_pad((string) $gym->id, 6, '0', STR_PAD_LEFT).'-'.$year,
-                    'Validity: 31 December '.$year,
-                    'Sample document prepared for platform demonstration. Not valid for official use.',
-                ]),
-            ],
-            'mayors_permit' => [
-                "{$base}/mayors-permit.pdf",
-                "Mayors-Permit-{$year}-{$slug}.pdf",
-                'application/pdf',
-                $this->pdf("Mayor's Business Permit", [
-                    'Permit holder: '.$gym->name,
-                    "Owner: {$ownerName}",
-                    "Business address: {$address}",
-                    'Permit number: MP-'.str_pad((string) $gym->id, 6, '0', STR_PAD_LEFT).'-'.$year,
-                    'Valid until: 31 December '.$year,
-                    'Sample document prepared for platform demonstration. Not valid for official use.',
-                ]),
-            ],
-            'barangay_clearance' => [
-                "{$base}/barangay-clearance.pdf",
-                "Barangay-Clearance-{$year}-{$slug}.pdf",
-                'application/pdf',
-                $this->pdf('Barangay Business Clearance', [
-                    "Business name: {$gym->name}",
-                    "Owner: {$ownerName}",
-                    "Address: {$address}",
-                    'Clearance number: BC-'.str_pad((string) $gym->id, 6, '0', STR_PAD_LEFT).'-'.$year,
-                    'Valid until: 31 December '.$year,
-                    'Sample document prepared for platform demonstration. Not valid for official use.',
-                ]),
-            ],
+            'dti' => ["{$base}/dti-certificate.png", "DTI-Certificate-{$slug}.png", 'image/png', $this->demoAsset('images/dti-certificate-scan.png')],
+            'mayors_permit' => ["{$base}/mayors-permit.pdf", "Mayors-Permit-{$year}-{$slug}.pdf", 'application/pdf', $this->demoAsset('documents/mayors-permit.pdf')],
+            'barangay_clearance' => ["{$base}/barangay-clearance.png", "Barangay-Clearance-{$year}-{$slug}.png", 'image/png', $this->demoAsset('images/barangay-clearance-scan.png')],
             'facility_photo' => [
-                "{$base}/facility-photo-{$index}.svg",
-                "Facility-Photo-{$index}-{$slug}.svg",
-                'image/svg+xml',
-                $this->imageDocument(
-                    'FACILITY PHOTO '.$index.' OF 10',
-                    ($gym->facilities ?: ['Training area'])[($index - 1) % max(count($gym->facilities ?: ['Training area']), 1)],
-                    $palette,
-                ),
+                "{$base}/facility-photo-{$index}.jpg",
+                "Facility-Photo-{$index}-{$slug}.jpg",
+                'image/jpeg',
+                $this->demoAsset(sprintf('images/facility-%02d.jpg', $index)),
             ],
             'video_tour' => [
                 "{$base}/facility-tour.mp4",
@@ -1673,36 +1636,14 @@ SVG;
                 'video/mp4',
                 $this->videoPlaceholder($gym->name),
             ],
-            'owner_id' => [
-                "{$base}/owner-id.pdf",
-                "Owners-Valid-ID-{$slug}.pdf",
-                'application/pdf',
-                $this->pdf('Owner Valid ID', [
-                    "Name: {$ownerName}",
-                    'ID number: PH-'.str_pad((string) $owner->id, 8, '0', STR_PAD_LEFT).'-'.$year,
-                    'Date of birth: 14 June 1988',
-                    'Address: '.$gym->city.', '.$gym->province,
-                    'Sample document prepared for platform demonstration. Not valid for official use.',
-                ]),
-            ],
+            'owner_id' => ["{$base}/owner-id.png", "Owners-Valid-ID-{$slug}.png", 'image/png', $this->demoAsset('images/owner-id-scan.png')],
             'owner_selfie' => [
                 "{$base}/owner-selfie.svg",
                 "Owner-Selfie-{$slug}.svg",
                 'image/svg+xml',
                 $this->imageDocument('OWNER SELFIE', $ownerName, $palette),
             ],
-            'utility_bill' => [
-                "{$base}/utility-bill.pdf",
-                "Utility-Bill-{$billMonth->format('F-Y')}-{$slug}.pdf",
-                'application/pdf',
-                $this->pdf('Utility Bill', [
-                    'Account name: '.$gym->name,
-                    "Service address: {$address}",
-                    'Billing period: '.$billMonth->copy()->startOfMonth()->format('j').' to '.$billMonth->copy()->endOfMonth()->format('j F Y'),
-                    'Amount due: PHP 18,742.65',
-                    'Sample document prepared for platform demonstration. Not valid for official use.',
-                ]),
-            ],
+            'utility_bill' => ["{$base}/utility-bill.pdf", "Utility-Bill-{$billMonth->format('F-Y')}-{$slug}.pdf", 'application/pdf', $this->demoAsset('documents/utility-bill.pdf')],
             default => [
                 "{$base}/{$type}.pdf",
                 Str::title(str_replace('_', ' ', $type))."-{$slug}.pdf",

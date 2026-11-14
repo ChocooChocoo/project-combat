@@ -49,6 +49,7 @@ trait P09Scenarios
             ['voucher', 'Friend referral voucher', 'FRIEND200', 'fixed', 200, -30, 30, 5, 5, 'approved', $desk, $owner, null],
             ['promo', 'Back to school promo', null, 'percent', 25, 5, 40, null, 0, 'rejected', $desk, $owner, 'A 25% discount is too deep for a monthly plan. Resubmit at 10% or less.'],
             ['promo', 'Summer sale', null, 'fixed', 300, -60, -20, null, 11, 'approved', $owner, $owner, null],
+            ['promo', 'Holy Week promo', null, 'percent', 15, -230, -222, null, 7, 'archived', $owner, $owner, null],
         ];
 
         foreach ($rows as [$kind, $name, $code, $type, $value, $startDays, $endDays, $max, $uses, $status, $maker, $decider, $reason]) {
@@ -77,12 +78,18 @@ trait P09Scenarios
             ['pending', 'Former interclub fighter. Runs conditioning sessions for a running club.', 'Conditioning coach', 'Strength and conditioning', [['sat', '08:00', '12:00']], null],
             ['rejected', 'Two years of recreational training. Wants to help with beginner classes.', 'Novice', 'Beginner classes', [['mon', '18:00', '20:00']], 'Please gain more teaching experience and apply again after a coaching course.'],
             ['withdrawn', 'Certified fitness instructor, new to combat sports.', 'Fitness instructor', 'Mobility', [['wed', '09:00', '11:00']], null],
+            ['approved', 'Licensed boxing instructor with eight years of amateur bouts. Coaches a barangay youth program on weekends.', 'Assistant coach', 'technique', [['mon', '17:00', '20:00'], ['wed', '17:00', '20:00']], null],
         ];
 
         foreach ($rows as $index => [$status, $experience, $rank, $specialisation, $slots, $reason]) {
-            $user = $applicants[$index + 3] ?? null;
+            $user = $applicants[$status === 'approved' ? 7 : $index + 3] ?? null;
             if (! $user) {
                 continue;
+            }
+            $decided = in_array($status, ['approved', 'rejected'], true);
+            $createdAt = now()->subDays($status === 'approved' ? 6 : 3 + $index);
+            if ($status === 'approved') {
+                $specialisation = (config('verification.disciplines')[$gym->disciplines[0] ?? ''] ?? 'Boxing').' technique';
             }
             $application = new CoachApplication([
                 'experience' => $experience, 'rank' => $rank, 'specialisation' => $specialisation,
@@ -90,9 +97,20 @@ trait P09Scenarios
             ]);
             $application->forceFill([
                 'gym_id' => $gym->id, 'user_id' => $user->id, 'status' => $status,
-                'decided_by' => $status === 'rejected' ? $owner->id : null, 'decided_at' => $status === 'rejected' ? now()->subDay() : null,
-                'decision_reason' => $reason, 'created_at' => now()->subDays(3 + $index), 'updated_at' => now()->subDays(3 + $index),
+                'decided_by' => $decided ? $owner->id : null,
+                'decided_at' => $status === 'approved' ? now()->subDays(3) : ($decided ? now()->subDay() : null),
+                'decision_reason' => $reason, 'created_at' => $createdAt, 'updated_at' => $createdAt,
             ])->save();
+
+            if ($status === 'approved') {
+                $this->hireMember($gym, $user, [
+                    'job_title' => 'Coach', 'coach_experience' => $experience, 'coach_rank' => $rank, 'coach_specialisation' => $specialisation,
+                ], GymRole::where('template_key', 'coach')->where('status', 'active')->first(), today()->subDays(3));
+                foreach ($slots as [$weekday, $start, $end]) {
+                    $gym->workSchedules()->updateOrCreate(['user_id' => $user->id, 'weekday' => $weekday], ['start_time' => $start, 'end_time' => $end]);
+                }
+                $user->notify(new GymNotice('Coach application approved', "You are now a coach at {$gym->name}. Open My work to see your schedule.", $gym->id, "/gyms/{$gym->id}/manage/my-work"));
+            }
 
             if ($status === 'pending') {
                 $owner->notify(new GymNotice('Coach application waiting', trim("{$user->first_name} {$user->last_name}").' applied to coach.', $gym->id, "/gyms/{$gym->id}/manage/coach-applications"));
@@ -100,7 +118,7 @@ trait P09Scenarios
         }
     }
 
-    /** A second request waiting for approval, and a delivery photo on the part-received order. */
+    /** A second request waiting for approval, and delivery proofs (image and PDF) on the part-received order. */
     private function seedPurchasingP09(Gym $gym, User $owner, array $employees): void
     {
         $items = $gym->stockItems()->orderBy('id')->get();
@@ -122,16 +140,20 @@ trait P09Scenarios
 
         $order = $gym->purchaseOrders()->where('status', 'partly_received')->first();
         if ($order) {
-            // 1x1 PNG stands in for the delivery photo.
-            $path = "purchase-proofs/{$gym->id}/delivery-note-{$order->id}.png";
-            $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==');
-            Storage::disk('local')->put($path, $png);
-            DB::table('purchase_order_proofs')->insert([
-                'gym_id' => $gym->id, 'purchase_order_id' => $order->id,
-                'goods_receipt_id' => DB::table('goods_receipts')->where('purchase_order_id', $order->id)->value('id'),
-                'path' => $path, 'original_name' => 'delivery-note.png', 'mime' => 'image/png', 'size' => strlen($png),
-                'uploaded_by' => $owner->id, 'created_at' => now()->subDays(6), 'updated_at' => now()->subDays(6),
-            ]);
+            // Real sample scans from the repo-root assets/ folder: one image proof and one PDF proof.
+            $receiptId = DB::table('goods_receipts')->where('purchase_order_id', $order->id)->value('id');
+            foreach ([
+                ['images/delivery-note-scan.png', "Delivery-note-{$order->number}.png", 'image/png', 'delivery-note.png', 6],
+                ['documents/purchase-receipt.pdf', "Sales-invoice-{$order->number}.pdf", 'application/pdf', 'sales-invoice.pdf', 5],
+            ] as [$asset, $name, $mime, $file, $daysAgo]) {
+                $path = "purchase-proofs/{$gym->id}/{$file}";
+                $size = $this->putDemoAsset('local', $path, $asset);
+                DB::table('purchase_order_proofs')->insert([
+                    'gym_id' => $gym->id, 'purchase_order_id' => $order->id, 'goods_receipt_id' => $receiptId,
+                    'path' => $path, 'original_name' => $name, 'mime' => $mime, 'size' => $size,
+                    'uploaded_by' => $owner->id, 'created_at' => now()->subDays($daysAgo), 'updated_at' => now()->subDays($daysAgo),
+                ]);
+            }
         }
     }
 
@@ -141,6 +163,7 @@ trait P09Scenarios
             ['Win a first interclub round', 'Build ring confidence for the next interclub event.', 40, 'active', [['Spar three rounds without stopping', 20, true], ['Sparring session with a new partner', 25, true], ['Fight-simulation session', 35, false]]],
             ['Complete a 12-week conditioning block', 'Improve stamina and footwork.', -5, 'achieved', [['Weeks 1 to 4', -40, true], ['Weeks 5 to 8', -25, true], ['Weeks 9 to 12', -6, true]]],
             ['Lose 4 kg before the annual weigh-in', 'Steady loss through training and nutrition.', -3, 'active', [['Reach minus 2 kg', -15, true], ['Reach minus 4 kg', -3, false]]],
+            ['Fight at the December interclub', 'Prepare for a first amateur bout.', 20, 'dropped', [['Make weight at 63 kg', -10, true], ['Six sparring sessions', 10, false]]],
         ];
 
         foreach ($specs as $index => [$title, $description, $targetDays, $status, $milestones]) {
@@ -201,9 +224,9 @@ trait P09Scenarios
     {
         $training = StockItem::where('sku', 'G'.$gym->id.'-TRAIN')->first();
         $specs = [
-            ['Boxing gloves 14 oz', 'ok', 30, -3, 'Stitching and padding checked.', 33],
+            ['Boxing gloves 14 oz', 'pass', 30, -3, 'Stitching and padding checked.', 33],
             ['Focus mitts', 'needs_repair', 60, 10, 'Torn padding on one mitt. Send for repair.', 4],
-            ['Mouth guards', 'ok', 14, 3, 'No cracks. Sanitised.', 11],
+            ['Mouth guards', 'pass', 14, 3, 'No cracks. Sanitised.', 11],
             [$training?->name, 'unsafe', 30, 25, 'Cracked foam and loose strap. Remove from use.', 5],
         ];
 
@@ -218,7 +241,7 @@ trait P09Scenarios
                 'checked_by' => $owner->id, 'checked_on' => today()->subDays($daysAgo),
                 'created_at' => now()->subDays($daysAgo), 'updated_at' => now()->subDays($daysAgo),
             ])->save();
-            $item->forceFill(['safety_status' => $result, 'check_interval_days' => $interval, 'next_check_on' => today()->addDays($nextDays)])->save();
+            $item->forceFill(['safety_status' => $result === 'pass' ? 'ok' : $result, 'check_interval_days' => $interval, 'next_check_on' => today()->addDays($nextDays)])->save();
         }
     }
 
