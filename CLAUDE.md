@@ -15,6 +15,7 @@ php artisan dev                # API at http://localhost:8000/api + email worker
 php artisan test               # backend tests (SQLite in memory, mail not sent, queue runs inline)
 php artisan test --filter=LeaveTest            # one test file or test method
 php artisan migrate            # apply database changes
+php artisan migrate:fresh --seed   # rebuild demo data (all accounts use Password_123); needs repo-root assets/
 php artisan app:make-admin you@example.com   # the only way to make a platform admin
 php artisan app:sync-permissions             # sync config/permissions.php catalog into the DB
 php artisan app:seed-system-roles            # add starter roles (config/access.php) to gyms
@@ -77,6 +78,13 @@ The frontend calls the API at `VITE_API_URL` (`frontend/.env`).
   Stock quantity changes only through `StockLedger` movements. `PayrollLock::assertOpen` blocks edits to
   dates inside an in-review or released payroll run (409). Payroll math uses integer centavos
   (`Payroll\Money`); statutory rates live in the `statutory_rates` table, not config.
+  List endpoints page only when the request sends `?page=N` (`App\Support\Paging`, 25 rows plus `meta`); without it
+  they return the full list, which other screens rely on (payment dialog, leave calendar). Government ID numbers on
+  `employee_profiles` use the `encrypted` cast, so changing `APP_KEY` makes them unreadable (reseed or set
+  `APP_PREVIOUS_KEYS`). Distances go through `App\Support\Geo`.
+- **Demo seeder.** `DatabaseSeeder` plus the `DemoScenarios`, `P09Scenarios` and `P10P11Scenarios` traits. Files come
+  from the repo-root `assets/` folder; a missing file stops the seed with "Demo asset missing" on purpose.
+  `DatabaseSeederTest` checks every seeded status and file.
 - **Time and SQL.** App timezone is `Asia/Manila`; frontend formats dates with `gymDate()` in
   `src/lib/membership.ts`. A session's shown status (`phase`: scheduled, ongoing, ended, cancelled) comes from
   `TrainingSession::phase()` on the server clock; it is never stored, and business rules check `status` instead.
@@ -95,6 +103,9 @@ The frontend calls the API at `VITE_API_URL` (`frontend/.env`).
 - **Frontend.** `src/App.tsx` holds all routes and guards (guest, signed-in, first password, admin, gym member).
   `src/components/ui/` is coss UI (Base UI + Tailwind v4); reuse it before writing new components. `@/` maps to `src/`.
   Each area has `src/lib/<area>.ts` (response types and display helpers, e.g. `payroll.ts`, `inventory.ts`) used by `src/pages/gym/*`.
+  `node --test` imports `src/lib/*.ts` directly, so helpers it tests (e.g. `validation.ts`, `places.ts`,
+  `document-check.ts`, `qr-scan.ts`) must not use `@/` imports. Heavy libraries (`jsqr`, `tesseract.js`) load only
+  through `await import(...)` when needed.
   Light/dark theme lives in `src/lib/theme.ts` (`dark` class on `<html>`, saved in `localStorage`, dark by default).
 
 ## Rules

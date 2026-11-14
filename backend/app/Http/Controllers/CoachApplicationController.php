@@ -7,13 +7,13 @@ use App\Enums\GymStatus;
 use App\Models\CoachApplication;
 use App\Models\EmployeeProfile;
 use App\Models\Gym;
-use App\Models\GymRole;
 use App\Models\User;
 use App\Models\WorkSchedule;
 use App\Notifications\GymNotice;
 use App\Support\CoachScheduleConflicts;
 use App\Support\CurrentGym;
 use App\Support\Paging;
+use App\Support\SystemRoles;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -150,7 +150,7 @@ class CoachApplicationController extends Controller
                     );
                 }
 
-                if ($role = GymRole::where('template_key', 'coach')->where('status', 'active')->first()) {
+                if ($role = SystemRoles::role('coach')) {
                     $role->users()->syncWithoutDetaching([$user->id]);
                 }
             }

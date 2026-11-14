@@ -16,6 +16,7 @@ use App\Models\TrainingGoal;
 use App\Models\User;
 use App\Notifications\GymNotice;
 use App\Support\Procurement\Notifier;
+use App\Support\SystemRoles;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -105,7 +106,7 @@ trait P09Scenarios
             if ($status === 'approved') {
                 $this->hireMember($gym, $user, [
                     'job_title' => 'Coach', 'coach_experience' => $experience, 'coach_rank' => $rank, 'coach_specialisation' => $specialisation,
-                ], GymRole::where('template_key', 'coach')->where('status', 'active')->first(), today()->subDays(3));
+                ], SystemRoles::role('coach'), today()->subDays(3));
                 foreach ($slots as [$weekday, $start, $end]) {
                     $gym->workSchedules()->updateOrCreate(['user_id' => $user->id, 'weekday' => $weekday], ['start_time' => $start, 'end_time' => $end]);
                 }

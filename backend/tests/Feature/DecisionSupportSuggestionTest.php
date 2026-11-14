@@ -36,6 +36,15 @@ class DecisionSupportSuggestionTest extends TestCase
             ->assertJsonPath('items.0.action.body.lines.0.stock_item_id', $item->id);
         $action = $response->json('items.0.action');
         $this->actingAs($this->owner)->postJson($this->url($action['path']), $action['body'])->assertCreated();
+
+        // The item is now on a pending request, so it is not suggested again (no duplicate request).
+        $codes = collect($this->actingAs($this->owner)->getJson($this->decisionUrl('suggestions'))->assertOk()->json('items'))->pluck('code');
+        $this->assertNotContains('low_stock', $codes);
+
+        // Once the request is rejected the item is suggested again.
+        DB::table('purchase_requests')->update(['status' => 'rejected']);
+        $this->actingAs($this->owner)->getJson($this->decisionUrl('suggestions'))->assertOk()
+            ->assertJsonPath('items.0.code', 'low_stock');
     }
 
     public function test_membership_ending_in_three_days_is_suggested(): void

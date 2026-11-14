@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { toastManager } from '@/components/ui/toast'
 import { api, ApiError, type FieldErrors } from '@/lib/api'
-import { JOB_FILE_ACCEPT, JOB_FILE_MAX_KB } from '@/lib/hiring'
+import { type GymDetailPayload, readGymDetail } from '@/lib/discovery'
+import { JOB_FILE_ACCEPT, JOB_FILE_MAX_KB, type PublicJobPosting } from '@/lib/hiring'
 import { fileProblem } from '@/lib/validation'
 
 /** R-138: a member applies for a job posting with experience, credentials and a valid ID. */
@@ -18,6 +19,19 @@ export default function JobApply() {
   const navigate = useNavigate()
   const [errors, setErrors] = useState<FieldErrors>({})
   const [busy, setBusy] = useState(false)
+  const [job, setJob] = useState<{ gym: string; posting: PublicJobPosting | null } | null>(null)
+
+  // Name the job and gym on the page, so a shared link or a refresh still shows what this is for.
+  useEffect(() => {
+    let active = true
+    api<{ gym: GymDetailPayload }>(`/gyms/${gymId}`)
+      .then(({ gym }) => {
+        const detail = readGymDetail(gym)
+        if (active) setJob({ gym: detail.name, posting: detail.job_postings.find((row) => String(row.id) === postingId) ?? null })
+      })
+      .catch(() => undefined)
+    return () => { active = false }
+  }, [gymId, postingId])
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -48,7 +62,19 @@ export default function JobApply() {
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <PageHeader title="Apply for this job" description="Tell the gym about your experience and attach your credentials and a valid ID. Only the gym's hiring staff can open them." />
+      <PageHeader
+        title={job?.posting ? `Apply: ${job.posting.title}` : 'Apply for this job'}
+        description={`${job ? `${job.gym}. ` : ''}Tell the gym about your experience and attach your credentials and a valid ID. Only the gym's hiring staff can open them.`}
+      />
+      {job?.posting && (
+        <Card className="max-w-3xl">
+          <CardPanel className="flex flex-col gap-2 text-sm">
+            <p className="whitespace-pre-wrap text-muted-foreground wrap-anywhere">{job.posting.description}</p>
+            {job.posting.requirements && <p className="whitespace-pre-wrap wrap-anywhere"><span className="font-medium">Requirements: </span>{job.posting.requirements}</p>}
+          </CardPanel>
+        </Card>
+      )}
+      {job && !job.posting && <p className="text-muted-foreground text-sm">This opening is closed or no longer listed.</p>}
       <Form errors={errors} onSubmit={submit} className="flex max-w-3xl flex-col gap-6">
         <Card>
           <CardHeader><CardTitle render={<h2 />}>Your application</CardTitle></CardHeader>

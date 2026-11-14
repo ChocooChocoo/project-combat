@@ -54,6 +54,32 @@ class SparringTest extends TestCase
         $this->assertContains('2 kg apart', $response->json('matches.0.reasons'));
     }
 
+    public function test_minors_and_adults_are_not_matched_but_unknown_ages_are(): void
+    {
+        $this->applicant->forceFill(['birthdate' => today()->subYears(30)])->save();
+        DB::table('athlete_profiles')->where('user_id', $this->applicant->id)->update(['weight_kg' => 60, 'experience_years' => 2]);
+        $adult = $this->athlete(['weight_kg' => 61, 'experience_years' => 3], 'Adult');
+        $adult->forceFill(['birthdate' => today()->subYears(25)])->save();
+        $minor = $this->athlete(['weight_kg' => 60], 'Minor');
+        $minor->forceFill(['birthdate' => today()->subYears(14)])->save();
+        $unknown = $this->athlete(['weight_kg' => 60], 'Unknown');
+        $unknown->forceFill(['birthdate' => null])->save();
+
+        $ids = collect($this->getMatches()->assertOk()->json('matches'))->pluck('user_id');
+        $this->assertTrue($ids->contains($adult->id));
+        $this->assertTrue($ids->contains($unknown->id));
+        $this->assertFalse($ids->contains($minor->id));
+        $adultRow = collect($this->getMatches()->json('matches'))->firstWhere('user_id', $adult->id);
+        $this->assertContains('1 year more experience', $adultRow['reasons']);
+
+        $minorResponse = $this->getMatches(target: $minor)->assertOk();
+        $this->assertContains('This athlete is under 18, so only other athletes under 18 are suggested.', $minorResponse->json('notes'));
+        $forMinor = collect($minorResponse->json('matches'))->pluck('user_id');
+        $this->assertFalse($forMinor->contains($adult->id));
+        $this->assertFalse($forMinor->contains($this->applicant->id));
+        $this->assertTrue($forMinor->contains($unknown->id));
+    }
+
     public function test_a_candidate_without_weight_is_listed_after_one_with_weight(): void
     {
         DB::table('athlete_profiles')->where('user_id', $this->applicant->id)->update(['weight_kg' => 60, 'level' => 'beginner']);

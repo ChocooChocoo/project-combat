@@ -88,6 +88,18 @@ class CoachApplicationTest extends TestCase
         $this->assertSame(1, $this->coach->notifications()->count());
     }
 
+    public function test_approval_uses_a_coach_role_made_by_the_owner_when_there_is_no_starter_role(): void
+    {
+        // The owner made "Coach" before the starter roles, so SystemRoles skipped the template (no template_key).
+        GymRole::withoutGlobalScope('gym')->where('gym_id', $this->gymB->id)->where('template_key', 'coach')->delete();
+        $own = GymRole::withoutEvents(fn () => GymRole::withoutGlobalScope('gym')->forceCreate(['gym_id' => $this->gymB->id, 'name' => 'Coach', 'status' => 'active']));
+
+        $id = $this->apply([['weekday' => 'tue', 'start' => '17:00', 'end' => '20:00']])->assertCreated()->json('application.id');
+        $this->actingAs($this->ownerB)->postJson("/api/gyms/{$this->gymB->id}/coach-applications/{$id}/decision", ['decision' => 'approve'])->assertOk();
+
+        $this->assertTrue($own->users()->whereKey($this->coach->id)->exists());
+    }
+
     public function test_owner_accounts_staff_and_duplicates_are_refused(): void
     {
         $this->apply([['weekday' => 'wed', 'start' => '09:00', 'end' => '10:00']], $this->ownerB)->assertForbidden();

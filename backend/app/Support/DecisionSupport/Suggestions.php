@@ -3,9 +3,11 @@
 namespace App\Support\DecisionSupport;
 
 use App\Enums\MembershipStatus;
+use App\Enums\PurchaseRequestStatus;
 use App\Models\Gym;
 use App\Support\CurrentGym;
 use App\Support\Procurement\Restock;
+use Illuminate\Support\Facades\DB;
 
 /**
  * (R-141) suggestions only; the owner confirms every action and the target endpoint checks permission.
@@ -20,7 +22,18 @@ final class Suggestions
         app(CurrentGym::class)->set($gym);
         $items = [];
 
-        $restock = app(Restock::class)->forGym($gym);
+        // Items already on a request still waiting for approval or an order are left out, so a second click
+        // does not make a duplicate request.
+        $requested = DB::table('purchase_request_lines')
+            ->join('purchase_requests', 'purchase_requests.id', '=', 'purchase_request_lines.purchase_request_id')
+            ->leftJoin('purchase_orders', 'purchase_orders.purchase_request_id', '=', 'purchase_requests.id')
+            ->where('purchase_requests.gym_id', $gym->id)
+            ->where(fn ($query) => $query->where('purchase_requests.status', PurchaseRequestStatus::Pending->value)
+                ->orWhere(fn ($query) => $query->where('purchase_requests.status', PurchaseRequestStatus::Approved->value)
+                    ->whereNull('purchase_orders.id')))
+            ->pluck('purchase_request_lines.stock_item_id')
+            ->flip();
+        $restock = app(Restock::class)->forGym($gym)->reject(fn (array $row) => $requested->has($row['stock_item_id']))->values();
         if ($restock->isNotEmpty()) {
             $items[] = [
                 'code' => 'low_stock',

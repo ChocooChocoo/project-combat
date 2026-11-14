@@ -10,6 +10,20 @@ use Illuminate\Support\Str;
 
 final class SystemRoles
 {
+    /**
+     * The current gym's active starter role for a template. seed() skips a template when a role with the same
+     * name already exists, so that role has no template_key and is matched by name instead.
+     */
+    public static function role(string $key): ?GymRole
+    {
+        $name = config("access.names.{$key}", Str::headline($key));
+
+        return GymRole::where('status', 'active')
+            ->where(fn ($query) => $query->where('template_key', $key)->orWhereRaw('LOWER(name) = ?', [Str::lower($name)]))
+            ->orderByRaw('template_key IS NULL')
+            ->first();
+    }
+
     public static function seed(Gym $gym): void
     {
         DB::transaction(function () use ($gym) {

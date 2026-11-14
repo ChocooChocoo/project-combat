@@ -103,7 +103,7 @@ export function SparringCard({ gymId, athleteId, sparring, canEdit, canSee }: { 
             {notes.map((note) => (
               <Alert key={note} variant="info"><AlertDescription>{note}</AlertDescription></Alert>
             ))}
-            {matches && matches.length === 0 && <p className="text-muted-foreground text-sm">No active members to match yet.</p>}
+            {matches && matches.length === 0 && <p className="text-muted-foreground text-sm">No suitable partners right now.</p>}
             <ul className="flex flex-col gap-2">
               {matches?.map((match) => (
                 <li key={match.user_id} className="rounded-xl border p-3 text-sm">

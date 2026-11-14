@@ -98,10 +98,11 @@ trait P10P11Scenarios
         }
     }
 
-    /** (R-125) One class service gets a thumbnail on all its sessions. */
+    /** (R-125) The class service with the most upcoming sessions gets a thumbnail on all its sessions. */
     private function seedSessionThumbnails(Gym $gym): void
     {
-        $serviceId = TrainingSession::where('type', 'classes')->orderBy('starts_at')->value('gym_service_id');
+        $serviceId = TrainingSession::where('type', 'classes')->whereNotNull('gym_service_id')->where('starts_at', '>=', now())
+            ->groupBy('gym_service_id')->orderByRaw('COUNT(*) DESC')->orderBy('gym_service_id')->value('gym_service_id');
         if ($serviceId === null) {
             return;
         }

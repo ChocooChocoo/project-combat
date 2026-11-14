@@ -123,6 +123,10 @@ class DatabaseSeederTest extends TestCase
             foreach (['pending', 'approved', 'rejected', 'withdrawn'] as $status) {
                 $this->assertDatabaseHas('coach_applications', ['gym_id' => $gym->id, 'status' => $status]);
             }
+            // The approved coach holds the gym's Coach role.
+            $approvedCoach = DB::table('coach_applications')->where('gym_id', $gym->id)->where('status', 'approved')->value('user_id');
+            $this->assertTrue(DB::table('gym_role_user')->join('gym_roles', 'gym_roles.id', '=', 'gym_role_user.gym_role_id')
+                ->where('gym_roles.gym_id', $gym->id)->where('gym_roles.name', 'Coach')->where('gym_role_user.user_id', $approvedCoach)->exists());
             $this->assertSame(2, DB::table('purchase_requests')->where('gym_id', $gym->id)->where('status', 'pending')->count());
             foreach (['image/png', 'application/pdf'] as $mime) {
                 $this->assertSame(1, DB::table('purchase_order_proofs')->where('gym_id', $gym->id)->where('mime', $mime)->count());
@@ -147,6 +151,7 @@ class DatabaseSeederTest extends TestCase
             // P10: thumbnail, encrypted government IDs, clock-in location.
             $thumb = DB::table('training_sessions')->where('gym_id', $gym->id)->whereNotNull('thumbnail_path')->value('thumbnail_path');
             $this->assertNotNull($thumb);
+            $this->assertTrue(DB::table('training_sessions')->where('gym_id', $gym->id)->whereNotNull('thumbnail_path')->where('starts_at', '>=', now())->exists());
             Storage::disk('public')->assertExists($thumb);
             $rawSss = DB::table('employee_profiles')->where('gym_id', $gym->id)->whereNotNull('sss_number')->value('sss_number');
             $this->assertNotNull($rawSss);

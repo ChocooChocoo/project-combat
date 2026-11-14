@@ -18,7 +18,14 @@ class Sparring
         $candidates = $gym->athleteProfiles()->whereIn('user_id', $activeIds)->where('user_id', '!=', $user->id)->get();
         $users = User::whereIn('id', $candidates->pluck('user_id'))->get()->keyBy('id');
 
-        $matches = $candidates->map(fn (AthleteProfile $other) => $this->score($target, $other, $users[$other->user_id] ?? null))
+        // Minors only spar minors and adults only adults; an unknown birthdate is not filtered.
+        $minor = fn (?User $person) => $person?->birthdate ? $person->birthdate->age < User::ADULT_AGE : null;
+        $targetMinor = $minor($user);
+
+        $matches = $candidates
+            ->reject(fn (AthleteProfile $other) => $targetMinor !== null
+                && ($otherMinor = $minor($users[$other->user_id] ?? null)) !== null && $otherMinor !== $targetMinor)
+            ->map(fn (AthleteProfile $other) => $this->score($target, $other, $users[$other->user_id] ?? null))
             ->filter()->sortBy([
                 // with a known target weight, candidates without a weight go last
                 [fn ($x, $y) => ($target->weight_kg !== null && $x['weight_kg'] === null) <=> ($target->weight_kg !== null && $y['weight_kg'] === null), 'asc'],
@@ -29,7 +36,10 @@ class Sparring
         return [
             'athlete' => $this->payload($target),
             'matches' => $matches,
-            'notes' => $target->weight_kg === null ? ["Add this athlete's weight for safer matches."] : [],
+            'notes' => array_values(array_filter([
+                $target->weight_kg === null ? "Add this athlete's weight for safer matches." : null,
+                $targetMinor ? 'This athlete is under 18, so only other athletes under 18 are suggested.' : null,
+            ])),
         ];
     }
 
@@ -86,7 +96,7 @@ class Sparring
             $gap = abs($a->experience_years - $b->experience_years);
             $available += $w['experience'];
             $points += $w['experience'] * max(0, 1 - $gap / config('sparring.experience_cap_years'));
-            $reasons[] = $gap === 0 ? 'Same experience' : "{$gap} years more experience";
+            $reasons[] = $gap === 0 ? 'Same experience' : "{$gap} ".($gap === 1 ? 'year' : 'years').' more experience';
         }
 
         $totalA = $a->wins + $a->losses + $a->draws;
