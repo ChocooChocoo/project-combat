@@ -12,6 +12,7 @@ use App\Models\Membership;
 use App\Models\SessionNote;
 use App\Models\User;
 use App\Support\AttendanceLedger;
+use App\Support\DecisionSupport\Sparring;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -75,6 +76,36 @@ class AthleteRecordController extends Controller
         $profile->update(['level' => $data['level']]);
 
         return response()->json(['level' => $profile->level]);
+    }
+
+    /** (R-140) a permitted coach records weight, height, fight record and experience for sparring matches. */
+    public function updateSparring(Request $request, Gym $gym, User $user): JsonResponse
+    {
+        $profile = $this->profile($gym, $user);
+        abort_if($request->user()->id === $user->id, 403, 'You cannot change your own sparring details.');
+
+        $data = $request->validate([
+            'weight_kg' => ['nullable', 'numeric', 'between:20,200'],
+            'height_cm' => ['nullable', 'integer', 'between:90,230'],
+            'wins' => ['nullable', 'integer', 'between:0,500'],
+            'losses' => ['nullable', 'integer', 'between:0,500'],
+            'draws' => ['nullable', 'integer', 'between:0,500'],
+            'experience_years' => ['nullable', 'integer', 'between:0,60'],
+        ]);
+        foreach (['wins', 'losses', 'draws'] as $key) {
+            if (array_key_exists($key, $data)) {
+                $data[$key] ??= 0;
+            }
+        }
+        $profile->update($data);
+
+        return response()->json(['sparring' => app(Sparring::class)->payload($profile->fresh())]);
+    }
+
+    /** (R-140) suggested sparring partners among this gym's active members. */
+    public function sparringMatches(Gym $gym, User $user, Sparring $sparring): JsonResponse
+    {
+        return response()->json($sparring->matchesFor($gym, $user));
     }
 
     /** R-41: the athlete's own record, health included. */
@@ -161,10 +192,13 @@ class AthleteRecordController extends Controller
 
         $attendance = app(AttendanceLedger::class)->rows(['user_id' => $user->id]);
         $record = [
-            'athlete' => [...$this->personPayload($user), 'phone' => $user->phone],
+            // (R-129) is_minor is false when no birthdate is on file.
+            'athlete' => [...$this->personPayload($user), 'phone' => $user->phone,
+                'is_minor' => $user->birthdate !== null && $user->birthdate->age < User::ADULT_AGE],
             'background' => $profile->background,
             'starting_rank' => $profile->current_rank,
             'level' => $profile->level,
+            'sparring' => app(Sparring::class)->payload($profile),
             'training_history' => $profile->training_history,
             'ranks' => $ranks,
             'entries' => $entries->map(fn (AthleteEntry $entry) => $this->entryPayload($entry))->values(),
@@ -180,6 +214,11 @@ class AthleteRecordController extends Controller
 
         if ($withHealth) {
             $record['health'] = $this->healthPayload($profile);
+            $record['athlete']['guardian'] = $user->guardian_name ? [
+                'name' => $user->guardian_name,
+                'phone' => $user->guardian_phone,
+                'relationship' => $user->guardian_relationship,
+            ] : null;
         }
 
         return $record;

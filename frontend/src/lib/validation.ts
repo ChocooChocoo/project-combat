@@ -46,3 +46,17 @@ export function fileProblem(file: File, accept: string | undefined, maxKb: numbe
   if (maxKb && file.size > maxKb * 1024) return `The file is too big. The limit is ${maxKb >= 1024 ? `${Math.round(maxKb / 1024)} MB` : `${maxKb} KB`}.`
   return null
 }
+
+/** (R-128) Name endings the API accepts. */
+export const SUFFIXES = ['Jr.', 'Sr.', 'II', 'III', 'IV', 'V']
+
+/** (R-129) Youngest allowed age, and the age below which a guardian is needed. */
+export const MIN_AGE = 7
+export const ADULT_AGE = 18
+
+/** Whole years between two yyyy-mm-dd dates. */
+export function ageOn(birthdate: string, today: string): number {
+  const [by, bm, bd] = birthdate.split('-').map(Number)
+  const [ty, tm, td] = today.split('-').map(Number)
+  return ty - by - (tm < bm || (tm === bm && td < bd) ? 1 : 0)
+}

@@ -10,8 +10,10 @@ use App\Models\MembershipPlan;
 use App\Models\User;
 use App\Support\CurrentGym;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Tests\Feature\Concerns\CustomerSetup;
 use Tests\TestCase;
 
@@ -23,6 +25,7 @@ class CustomerConversionTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Storage::fake('local');
         $this->travelTo(Carbon::parse('2026-11-13 09:00:00'));
         $this->setUpCustomerGym();
     }
@@ -155,6 +158,7 @@ class CustomerConversionTest extends TestCase
             'health_notes' => null,
             'waivers' => array_fill_keys(array_keys(config('membership.waivers')), true),
             'signature_name' => trim("{$applicant->first_name} {$applicant->last_name}"),
+            'medical_file' => UploadedFile::fake()->create('clearance.pdf', 50, 'application/pdf'), // (R-136)
         ];
     }
 }

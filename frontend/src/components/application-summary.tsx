@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { toastManager } from '@/components/ui/toast'
 import { apiBlobUrl, apiFile } from '@/lib/api'
+import { todayIso } from '@/lib/document-check'
 import {
   type Application,
   type ApplicationStatus,
@@ -13,6 +14,7 @@ import {
   type Requirements,
   typesFor,
 } from '@/lib/gyms'
+import { dateLabel } from '@/lib/membership'
 
 const STATUS: Record<ApplicationStatus, { label: string; variant: 'secondary' | 'info' | 'warning' | 'success' | 'error' }> = {
   draft: { label: 'Draft', variant: 'secondary' },
@@ -115,10 +117,16 @@ export function ProfileSummary({ app, requirements }: { app: Application; requir
   )
 }
 
+const FLAG_LABELS: Record<string, string> = {
+  owner_name: 'Owner name not found',
+  gym_name: 'Gym name not found',
+  no_text: 'Text could not be read',
+}
+
 const sizeText = (bytes: number) => (bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`)
 
 /** One uploaded file. Images show a preview, loaded through the private route (R-15). */
-export function FileTile({ gymId, file, onRemove }: { gymId: number; file: GymDocument; onRemove?: (id: number) => void }) {
+export function FileTile({ gymId, file, onRemove, onOpened, opened }: { gymId: number; file: GymDocument; onRemove?: (id: number) => void; onOpened?: (id: number) => void; opened?: boolean }) {
   const isImage = file.mime.startsWith('image/')
   const [preview, setPreview] = useState<string | null>(null)
 
@@ -126,7 +134,7 @@ export function FileTile({ gymId, file, onRemove }: { gymId: number; file: GymDo
     if (!isImage) return
     let url = ''
     let live = true
-    apiBlobUrl(documentUrl(gymId, file.id))
+    apiBlobUrl(`${documentUrl(gymId, file.id)}?preview=1`)
       .then((u) => {
         url = u
         if (live) setPreview(u)
@@ -140,7 +148,9 @@ export function FileTile({ gymId, file, onRemove }: { gymId: number; file: GymDo
   }, [gymId, file.id, isImage])
 
   const open = () =>
-    apiFile(documentUrl(gymId, file.id)).catch(() => toastManager.add({ title: 'The file could not be opened.', type: 'error' }))
+    apiFile(documentUrl(gymId, file.id))
+      .then(() => onOpened?.(file.id))
+      .catch(() => toastManager.add({ title: 'The file could not be opened.', type: 'error' }))
   const Icon = file.mime.startsWith('video/') ? Film : FileText
 
   return (
@@ -157,7 +167,17 @@ export function FileTile({ gymId, file, onRemove }: { gymId: number; file: GymDo
         <span className="grid min-w-0">
           <span className="truncate font-medium text-sm group-hover:underline">{file.original_name}</span>
           <span className="text-muted-foreground text-xs">{sizeText(file.size)}</span>
+          {(file.expires_on || file.ocr_flags?.length) && (
+            <span className="mt-1 flex flex-wrap items-center gap-1.5">
+              {file.expires_on && <span className="text-muted-foreground text-xs">Expires {dateLabel(file.expires_on)}</span>}
+              {file.expires_on && file.expires_on < todayIso() && <Badge variant="error">Expired</Badge>}
+              {file.ocr_flags?.map((flag) => <Badge key={flag} variant="warning">{FLAG_LABELS[flag] ?? flag}</Badge>)}
+            </span>
+          )}
         </span>
+        {opened !== undefined && (
+          <Badge variant={opened ? 'success' : 'outline'} className="ms-auto shrink-0">{opened ? 'Opened' : 'Not opened'}</Badge>
+        )}
       </button>
       {onRemove && (
         <Button type="button" variant="ghost" size="icon-sm" aria-label={`Delete ${file.original_name}`} onClick={() => onRemove(file.id)}>
@@ -169,7 +189,7 @@ export function FileTile({ gymId, file, onRemove }: { gymId: number; file: GymDo
 }
 
 /** Every uploaded file, grouped by document, each openable through the private route (R-15). */
-export function DocumentSummary({ app, requirements }: { app: Application; requirements: Requirements }) {
+export function DocumentSummary({ app, requirements, onOpened, openedIds }: { app: Application; requirements: Requirements; onOpened?: (id: number) => void; openedIds?: Set<number> }) {
   const needed = typesFor(requirements, app.tier)
   const types = [...needed, ...new Set(app.documents.map((d) => d.type).filter((t) => !needed.includes(t)))]
   // For "DTI or SEC", hide the one not sent once the other is there.
@@ -194,7 +214,13 @@ export function DocumentSummary({ app, requirements }: { app: Application; requi
               <p className="text-muted-foreground text-sm">Not uploaded</p>
             ) : (
               <ul className={files.length > 2 ? 'grid gap-2 sm:grid-cols-2' : 'grid gap-2'}>
-                {files.map((file) => <FileTile key={file.id} gymId={app.id} file={file} />)}
+                {files.map((file) => <FileTile
+                    key={file.id}
+                    gymId={app.id}
+                    file={file}
+                    onOpened={onOpened}
+                    opened={openedIds && requirements.documents[file.type]?.must_open !== false ? openedIds.has(file.id) : undefined}
+                  />)}
               </ul>
             )}
           </section>

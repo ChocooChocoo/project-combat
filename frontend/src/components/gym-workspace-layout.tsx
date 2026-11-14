@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { useAuth, type GymAccess } from '@/lib/auth'
 import { planLockedSection } from '@/components/gym-nav'
 import { approvedGym } from '@/lib/gym-access'
+import { dateLabel } from '@/lib/membership'
 import { daysLeft } from '@/lib/subscriptions'
 
 /**
@@ -34,23 +35,28 @@ export function GymWorkspaceLayout() {
   )
 }
 
-/** R-106, R-107: tells the owner when modules are locked or the trial or paid month is about to end. */
+/** R-106, R-107, R-139: tells the owner when modules are locked or the trial or paid month is about to end. */
 function PlanNotice({ gym }: { gym: GymAccess }) {
   const sub = gym.subscription
   if (!sub || sub.status === 'unmanaged') return null
   const left = daysLeft(sub.period_ends_at)
   const ending = left !== null && left <= 7
-  if (sub.status !== 'free' && !ending) return null
+  if (sub.status === 'paid' && !ending) return null
 
   const title = sub.status === 'free'
     ? 'Your gym is on the free plan'
-    : `Your ${sub.status === 'trial' ? 'free trial' : 'paid plan'} ends in ${left} ${left === 1 ? 'day' : 'days'}`
+    : sub.status === 'trial'
+      ? `Free trial: ${left} ${left === 1 ? 'day' : 'days'} left`
+      : `Your paid plan ends in ${left} ${left === 1 ? 'day' : 'days'}`
   const body = sub.status === 'free'
     ? `${sub.locked_modules.length} ${sub.locked_modules.length === 1 ? 'module is' : 'modules are'} locked. Your records are kept and come back when you subscribe.`
-    : 'Subscribe to keep every module you use. Without a plan, the gym moves to the free plan.'
+    : sub.status === 'trial'
+      ? `Every module is open until ${dateLabel(sub.period_ends_at)}. Choose a plan before then to keep the modules you use.`
+      : 'Subscribe to keep every module you use. Without a plan, the gym moves to the free plan.'
+  const warn = sub.status === 'free' || ending
 
   return (
-    <Alert variant={sub.status === 'free' ? 'warning' : 'info'}>
+    <Alert variant={warn ? 'warning' : 'info'}>
       <AlertTitle>{title}</AlertTitle>
       <AlertDescription>
         <p>{body}</p>

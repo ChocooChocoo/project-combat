@@ -48,6 +48,13 @@ class GymDocumentController extends Controller
                 : "You can upload at most {$max} of these."]);
         }
 
+        // (R-133) ponytail: flags come from the browser and can be faked; they only guide the admin.
+        $request->validate([
+            'expires_on' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:today'],
+            'ocr_flags' => ['nullable', 'array', 'max:3'],
+            'ocr_flags.*' => [Rule::in(['owner_name', 'gym_name', 'no_text'])],
+        ], ['expires_on.after_or_equal' => 'This document has expired. Upload a current one.']);
+
         $file = $request->file('file');
         $document = $gym->documents()->create([
             'type' => $type,
@@ -55,14 +62,38 @@ class GymDocumentController extends Controller
             'original_name' => $file->getClientOriginalName(),
             'mime' => $file->getMimeType(),
             'size' => $file->getSize(),
+            'expires_on' => config("verification.documents.{$type}.expiry") ? $request->input('expires_on') : null,
+            'ocr_flags' => $request->input('ocr_flags') ?: null,
         ]);
 
         return response()->json(['document' => $document], 201);
     }
 
-    public function show(Gym $gym, GymDocument $document): StreamedResponse
+    /** (R-133) The owner corrects the expiry date, before sending only (policy). */
+    public function update(Request $request, Gym $gym, GymDocument $document): JsonResponse
+    {
+        Gate::authorize('update', $gym);
+
+        if (! config("verification.documents.{$document->type}.expiry")) {
+            throw ValidationException::withMessages(['expires_on' => 'This document has no expiry date.']);
+        }
+
+        $data = $request->validate(['expires_on' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:today']], [
+            'expires_on.after_or_equal' => 'This document has expired. Upload a current one.',
+        ]);
+        $document->update(['expires_on' => $data['expires_on'] ?? null]);
+
+        return response()->json(['document' => $document]);
+    }
+
+    public function show(Request $request, Gym $gym, GymDocument $document): StreamedResponse
     {
         Gate::authorize('view', $gym);
+
+        // (R-132) Thumbnail previews send ?preview=1 and do not count as opened.
+        if ($request->user()->is_platform_admin && ! $request->boolean('preview') && $document->admin_viewed_at === null) {
+            $document->forceFill(['admin_viewed_at' => now()])->save();
+        }
 
         return Storage::disk('local')->response($document->path, $document->original_name);
     }

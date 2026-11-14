@@ -16,7 +16,13 @@ class UserResource extends JsonResource
         return [
             'id' => $this->id,
             'first_name' => $this->first_name,
+            'middle_name' => $this->middle_name,
             'last_name' => $this->last_name,
+            'suffix' => $this->suffix,
+            'full_name' => $this->resource->fullName(),
+            'birthdate' => $this->birthdate?->toDateString(),
+            'city' => $this->city,
+            'province' => $this->province,
             'email' => $this->email,
             'phone' => $this->phone,
             'photo_url' => $this->photo_path ? Storage::disk('public')->url($this->photo_path) : null,

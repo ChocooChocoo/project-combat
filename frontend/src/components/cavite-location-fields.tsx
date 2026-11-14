@@ -8,7 +8,7 @@ type Municipality = { name: string; zip: string; barangays: string[] }
 
 // One request per page load; the list never changes while the app runs.
 let cache: Promise<Municipality[]> | null = null
-const loadMunicipalities = () =>
+export const loadMunicipalities = () =>
   (cache ??= api<{ municipalities: Municipality[] }>('/locations/cavite')
     .then((r) => r.municipalities)
     .catch((error) => {

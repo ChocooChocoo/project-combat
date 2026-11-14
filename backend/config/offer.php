@@ -37,6 +37,10 @@ return [
         'max_kb' => 4096,
     ],
 
+    // R-134, R-135: gym gallery photos and policy PDFs.
+    'gym_photos' => ['max' => 12, 'max_kb' => 4096],
+    'policy_files' => ['max' => 5, 'mimes' => ['pdf'], 'max_kb' => 5120],
+
     'plan_billing' => [
         'time' => 'By time',
         'sessions' => 'By sessions',

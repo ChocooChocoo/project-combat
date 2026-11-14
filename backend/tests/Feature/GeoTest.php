@@ -79,4 +79,26 @@ class GeoTest extends TestCase
         $this->getJson('/api/geo/search?q=a')->assertUnprocessable()->assertJsonValidationErrors('q');
         Http::assertNothingSent();
     }
+
+    public function test_reverse_maps_an_address_and_is_public(): void
+    {
+        Http::fake(['nominatim.openstreetmap.org/reverse*' => Http::response([
+            'display_name' => 'x',
+            'address' => ['town' => 'Silang', 'province' => 'Cavite', 'village' => 'Biga'],
+        ])]);
+        $this->app['auth']->forgetGuards();
+
+        $this->getJson('/api/geo/reverse?lat=14.2&lng=120.97')->assertOk()
+            ->assertJsonPath('place.city', 'Silang')
+            ->assertJsonPath('place.province', 'Cavite')
+            ->assertJsonPath('place.barangay', 'Biga');
+    }
+
+    public function test_reverse_refuses_bad_coordinates_and_reports_failures(): void
+    {
+        $this->getJson('/api/geo/reverse?lat=200&lng=120')->assertUnprocessable()->assertJsonValidationErrors('lat');
+
+        Http::fake(['nominatim.openstreetmap.org/*' => Http::response('x', 500)]);
+        $this->getJson('/api/geo/reverse?lat=14.2&lng=120.97')->assertStatus(502);
+    }
 }

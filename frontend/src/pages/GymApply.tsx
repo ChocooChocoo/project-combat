@@ -2,7 +2,7 @@ import { ArrowLeft, Check, Upload } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { DocumentSummary, FileTile, ProfileSummary, StatusBadge } from '@/components/application-summary'
-import { CaviteLocationFields } from '@/components/cavite-location-fields'
+import { CaviteLocationFields, loadMunicipalities } from '@/components/cavite-location-fields'
 import { LocationPicker } from '@/components/location-picker'
 import { PageHeader } from '@/components/page-header'
 import { TextField } from '@/components/text-field'
@@ -21,10 +21,15 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { toastManager } from '@/components/ui/toast'
 import { api, ApiError, type FieldErrors } from '@/lib/api'
+import { useAuth } from '@/lib/auth'
+import { blurScore, BLUR_MIN, findExpiryDate, nameFlags, readText, todayIso } from '@/lib/document-check'
+import { dateLabel } from '@/lib/membership'
+import { matchCavitePlace } from '@/lib/places'
 import {
   type Application,
   DAYS,
   type Day,
+  type GymDocument,
   documentsMissing,
   documentUrl,
   editable,
@@ -199,6 +204,22 @@ export default function GymApply() {
     )
   }
 
+  // (R-130) A dropped pin fills empty address fields, so the owner only checks them.
+  async function fillFromPin(value: FormState['location']) {
+    if (!value) return
+    try {
+      const { place } = await api<{ place: { city: string | null; barangay: string | null; street: string } }>(`/geo/reverse?lat=${value.lat}&lng=${value.lng}`)
+      const match = matchCavitePlace(place, await loadMunicipalities())
+      const fillArea = !form.city && match.city
+      const fillStreet = !form.address_line && place.street
+      if (!fillArea && !fillStreet) return
+      setForm((f) => ({ ...f, ...(fillArea ? match : {}), ...(fillStreet ? { address_line: place.street } : {}) }))
+      toastManager.add({ title: 'Address filled from the map pin. Check it.', type: 'success' })
+    } catch {
+      // The pin still works without an address.
+    }
+  }
+
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm((current) => ({ ...current, [key]: value }))
   const setDay = (day: Day, change: Partial<Hours[Day]>) =>
     setForm((current) => ({ ...current, hours: { ...current.hours, [day]: { ...current.hours[day], ...change } } }))
@@ -367,7 +388,7 @@ export default function GymApply() {
                       </Fieldset>
                       <Fieldset className="flex flex-col gap-3">
                         <FieldsetLegend className="font-medium text-sm">Map location</FieldsetLegend>
-                        <LocationPicker value={form.location} onChange={(value) => set('location', value)} />
+                        <LocationPicker value={form.location} onChange={(value) => { set('location', value); void fillFromPin(value) }} />
                       </Fieldset>
                       <div className="grid gap-4 sm:grid-cols-2">
                         <TextField name="contact_phone" label="Contact number" type="tel" autoComplete="tel" maxLength={30} validate={phoneRule} required value={form.contact_phone} onChange={(e) => set('contact_phone', e.target.value)} />
@@ -502,10 +523,33 @@ function StepFooter({ onBack, secondary, primary }: { onBack?: () => void; secon
   )
 }
 
+/** (R-133) The owner checks or types the expiry date read from the file. */
+function ExpiryField({ gymId, file, required, onSaved }: { gymId: number; file: GymDocument; required: boolean; onSaved: () => Promise<void> }) {
+  const [error, setError] = useState('')
+  async function save(value: string) {
+    setError('')
+    try {
+      await api(documentUrl(gymId, file.id), { method: 'PUT', body: { expires_on: value || null } })
+      await onSaved()
+    } catch (e) {
+      setError(e instanceof ApiError ? (e.errors.expires_on?.[0] ?? e.message) : 'Could not save the date.')
+    }
+  }
+  return (
+    <label className="flex flex-col gap-1 text-sm">
+      <span className="font-medium">Expiry date{required ? ' (required)' : ''}</span>
+      <Input type="date" min={todayIso()} defaultValue={file.expires_on ?? ''} key={file.expires_on ?? ''} onBlur={(e) => e.target.value !== (file.expires_on ?? '') && save(e.target.value)} />
+      {error && <span role="alert" className="text-destructive-foreground">{error}</span>}
+    </label>
+  )
+}
+
 /** R-12, R-13: the chosen tier's exact documents, with the upload rules. */
 function Documents({ app, requirements, onChange }: { app: Application; requirements: Requirements; onChange: (app: Application) => void }) {
   const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({})
   const [uploading, setUploading] = useState('')
+  const [reading, setReading] = useState(false)
+  const { user } = useAuth()
 
   const reload = async () => onChange((await api<{ application: Application }>(`/gym-applications/${app.id}`)).application)
 
@@ -523,6 +567,30 @@ function Documents({ app, requirements, onChange }: { app: Application; requirem
       const body = new FormData()
       body.append('type', type)
       body.append('file', file)
+      if (file.type.startsWith('image/')) {
+        // (R-133) Refuse blurry photos, then read the date and names in the browser. A failed check never blocks the upload.
+        let blurry = false
+        try {
+          blurry = (await blurScore(file)) < BLUR_MIN
+        } catch {
+          // Skip the blur check.
+        }
+        if (blurry) {
+          failed.push(`${file.name}: This photo looks blurry. Take a clearer photo in good light and upload it again.`)
+          continue
+        }
+        const info = requirements.documents[type]
+        if (info.expiry || info.match) {
+          setUploading(type)
+          setReading(true)
+          const text = await readText(file).catch(() => '')
+          setReading(false)
+          const expires = findExpiryDate(text)
+          if (expires && expires >= todayIso()) body.append('expires_on', expires)
+          else if (expires) failed.push(`${file.name}: The date read from this file (${dateLabel(expires)}) has passed. Check the expiry date.`)
+          for (const flag of nameFlags(text, info.match ?? [], { owner: user?.last_name ?? '', gym: app.name ?? '' })) body.append('ocr_flags[]', flag)
+        }
+      }
       try {
         await api(`/gym-applications/${app.id}/documents`, { body })
       } catch (error) {
@@ -600,7 +668,7 @@ function Documents({ app, requirements, onChange }: { app: Application; requirem
                             className={`${buttonVariants({ variant: 'outline', size: 'sm' })} has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-ring ${uploading === type ? 'pointer-events-none opacity-64' : ''}`}
                           >
                             <Upload aria-hidden />
-                            {uploading === type ? 'Uploading…' : files.length > 0 ? 'Add more' : 'Choose file'}
+                            {uploading === type ? (reading ? 'Reading the document…' : 'Uploading…') : files.length > 0 ? 'Add more' : 'Choose file'}
                             <input
                               type="file"
                               className="sr-only"
@@ -624,7 +692,12 @@ function Documents({ app, requirements, onChange }: { app: Application; requirem
                       {uploading === type && <Skeleton className="h-14" aria-label="Uploading" />}
                       {files.length > 0 && (
                         <ul className={files.length > 2 ? 'grid gap-2 sm:grid-cols-2' : 'grid gap-2'}>
-                          {files.map((file) => <FileTile key={file.id} gymId={app.id} file={file} onRemove={remove} />)}
+                          {files.map((file) => (
+                            <div key={file.id} className="flex flex-col gap-1.5">
+                              <FileTile gymId={app.id} file={file} onRemove={remove} />
+                              {info.expiry && <ExpiryField gymId={app.id} file={file} required={info.expiry === 'required'} onSaved={reload} />}
+                            </div>
+                          ))}
                         </ul>
                       )}
                     </div>

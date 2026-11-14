@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Gym;
 use App\Enums\GymStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Gym;
+use App\Models\User;
+use App\Notifications\GymNotice;
 use App\Rules\ClosingTime;
 use App\Support\Verification;
 use App\Support\CaviteLocations;
@@ -101,9 +103,27 @@ class GymApplicationController extends Controller
             }
         }
 
+        if ($gym->tier) {
+            // (R-133) Required expiry dates must be present and not past.
+            $types = Verification::typesFor($gym->tier);
+            foreach ($gym->documents()->whereIn('type', $types)->get() as $doc) {
+                if (config("verification.documents.{$doc->type}.expiry") !== 'required') {
+                    continue;
+                }
+                $label = config("verification.documents.{$doc->type}.label");
+                if (! $doc->expires_on) {
+                    $missing["expiry.{$doc->id}"] = "Add the expiry date of the {$label}.";
+                } elseif ($doc->expires_on->lt(today())) {
+                    $missing["expiry.{$doc->id}"] = "The {$label} has expired. Upload a current one.";
+                }
+            }
+        }
+
         if ($missing) {
             throw ValidationException::withMessages($missing);
         }
+
+        $wasReturned = $gym->status === GymStatus::Returned;
 
         $gym->forceFill([
             'status' => GymStatus::Submitted,
@@ -111,6 +131,14 @@ class GymApplicationController extends Controller
             'return_items' => null,
             'decision_reason' => null,
         ])->save();
+
+        // (R-131) Every platform admin hears about a new or re-sent application.
+        $gym->loadMissing('applicant');
+        User::where('is_platform_admin', true)->get()->each(fn (User $admin) => $admin->notify(new GymNotice(
+            $wasReturned ? 'Gym application sent again' : 'New gym application',
+            "{$gym->name} from {$gym->applicant->first_name} {$gym->applicant->last_name} is waiting for review.",
+            null, "/admin/applications/{$gym->id}",
+        )));
 
         return response()->json(['application' => $gym->load('documents')]);
     }

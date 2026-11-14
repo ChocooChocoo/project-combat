@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
+import { todayIso } from '@/lib/document-check'
 
 /** Shared types and helpers for gym applications (R-11 to R-18). */
 
@@ -16,7 +17,7 @@ export const DAYS: { key: Day; label: string }[] = [
 
 export type ApplicationStatus = 'draft' | 'submitted' | 'under_review' | 'returned' | 'approved' | 'rejected'
 
-export type GymDocument = { id: number; type: string; original_name: string; mime: string; size: number }
+export type GymDocument = { id: number; type: string; original_name: string; mime: string; size: number; admin_viewed_at?: string | null; expires_on?: string | null; ocr_flags?: string[] | null }
 
 export type Application = {
   id: number
@@ -47,7 +48,7 @@ export type Application = {
 export type Requirement = { types: string[]; min: number }
 
 export type Requirements = {
-  documents: Record<string, { label: string; proves: string; who: string; max?: number; kind?: string }>
+  documents: Record<string, { label: string; proves: string; who: string; max?: number; kind?: string; must_open?: boolean; expiry?: 'required' | 'optional'; match?: string[] }>
   kinds: Record<string, { mimes: string[]; max_kb: number }>
   tiers: Record<string, { label: string; badge: string; requirements: Requirement[] }>
   checklist: Record<string, { label: string; tiers: number[] }>
@@ -67,6 +68,10 @@ export function useRequirements(): Requirements | null {
 export const typesFor = (requirements: Requirements, tier: number | null): string[] =>
   tier ? requirements.tiers[tier].requirements.flatMap((r) => r.types) : []
 
+/** Files the admin must open before the checklist; same rule as Verification::unopened() on the server (R-132). */
+export const mustOpen = (app: Application, requirements: Requirements): GymDocument[] =>
+  app.documents.filter((d) => typesFor(requirements, app.tier).includes(d.type) && requirements.documents[d.type]?.must_open !== false)
+
 export const documentUrl = (gymId: number, documentId: number) => `/gym-applications/${gymId}/documents/${documentId}`
 
 export const editable = (status: ApplicationStatus) => status === 'draft' || status === 'returned'
@@ -82,5 +87,17 @@ export function documentsMissing(app: Application, requirements: Requirements): 
     const labels = req.types.map((t) => requirements.documents[t].label).join(' or ')
     if (have >= req.min) return []
     return [req.min > 1 ? `Upload at least ${req.min} ${labels} (${have} so far).` : `Upload the ${labels}.`]
-  })
+  }).concat(expiryProblems(app, requirements))
+}
+
+/** (R-133) Required expiry dates that are missing or past; the server checks the same on submit. */
+function expiryProblems(app: Application, requirements: Requirements): string[] {
+  const today = todayIso()
+  return app.documents
+    .filter((d) => typesFor(requirements, app.tier).includes(d.type) && requirements.documents[d.type]?.expiry === 'required')
+    .flatMap((d) => {
+      const label = requirements.documents[d.type].label
+      if (!d.expires_on) return [`Add the expiry date of the ${label}.`]
+      return d.expires_on < today ? [`The ${label} has expired.`] : []
+    })
 }

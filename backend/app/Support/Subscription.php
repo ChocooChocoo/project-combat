@@ -32,7 +32,7 @@ final class Subscription
         'inventory' => 'Stock',
         'procurement' => 'Purchasing',
         'announcements' => 'Announcements',
-        'decision_support' => 'Decision support',
+        'decision_support' => 'Analytics',
     ];
 
     public const DEFAULT_TRIAL_DAYS = 30;

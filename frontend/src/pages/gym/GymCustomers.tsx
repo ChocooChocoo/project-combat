@@ -270,7 +270,7 @@ export default function GymCustomers() {
   const addButton = canManage ? (
     <Button size="sm" onClick={() => setAddOpen(true)}>
       <Plus aria-hidden />
-      Add customer
+      Add member
     </Button>
   ) : undefined
 
@@ -736,8 +736,8 @@ function AddCustomerDialog({
       })
       toastManager.add({
         title: result.customer.membership_id
-          ? 'Customer added and linked to their application.'
-          : 'Customer added.',
+          ? 'Member added and linked to their application.'
+          : 'Member added.',
         type: 'success',
       })
       onSaved()
@@ -753,10 +753,10 @@ function AddCustomerDialog({
       <DialogPopup>
         <Form errors={errors} onSubmit={save} className="flex min-h-0 flex-col">
           <DialogHeader>
-            <DialogTitle>Add customer</DialogTitle>
+            <DialogTitle>Add member</DialogTitle>
             <DialogDescription>
-              A walk-in, referral or someone who asked online. A matching email links their waiting application
-              automatically; otherwise link it from the customer record.
+              Add someone who walked in, was referred or asked online. They are kept as a lead and become a member once
+              their membership is linked. A matching email links a waiting application automatically.
             </DialogDescription>
           </DialogHeader>
           <DialogPanel className="flex flex-col gap-4">
@@ -863,7 +863,7 @@ function AddCustomerDialog({
               Cancel
             </Button>
             <Button type="submit" loading={busy} disabled={!name.trim()}>
-              Add customer
+              Add member
             </Button>
           </DialogFooter>
         </Form>

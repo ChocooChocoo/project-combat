@@ -24,6 +24,7 @@ return [
 
     // R-32: the optional medical clearance, kept privately (as in R-15).
     'medical_file' => [
+        'required' => true, // (R-136)
         'mimes' => ['pdf', 'jpg', 'jpeg', 'png'],
         'max_kb' => 5120,
     ],

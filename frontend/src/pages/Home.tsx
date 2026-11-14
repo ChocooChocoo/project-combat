@@ -1,4 +1,4 @@
-import { FilePlus2, LocateFixed, MapPin, Search, SlidersHorizontal, Sun, Sunrise, Sunset, X } from 'lucide-react'
+import { Dumbbell, FilePlus2, LocateFixed, MapPin, Search, SlidersHorizontal, Sun, Sunrise, Sunset, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { GymMap, distanceLabel, type GymMapGym } from '@/components/gym-map'
@@ -934,7 +934,7 @@ export default function Home() {
                 )}
               </Empty>
             ) : (
-              <ul className="grid min-w-0 gap-3">
+              <ul className={`grid min-w-0 gap-3${showMap ? '' : ' sm:grid-cols-2'}`}>
                 {(results?.gyms ?? []).map((gym) => {
                   const services = serviceNames(gym)
                   return (
@@ -943,6 +943,14 @@ export default function Home() {
                         className="gap-3 p-4 transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:bg-accent/40"
                         render={<Link to={`/gyms/${gym.id}`} />}
                       >
+                        {/* (R-134) */}
+                        {gym.cover_photo_url ? (
+                          <img className="aspect-video w-full rounded-lg object-cover" loading="lazy" alt="" src={gym.cover_photo_url} />
+                        ) : (
+                          <div className="flex aspect-video w-full items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                            <Dumbbell aria-hidden className="size-7" />
+                          </div>
+                        )}
                         <div className="flex items-start justify-between gap-2">
                           <span className="min-w-0 font-semibold">{gym.name}</span>
                           <span className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">

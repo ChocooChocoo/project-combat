@@ -4,6 +4,7 @@ import { RangePicker } from '@/components/decision-support/range-picker'
 import { NO_RANGE } from '@/lib/decision-support'
 import { GoalsCard } from '@/components/training/goals-card'
 import { InjuriesCard } from '@/components/training/injuries-card'
+import { SparringCard } from '@/components/training/sparring-card'
 import { Link, useParams } from 'react-router'
 import { AthleteRecordView, HealthSummary } from '@/components/membership/athlete-record-view'
 import { HistoryList, MembershipStatusBadge, PaymentsList } from '@/components/membership/membership-parts'
@@ -296,6 +297,15 @@ export default function MemberRecord() {
             />
           )}
 
+          {record && gym && (
+            <SparringCard
+              gymId={gymId}
+              athleteId={membership.member.id}
+              sparring={record.sparring}
+              canEdit={canCoach && membership.member.id !== user?.id}
+              canSee={can(gym, 'training.athletes.view', 'decision_support.general.view')}
+            />
+          )}
           {record && <GoalsCard gymId={gymId} athleteId={membership.member.id} canEdit={canCoach} />}
           {record && gym && can(gym, 'health_records.records.view') && (
             <InjuriesCard gymId={gymId} athleteId={membership.member.id} canReport={can(gym, 'health_records.injuries.manage')} canManage={can(gym, 'health_records.injuries.manage')} />

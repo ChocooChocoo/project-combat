@@ -20,12 +20,24 @@ use Illuminate\Support\Collection;
 use Laravel\Sanctum\HasApiTokens;
 
 // is_platform_admin and password_change_required are deliberately not fillable.
-#[Fillable(['first_name', 'last_name', 'email', 'phone', 'password', 'account_type'])]
+#[Fillable(['first_name', 'middle_name', 'last_name', 'suffix', 'email', 'phone', 'password', 'account_type', 'birthdate', 'city', 'province'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
+
+    public const SUFFIXES = ['Jr.', 'Sr.', 'II', 'III', 'IV', 'V'];
+
+    public const MIN_AGE = 7;
+
+    public const ADULT_AGE = 18;
+
+    /** (R-128) First, middle, last and suffix, single-spaced. */
+    public function fullName(): string
+    {
+        return trim(preg_replace('/\s+/', ' ', "{$this->first_name} {$this->middle_name} {$this->last_name} {$this->suffix}"));
+    }
 
     protected function casts(): array
     {
@@ -35,6 +47,8 @@ class User extends Authenticatable
             'is_platform_admin' => 'boolean',
             'password_change_required' => 'boolean',
             'account_type' => AccountType::class,
+            'birthdate' => 'date',
+            'guardian_consent_at' => 'datetime',
         ];
     }
 

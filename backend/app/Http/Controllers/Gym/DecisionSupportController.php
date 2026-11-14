@@ -12,6 +12,7 @@ use App\Support\DecisionSupport\BusinessDashboards;
 use App\Support\DecisionSupport\Trends;
 use App\Support\DecisionSupport\Forecast;
 use App\Support\DecisionSupport\Problems;
+use App\Support\DecisionSupport\Suggestions;
 use App\Support\DecisionSupport\Sustainability;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
@@ -41,6 +42,12 @@ class DecisionSupportController extends Controller
             'generated_at' => Carbon::now('Asia/Manila')->toIso8601String(),
             'has_data' => $hasData, 'notes' => $notes,
         ];
+    }
+
+    /** (R-141) read-only; each action calls an existing endpoint after the owner confirms. */
+    public function suggestions(Gym $gym, Suggestions $suggestions): JsonResponse
+    {
+        return response()->json($suggestions->forGym($gym));
     }
 
     public function attendance(Request $request, Gym $gym, TrainingDashboards $training): JsonResponse

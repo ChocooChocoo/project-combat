@@ -5,19 +5,26 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardPanel, CardTitle } from '@/components/ui/card'
+import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Form } from '@/components/ui/form'
+import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toastManager } from '@/components/ui/toast'
 import { api, ApiError, formValues, type FieldErrors } from '@/lib/api'
 import { useAuth, type User } from '@/lib/auth'
-import { fileProblem, passwordRule, phoneRule, sameAs } from '@/lib/validation'
+import { dateLabel } from '@/lib/membership'
+import { fileProblem, passwordRule, phoneRule, SUFFIXES, sameAs } from '@/lib/validation'
 
-/** S-14, R-05: own details, photo and password. */
+const NO_SUFFIX = 'none'
+const suffixItems = [{ value: NO_SUFFIX, label: 'None' }, ...SUFFIXES.map((s) => ({ value: s, label: s }))]
+
+/** S-14, R-05: own details, photo and password. (R-128) */
 export default function Profile() {
   const { user, setUser } = useAuth()
   const navigate = useNavigate()
   const [detailErrors, setDetailErrors] = useState<FieldErrors>({})
   const [passwordErrors, setPasswordErrors] = useState<FieldErrors>({})
   const [busy, setBusy] = useState('')
+  const [suffix, setSuffix] = useState(user?.suffix ?? NO_SUFFIX)
 
   if (!user) return null
 
@@ -25,7 +32,7 @@ export default function Profile() {
     const values = formValues(event)
     setBusy('details')
     try {
-      const result = await api<{ data: User }>('/me', { method: 'PUT', body: values })
+      const result = await api<{ data: User }>('/me', { method: 'PUT', body: { ...values, suffix: suffix === NO_SUFFIX ? '' : suffix } })
       setUser(result.data)
       setDetailErrors({})
       if (!result.data.email_verified) {
@@ -113,10 +120,26 @@ export default function Profile() {
             <Form className="flex flex-col gap-5" errors={detailErrors} onSubmit={saveDetails}>
               <div className="grid gap-4 sm:grid-cols-2">
                 <TextField name="first_name" label="First name" maxLength={100} defaultValue={user.first_name} required autoComplete="given-name" />
+                <TextField name="middle_name" label="Middle name (optional)" maxLength={100} defaultValue={user.middle_name ?? ''} autoComplete="additional-name" />
                 <TextField name="last_name" label="Last name" maxLength={100} defaultValue={user.last_name} required autoComplete="family-name" />
+                <Field name="suffix" className="w-full">
+                  <FieldLabel>Suffix</FieldLabel>
+                  <Select items={suffixItems} value={suffix} onValueChange={(value) => setSuffix(value ?? NO_SUFFIX)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectPopup>
+                      {suffixItems.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}
+                    </SelectPopup>
+                  </Select>
+                  <FieldError />
+                </Field>
               </div>
               <TextField name="email" label="Email" type="email" maxLength={255} defaultValue={user.email} required autoComplete="email" />
               <TextField name="phone" label="Phone" type="tel" maxLength={30} validate={phoneRule} defaultValue={user.phone ?? ''} autoComplete="tel" />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <TextField name="city" label="City" maxLength={120} defaultValue={user.city ?? ''} autoComplete="address-level2" />
+                <TextField name="province" label="Province" maxLength={120} defaultValue={user.province ?? ''} autoComplete="address-level1" />
+              </div>
+              {user.birthdate && <p className="text-muted-foreground text-sm">Birthdate: {dateLabel(user.birthdate)}</p>}
               <div className="flex justify-end">
                 <Button type="submit" loading={busy === 'details'}>Save details</Button>
               </div>

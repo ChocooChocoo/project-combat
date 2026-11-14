@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, FileUp } from 'lucide-react'
+import { ArrowLeft, Check, FileText, FileUp } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { ContactsEditor, HealthQuestions } from '@/components/membership/membership-parts'
@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { toastManager } from '@/components/ui/toast'
 import { api, ApiError, type FieldErrors } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
-import { type GymDetailPayload, planLength, type PublicGymDetail, readGymDetail } from '@/lib/discovery'
+import { fileSizeText, type GymDetailPayload, planLength, type PublicGymDetail, readGymDetail } from '@/lib/discovery'
 import { appendForm, money, prepayCharge, type EmergencyContact, type Membership, type MembershipForm } from '@/lib/membership'
 import { fileProblem } from '@/lib/validation'
 
@@ -72,6 +72,8 @@ export default function MembershipApply() {
     if (Object.keys(form.health_questions).some((key) => answers[key] === undefined)) local.health_answers = ['Answer every health question.']
     for (const key of Object.keys(form.waivers)) if (!waivers[key]) local[`waivers.${key}`] = ['Accept this waiver to continue.']
     if (!values.signature_name?.trim()) local.signature_name = ['Type your full name to sign.']
+    if (gym?.needs_terms && !waivers.gym_terms) local['waivers.gym_terms'] = ["Accept the gym's policies and waiver to continue."]
+    if (!file && form.medical_file.required) local.medical_file = ['Upload your medical clearance.']
     if (file) {
       const problem = fileProblem(file, form.medical_file.mimes.map((ext) => `.${ext}`).join(','), form.medical_file.max_kb)
       if (problem) local.medical_file = [problem]
@@ -294,7 +296,7 @@ export default function MembershipApply() {
               <FieldError />
             </Field>
             <Field name="medical_file" className="w-full">
-              <FieldLabel>Medical clearance (optional)</FieldLabel>
+              <FieldLabel>Medical clearance{form.medical_file.required ? '' : ' (optional)'}</FieldLabel>
               <Input
                 type="file"
                 accept={form.medical_file.mimes.map((ext) => `.${ext}`).join(',')}
@@ -320,6 +322,32 @@ export default function MembershipApply() {
                 <p className="font-medium">{gym.name} policies</p>
                 <p className="mt-1 whitespace-pre-line text-muted-foreground">{gym.policies}</p>
               </div>
+            )}
+            {gym.policy_files.length > 0 && (
+              <ul className="flex flex-col gap-1 text-sm">
+                {gym.policy_files.map((policy) => (
+                  <li key={policy.id}>
+                    <a className="inline-flex items-center gap-2 underline-offset-4 hover:underline" href={policy.url} target="_blank" rel="noreferrer">
+                      <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                      {policy.name} <span className="text-muted-foreground">({fileSizeText(policy.size)})</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {gym.needs_terms && (
+              <Field name="waivers.gym_terms" className="w-full">
+                <label className="flex items-start gap-3 text-sm">
+                  <Checkbox
+                    className="mt-0.5"
+                    checked={waivers.gym_terms ?? false}
+                    onCheckedChange={(checked) => setWaivers((current) => ({ ...current, gym_terms: checked }))}
+                    aria-invalid={(tried && !waivers.gym_terms) || undefined}
+                  />
+                  I have read {gym.name}'s policies and waiver and accept them.
+                </label>
+                <FieldError />
+              </Field>
             )}
             {Object.entries(form.waivers).map(([key, text]) => (
               <Field key={key} name={`waivers.${key}`} className="w-full">

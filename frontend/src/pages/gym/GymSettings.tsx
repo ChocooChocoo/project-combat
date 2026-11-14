@@ -2,6 +2,7 @@ import { ExternalLink, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { CaviteLocationFields } from '@/components/cavite-location-fields'
+import { GymMediaCard } from '@/components/gym/gym-media-card'
 import { LocationPicker, type LatLng } from '@/components/location-picker'
 import { PageHeader } from '@/components/page-header'
 import { TextField } from '@/components/text-field'
@@ -534,7 +535,7 @@ export default function GymSettings() {
             <Card>
               <CardHeader>
                 <CardTitle render={<h2 />}>Policies</CardTitle>
-                <CardDescription>House rules members should know before they join.</CardDescription>
+                <CardDescription>House rules and waiver members accept before joining. You can also upload PDFs below.</CardDescription>
               </CardHeader>
               <CardPanel>
                 <Field name="policies" className="w-full">
@@ -551,6 +552,15 @@ export default function GymSettings() {
                 </Field>
               </CardPanel>
             </Card>
+
+            {setup && options && (
+              <GymMediaCard
+                gymId={gymId!}
+                media={setup.media}
+                options={options}
+                onChange={(media) => setSetup((current) => (current ? { ...current, media } : current))}
+              />
+            )}
           </fieldset>
 
           {canManage && (

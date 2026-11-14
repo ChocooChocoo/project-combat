@@ -7,6 +7,8 @@ use App\Http\Controllers\Admin\SubscriptionPlanController;
 use App\Http\Controllers\Admin\PlatformNoticeController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CoachApplicationController;
+use App\Http\Controllers\JobApplicationController;
+use App\Http\Controllers\Gym\JobPostingController;
 use App\Http\Controllers\DiscoveryController;
 use App\Http\Controllers\GeoController;
 use App\Http\Controllers\Gym\AthleteRecordController;
@@ -25,6 +27,7 @@ use App\Http\Controllers\Gym\FollowUpController;
 use App\Http\Controllers\Gym\GymApplicationController;
 use App\Http\Controllers\Gym\GymDocumentController;
 use App\Http\Controllers\Gym\GymRoleController;
+use App\Http\Controllers\Gym\GymMediaController;
 use App\Http\Controllers\Gym\GymSetupController;
 use App\Http\Controllers\Gym\HolidayController;
 use App\Http\Controllers\Gym\IncomeController;
@@ -65,7 +68,9 @@ use App\Http\Controllers\Gym\SupplierController;
 use App\Http\Controllers\Gym\SupplyNeedController;
 use App\Http\Controllers\Gym\WorkController;
 use App\Http\Controllers\GymPreferenceController;
+use App\Http\Controllers\Gym\WalkInDeskController;
 use App\Http\Controllers\MembershipApplicationController;
+use App\Http\Controllers\WalkInController;
 use App\Http\Controllers\MyBookingController;
 use App\Http\Controllers\MemberDashboardController;
 use App\Http\Controllers\MyMembershipController;
@@ -95,6 +100,11 @@ Route::post('webhooks/paymongo', PayMongoWebhookController::class)->middleware('
 // The landing page is for visitors who have no account yet. It reads only approved
 // gyms and what they published, the same information the public gym page shows.
 Route::get('public/landing', PublicLandingController::class)->middleware('throttle:60,1');
+// (R-137) The walk-in kiosk is public; posting is limited per IP.
+Route::get('public/gyms/{gym}/walk-in', [WalkInController::class, 'form'])->whereNumber('gym')->middleware('throttle:60,1');
+Route::post('public/gyms/{gym}/walk-ins', [WalkInController::class, 'store'])->whereNumber('gym')->middleware('throttle:walk-in');
+// (R-130) Sign-up is a guest page, so the reverse lookup is public.
+Route::get('geo/reverse', [GeoController::class, 'reverse'])->middleware('throttle:geo');
 Route::get('gyms/{gym}', [PublicGymController::class, 'show'])->whereNumber('gym')->middleware('throttle:60,1');
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -126,6 +136,7 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::post('{gym}/submit', [GymApplicationController::class, 'submit']);
                 Route::post('{gym}/documents', [GymDocumentController::class, 'store']);
                 Route::get('{gym}/documents/{document}', [GymDocumentController::class, 'show'])->scopeBindings();
+                Route::put('{gym}/documents/{document}', [GymDocumentController::class, 'update'])->scopeBindings();
                 Route::delete('{gym}/documents/{document}', [GymDocumentController::class, 'destroy'])->scopeBindings();
             });
 
@@ -147,6 +158,8 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('gyms/{gym}/membership-applications', [MembershipApplicationController::class, 'store'])->whereNumber('gym')->middleware('account:member');
             // R-117: members apply to coach; the applicant is not staff there yet.
             Route::post('gyms/{gym}/coach-applications', [CoachApplicationController::class, 'store'])->whereNumber('gym')->middleware('account:member');
+            // (R-138) Members apply to job postings.
+            Route::post('gyms/{gym}/job-postings/{posting}/applications', [JobApplicationController::class, 'store'])->whereNumber(['gym', 'posting'])->middleware('account:member');
             Route::get('me/coach-applications', [CoachApplicationController::class, 'mine']);
             Route::post('me/coach-applications/{application}/withdraw', [CoachApplicationController::class, 'withdraw'])->whereNumber('application');
             Route::get('my-memberships', [MyMembershipController::class, 'index']);
@@ -192,6 +205,7 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('subscription', [SubscriptionController::class, 'show']);
                 Route::post('subscription/checkout', [SubscriptionController::class, 'checkout']);
                 Route::post('subscription/confirm', [SubscriptionController::class, 'confirm']);
+                Route::get('decision-support/suggestions', [DecisionSupportController::class, 'suggestions'])->middleware('permission:decision_support.general.view');
                 Route::get('decision-support/options', [DecisionSupportController::class, 'options'])->middleware('permission:decision_support.general.view');
                 Route::get('decision-support/attendance', [DecisionSupportController::class, 'attendance'])->middleware('permission:decision_support.general.view');
                 Route::get('decision-support/athletes', [DecisionSupportController::class, 'athletes'])->middleware('permission:decision_support.general.view');
@@ -225,6 +239,10 @@ Route::middleware('auth:sanctum')->group(function () {
                 // Workspace setup (R-20). Options are open to any member.
                 Route::get('setup', [GymSetupController::class, 'show'])->middleware('permission:gym_setup.settings.view');
                 Route::put('setup', [GymSetupController::class, 'update'])->middleware('permission:gym_setup.settings.manage');
+                // (R-134, R-135)
+                Route::post('media/cover', [GymMediaController::class, 'cover'])->middleware('permission:gym_setup.settings.manage');
+                Route::post('media/files', [GymMediaController::class, 'storeFile'])->middleware('permission:gym_setup.settings.manage');
+                Route::delete('media/files/{file}', [GymMediaController::class, 'destroyFile'])->whereNumber('file')->middleware('permission:gym_setup.settings.manage');
                 Route::get('options', [GymSetupController::class, 'options']);
 
                 // Rooms (R-21).
@@ -242,6 +260,9 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('check-ins', [AttendanceController::class, 'today'])->middleware('permission:training.check_ins.manage');
                 Route::post('check-ins', [AttendanceController::class, 'store'])->middleware(['permission:training.check_ins.manage', 'throttle:60,1']);
                 Route::post('check-ins/visits/{visit}/check-out', [AttendanceController::class, 'checkOutVisit'])->whereNumber('visit')->middleware('permission:training.check_ins.manage');
+                // (R-137) Walk-ins at the front desk.
+                Route::get('walk-ins', [WalkInDeskController::class, 'today'])->middleware('permission:training.check_ins.manage');
+                Route::post('walk-ins/{walkIn}/payment', [WalkInDeskController::class, 'pay'])->whereNumber('walkIn')->middleware('permission:finance.payments.manage');
                 Route::get('attendance', [AttendanceController::class, 'index'])->middleware('permission:training.attendance.view');
                 Route::put('bookings/{booking}/attendance', [AttendanceController::class, 'attendance'])->whereNumber('booking')->middleware('permission:training.attendance.manage');
                 Route::post('bookings/{booking}/check-out', [AttendanceController::class, 'checkOut'])->whereNumber('booking')->middleware('permission:training.attendance.manage');
@@ -279,6 +300,13 @@ Route::middleware('auth:sanctum')->group(function () {
                 // Leave (R-25, R-26). Own requests are open; HR sees all. The controller checks.
                 Route::get('coach-applications', [CoachApplicationController::class, 'index'])->middleware('permission:hr.coach_applications.view,hr.coach_applications.approve');
                 Route::post('coach-applications/{application}/decision', [CoachApplicationController::class, 'decide'])->whereNumber('application')->middleware('permission:hr.coach_applications.approve');
+                // (R-138) Job postings and the applications they get.
+                Route::get('job-postings', [JobPostingController::class, 'index'])->middleware('permission:hr.job_postings.view,hr.job_postings.manage');
+                Route::post('job-postings', [JobPostingController::class, 'store'])->middleware('permission:hr.job_postings.manage');
+                Route::put('job-postings/{posting}', [JobPostingController::class, 'update'])->whereNumber('posting')->middleware('permission:hr.job_postings.manage');
+                Route::get('job-applications', [JobApplicationController::class, 'index'])->middleware('permission:hr.job_applications.view,hr.job_applications.approve');
+                Route::get('job-applications/{application}/files/{kind}', [JobApplicationController::class, 'file'])->whereNumber('application')->whereIn('kind', ['credentials', 'valid_id'])->middleware('permission:hr.job_applications.view,hr.job_applications.approve');
+                Route::post('job-applications/{application}/decision', [JobApplicationController::class, 'decide'])->whereNumber('application')->middleware('permission:hr.job_applications.approve');
                 Route::get('leave-requests', [LeaveController::class, 'index'])->middleware('plan:hr');
                 Route::post('leave-requests', [LeaveController::class, 'store'])->middleware('plan:hr');
                 Route::get('leave-requests/{leave}', [LeaveController::class, 'show'])->whereNumber('leave')->middleware('plan:hr');
@@ -455,6 +483,8 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('athletes/{user}/medical-file', [AthleteRecordController::class, 'medicalFile']);
                 Route::post('athletes/{user}/entries', [AthleteRecordController::class, 'storeEntry'])->middleware('permission:training.athletes.manage');
                 Route::put('athletes/{user}/level', [AthleteRecordController::class, 'updateLevel'])->middleware('permission:training.athletes.manage');
+                Route::put('athletes/{user}/sparring', [AthleteRecordController::class, 'updateSparring'])->middleware('permission:training.athletes.manage');
+                Route::get('athletes/{user}/sparring-matches', [AthleteRecordController::class, 'sparringMatches'])->middleware('permission:training.athletes.view,decision_support.general.view');
                 // R-118: goals and milestones; the controller lets athletes edit only their own.
                 Route::get('athletes/{user}/goals', [TrainingGoalController::class, 'index']);
                 Route::post('athletes/{user}/goals', [TrainingGoalController::class, 'store']);

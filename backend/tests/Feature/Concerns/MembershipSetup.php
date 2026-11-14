@@ -9,6 +9,8 @@ use App\Models\Membership;
 use App\Models\MembershipPlan;
 use App\Models\User;
 use App\Support\CurrentGym;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 /** Shared set-up for the Phase 4 tests: a gym, an owner, a published plan and an applicant. */
 trait MembershipSetup
@@ -24,6 +26,8 @@ trait MembershipSetup
 
     protected function setUpMembershipGym(array $plan = []): void
     {
+        Storage::fake('local');
+        Storage::fake('public');
         $this->gym = Gym::factory()->approved()->create();
         $this->owner = User::factory()->owner()->create();
         $this->applicant = User::factory()->create(['first_name' => 'Ana', 'last_name' => 'Cruz']);
@@ -66,6 +70,7 @@ trait MembershipSetup
             'health_notes' => null,
             'waivers' => array_fill_keys(array_keys(config('membership.waivers')), true),
             'signature_name' => 'Ana Cruz',
+            'medical_file' => UploadedFile::fake()->create('clearance.pdf', 50, 'application/pdf'), // (R-136)
         ], $overrides);
     }
 

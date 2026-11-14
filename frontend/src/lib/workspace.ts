@@ -1,3 +1,4 @@
+import type { GymMedia } from '@/lib/discovery'
 import type { Day } from '@/lib/gyms'
 
 /** Shared types for the Phase 3 gym workspace responses. */
@@ -209,6 +210,8 @@ export type WorkspaceOptions = {
   frequencies: Record<string, string>
   plan_billing: Record<PlanBilling, string>
   service_photos: { max: number; max_kb: number }
+  gym_photos: { max: number; max_kb: number }
+  policy_files: { max: number; mimes: string[]; max_kb: number }
 }
 
 export type WorkspaceSetup = {
@@ -234,6 +237,7 @@ export type WorkspaceSetup = {
   attendance_radius_m: number | null
   services: string[]
   facilities: string[]
+  media: GymMedia
   options?: WorkspaceOptions
 }
 
@@ -325,7 +329,7 @@ export const MODULE_LABELS: Record<string, string> = {
   inventory: 'Inventory',
   procurement: 'Procurement',
   announcements: 'Announcements',
-  decision_support: 'Decision support',
+  decision_support: 'Analytics',
 }
 
 export const LEVEL_LABELS: Record<string, string> = {

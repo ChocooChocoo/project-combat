@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/page-header'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardPanel, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogPanel, DialogPopup, DialogTitle } from '@/components/ui/dialog'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 import { Form } from '@/components/ui/form'
@@ -14,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { toastManager } from '@/components/ui/toast'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { api, ApiError, type FieldErrors } from '@/lib/api'
-import { type Application, useRequirements } from '@/lib/gyms'
+import { type Application, mustOpen, useRequirements } from '@/lib/gyms'
 
 type Review = Application & { applicant: { first_name: string; last_name: string; email: string; phone: string | null } | null }
 
@@ -28,11 +29,14 @@ export default function ReviewApplication() {
   const [errors, setErrors] = useState<FieldErrors>({})
   const [busy, setBusy] = useState('')
   const [missing, setMissing] = useState(false)
+  const [opened, setOpened] = useState<Set<number>>(new Set())
+  const [checklistOpen, setChecklistOpen] = useState(false)
 
   useEffect(() => {
     api<{ application: Review; checklist_items: string[] }>(`/admin/applications/${id}`)
       .then((r) => {
         setApp(r.application)
+        setOpened(new Set(r.application.documents.filter((d) => d.admin_viewed_at).map((d) => d.id)))
         setItems(r.checklist_items)
       })
       .catch(() => setMissing(true))
@@ -66,6 +70,7 @@ export default function ReviewApplication() {
   const open = app.status === 'submitted' || app.status === 'under_review'
   const passed = items.filter((item) => app.checklist?.[item] === true).length
   const allPassed = passed === items.length
+  const toOpen = mustOpen(app, requirements).filter((d) => !opened.has(d.id))
 
   async function mark(item: string, value: boolean | null) {
     try {
@@ -133,10 +138,10 @@ export default function ReviewApplication() {
           <Card>
             <CardHeader>
               <CardTitle render={<h2 />}>Documents</CardTitle>
-              <CardDescription>Open each file to check it is clear, current and matches the profile.</CardDescription>
+              <CardDescription>Open each file. The checklist unlocks when every file has been opened.</CardDescription>
             </CardHeader>
             <CardPanel>
-              <DocumentSummary app={app} requirements={requirements} />
+              <DocumentSummary app={app} requirements={requirements} openedIds={opened} onOpened={(id) => setOpened((s) => new Set(s).add(id))} />
             </CardPanel>
           </Card>
           <Card>
@@ -175,36 +180,18 @@ export default function ReviewApplication() {
             <CardHeader>
               <CardTitle render={<h2 />}>Checklist</CardTitle>
               <CardDescription className="tabular-nums">
-                {passed} of {items.length} passed
+                {passed} of {items.length} checks passed
               </CardDescription>
             </CardHeader>
-            <CardPanel>
-              <ul className="flex flex-col gap-4">
-                {items.map((item) => {
-                  const value = app.checklist?.[item]
-                  return (
-                    <li key={item} className="flex flex-col gap-2">
-                      <span id={`check-${item}`} className="text-sm">{requirements.checklist[item].label}</span>
-                      <ToggleGroup
-                        aria-labelledby={`check-${item}`}
-                        variant="outline"
-                        size="sm"
-                        disabled={!open}
-                        value={value === true ? ['pass'] : value === false ? ['fail'] : []}
-                        onValueChange={(v) => mark(item, v[0] === 'pass' ? true : v[0] === 'fail' ? false : null)}
-                      >
-                        <ToggleGroupItem value="pass" className="data-pressed:text-success-foreground">
-                          <Check aria-hidden /> Passed
-                        </ToggleGroupItem>
-                        <ToggleGroupItem value="fail" className="data-pressed:text-destructive-foreground">
-                          <X aria-hidden /> Failed
-                        </ToggleGroupItem>
-                      </ToggleGroup>
-                    </li>
-                  )
-                })}
-              </ul>
-              {errors.checklist && <p role="alert" className="mt-4 text-destructive-foreground text-sm">{errors.checklist[0]}</p>}
+            <CardPanel className="flex flex-col gap-3">
+              {toOpen.length > 0 && (
+                <p className="text-muted-foreground text-sm tabular-nums">
+                  {toOpen.length} {toOpen.length === 1 ? 'document' : 'documents'} still to open
+                </p>
+              )}
+              <Button disabled={toOpen.length > 0} onClick={() => setChecklistOpen(true)}>
+                Continue to checklist
+              </Button>
             </CardPanel>
           </Card>
 
@@ -280,6 +267,53 @@ export default function ReviewApplication() {
           )}
         </aside>
       </div>
+
+      <Dialog open={checklistOpen} onOpenChange={setChecklistOpen}>
+        <DialogPopup>
+          <DialogHeader>
+            <DialogTitle>Checklist</DialogTitle>
+            <DialogDescription className="tabular-nums">
+              {passed} of {items.length} checks passed
+            </DialogDescription>
+          </DialogHeader>
+          <DialogPanel>
+            <ul className="flex flex-col gap-4">
+                    {items.map((item) => {
+                      const value = app.checklist?.[item]
+                      return (
+                        <li key={item} className="flex flex-col gap-2">
+                          <span id={`check-${item}`} className="text-sm">{requirements.checklist[item].label}</span>
+                          <ToggleGroup
+                            aria-labelledby={`check-${item}`}
+                            variant="outline"
+                            size="sm"
+                            disabled={!open}
+                            value={value === true ? ['pass'] : value === false ? ['fail'] : []}
+                            onValueChange={(v) => mark(item, v[0] === 'pass' ? true : v[0] === 'fail' ? false : null)}
+                          >
+                            <ToggleGroupItem value="pass" className="data-pressed:text-success-foreground">
+                              <Check aria-hidden /> Passed
+                            </ToggleGroupItem>
+                            <ToggleGroupItem value="fail" className="data-pressed:text-destructive-foreground">
+                              <X aria-hidden /> Failed
+                            </ToggleGroupItem>
+                          </ToggleGroup>
+                        </li>
+                      )
+                    })}
+                  </ul>
+              {errors.checklist && <p role="alert" className="mt-4 text-destructive-foreground text-sm">{errors.checklist[0]}</p>}
+          </DialogPanel>
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" />}>Done</DialogClose>
+            {open && allPassed && (
+              <Button loading={busy === 'approve'} onClick={() => decide({ decision: 'approve' })}>
+                Approve and go live
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogPopup>
+      </Dialog>
     </div>
   )
 }

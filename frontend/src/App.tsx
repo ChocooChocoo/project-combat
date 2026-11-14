@@ -20,6 +20,7 @@ import FirstPassword from '@/pages/FirstPassword'
 import ForgotPassword from '@/pages/ForgotPassword'
 import GymApply from '@/pages/GymApply'
 import GymPublic from '@/pages/GymPublic'
+import WalkIn from '@/pages/WalkIn'
 import EmployeeRecord from '@/pages/gym/EmployeeRecord'
 import GymApplications from '@/pages/gym/GymApplications'
 import GymAnnouncements from '@/pages/gym/GymAnnouncements'
@@ -55,6 +56,8 @@ import PurchaseOrder from '@/pages/gym/PurchaseOrder'
 import MembershipApply from '@/pages/member/MembershipApply'
 import CoachApply, { MyCoachApplications } from '@/pages/member/CoachApplications'
 import GymCoachApplications from '@/pages/gym/GymCoachApplications'
+import GymHiring from '@/pages/gym/GymHiring'
+import JobApply from '@/pages/member/JobApply'
 import MyMembership, { MyMembershipList } from '@/pages/member/MyMemberships'
 import MyRecord from '@/pages/member/MyRecord'
 import MyBookings from '@/pages/member/MyBookings'
@@ -172,6 +175,7 @@ export default function App() {
       </Route>
       <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="/gyms/:gymId" element={<GymPublic />} />
+      <Route path="/gyms/:gymId/walk-in" element={<WalkIn />} />
       <Route path="/" element={<HomeGate />} />
       <Route element={<Guard need="first-password" />}>
         <Route path="/first-password" element={<FirstPassword />} />
@@ -189,6 +193,7 @@ export default function App() {
           <Route element={<AccountOnly type="member" />}>
             <Route path="/gyms/:gymId/apply" element={<MembershipApply />} />
             <Route path="/gyms/:gymId/coach-apply" element={<CoachApply />} />
+            <Route path="/gyms/:gymId/jobs/:postingId/apply" element={<JobApply />} />
             <Route path="/coach-applications" element={<MyCoachApplications />} />
           </Route>
           <Route path="/memberships" element={<MyMembershipList />} />
@@ -216,6 +221,7 @@ export default function App() {
               <Route path="payroll/:runId" element={<GymPayrollRun />} />
               <Route path="leave" element={<GymLeave />} />
               <Route path="coach-applications" element={<GymCoachApplications />} />
+              <Route path="hiring" element={<GymHiring />} />
               <Route path="services" element={<GymServices />} />
               <Route path="plans" element={<GymPlans />} />
               <Route path="applications" element={<GymApplications />} />

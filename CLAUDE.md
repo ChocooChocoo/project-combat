@@ -46,6 +46,7 @@ The frontend calls the API at `VITE_API_URL` (`frontend/.env`).
 - **Auth.** Sanctum bearer tokens, stored in `localStorage` by `frontend/src/lib/api.ts`. Route groups in
   `backend/routes/api.php` stack middleware in order: `auth:sanctum` → `password.changed` → `verified.email`.
   Platform admin screens use `admin` middleware; `is_platform_admin` is set only by `app:make-admin`.
+  Public walk-in kiosk: `public/gyms/{gym}/walk-in(s)`, throttled by `walk-in`.
 - **Account types.** Each user has a fixed `account_type` (`AccountType`: `member` or `owner`), chosen at
   sign-up and never changed. Routes check it with `account:owner` / `account:member` (`EnsureAccountType`):
   only owners apply for gyms; only members join gyms, set preferences or get best matches. The frontend mirrors
@@ -84,11 +85,13 @@ The frontend calls the API at `VITE_API_URL` (`frontend/.env`).
 - **Notices and live updates.** Notices use database notifications only. The shared notification provider and the
   session/booking screens poll every 15 seconds while the tab is visible; there are no websockets, SSE or push.
   Announcements reuse `announcements.general.view|manage`; platform notices are admin-only and carry no gym data.
-- **Decision support.** Read-only aggregates live in `app/Support/DecisionSupport`; all thirteen GET routes use
+- **Decision support.** Shown as **Analytics** in the UI. Read-only aggregates live in `app/Support/DecisionSupport`; all fourteen GET routes use
   exactly `decision_support.general.view`, without source-module gates. Only `payroll.runs.view` unmasks individual
   payroll server-side. Backend supplies business totals/rates/forecasts; frontend formats values and chart geometry only.
   Active reports use a direct-body `.print-area.print-report` portal with static print flow. Keep print visibility
   selectors at least as specific as `body:has(.print-area) *`; DOM structure alone does not prove printable text.
+  `decision-support/suggestions` is read-only and returns actions that call existing endpoints after the owner confirms.
+  Sparring matches live at `athletes/{user}/sparring-matches` (`training.athletes.view` or `decision_support.general.view`).
 - **Frontend.** `src/App.tsx` holds all routes and guards (guest, signed-in, first password, admin, gym member).
   `src/components/ui/` is coss UI (Base UI + Tailwind v4); reuse it before writing new components. `@/` maps to `src/`.
   Each area has `src/lib/<area>.ts` (response types and display helpers, e.g. `payroll.ts`, `inventory.ts`) used by `src/pages/gym/*`.

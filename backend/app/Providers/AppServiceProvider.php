@@ -23,6 +23,7 @@ class AppServiceProvider extends ServiceProvider
         Password::defaults(fn () => Password::min(8)->letters()->mixedCase()->numbers());
 
         RateLimiter::for('auth-public', fn (Request $request) => Limit::perMinute(20)->by($request->ip()));
+        RateLimiter::for('walk-in', fn (Request $request) => Limit::perMinute(10)->by($request->ip())); // (R-137)
         RateLimiter::for('geo', fn (Request $request) => Limit::perMinute(30)->by($request->user()?->id ?: $request->ip()));
     }
 }

@@ -81,6 +81,48 @@ class GymReviewTest extends TestCase
         $this->actingAs($this->admin)->get("/api/gym-applications/{$gym->id}/documents/{$document->id}")->assertOk();
     }
 
+    private function doc(Gym $gym, string $type)
+    {
+        Storage::disk('local')->put("gym-applications/{$type}.pdf", 'pdf');
+
+        return $gym->documents()->create(['type' => $type, 'path' => "gym-applications/{$type}.pdf", 'original_name' => "{$type}.pdf", 'mime' => 'application/pdf', 'size' => 3, 'expires_on' => in_array($type, ['dti', 'mayors_permit', 'barangay_clearance'], true) ? today()->addYear() : null]);
+    }
+
+    public function test_only_a_real_admin_open_marks_a_document_opened(): void
+    {
+        $gym = $this->sent();
+        $document = $this->doc($gym, 'dti');
+        $url = "/api/gym-applications/{$gym->id}/documents/{$document->id}";
+
+        $this->actingAs($this->applicant)->get($url)->assertOk();
+        $this->actingAs($this->admin)->get("{$url}?preview=1")->assertOk();
+        $this->assertNull($document->fresh()->admin_viewed_at);
+
+        $this->actingAs($this->admin)->get($url)->assertOk();
+        $this->assertNotNull($document->fresh()->admin_viewed_at);
+    }
+
+    public function test_checklist_waits_until_every_document_is_opened(): void
+    {
+        $gym = $this->sent();
+        $document = $this->doc($gym, 'dti');
+        $body = ['checklist' => ['documents_complete' => true]];
+
+        $this->actingAs($this->admin)->putJson("/api/admin/applications/{$gym->id}/checklist", $body)
+            ->assertUnprocessable()->assertJsonValidationErrors(['checklist']);
+
+        $this->actingAs($this->admin)->get("/api/gym-applications/{$gym->id}/documents/{$document->id}")->assertOk();
+        $this->actingAs($this->admin)->putJson("/api/admin/applications/{$gym->id}/checklist", $body)->assertOk();
+    }
+
+    public function test_unopened_facility_photo_does_not_block_the_checklist(): void
+    {
+        $gym = $this->sent(2);
+        $this->doc($gym, 'facility_photo');
+
+        $this->actingAs($this->admin)->putJson("/api/admin/applications/{$gym->id}/checklist", ['checklist' => ['documents_complete' => true]])->assertOk();
+    }
+
     public function test_approve_needs_every_check_passed_and_tier_2_has_two_more(): void
     {
         $gym = $this->sent(2);
@@ -121,7 +163,7 @@ class GymReviewTest extends TestCase
         $gym = $this->sent();
         foreach (['dti', 'mayors_permit', 'barangay_clearance'] as $type) {
             Storage::disk('local')->put("gym-applications/{$type}.pdf", 'pdf');
-            $gym->documents()->create(['type' => $type, 'path' => "gym-applications/{$type}.pdf", 'original_name' => "{$type}.pdf", 'mime' => 'application/pdf', 'size' => 3]);
+            $gym->documents()->create(['type' => $type, 'path' => "gym-applications/{$type}.pdf", 'original_name' => "{$type}.pdf", 'mime' => 'application/pdf', 'size' => 3, 'expires_on' => in_array($type, ['dti', 'mayors_permit', 'barangay_clearance'], true) ? today()->addYear() : null]);
         }
 
         $this->decide($gym, ['decision' => 'return'])->assertUnprocessable()->assertJsonValidationErrors(['items']);
@@ -134,7 +176,7 @@ class GymReviewTest extends TestCase
         $old = $gym->documents()->where('type', 'barangay_clearance')->first();
         $this->actingAs($this->applicant)->deleteJson("/api/gym-applications/{$gym->id}/documents/{$old->id}")->assertOk();
         $this->actingAs($this->applicant)->post("/api/gym-applications/{$gym->id}/documents", [
-            'type' => 'barangay_clearance', 'file' => UploadedFile::fake()->create('clear.pdf', 50, 'application/pdf'),
+            'type' => 'barangay_clearance', 'file' => UploadedFile::fake()->create('clear.pdf', 50, 'application/pdf'), 'expires_on' => today()->addYear()->toDateString(),
         ], ['Accept' => 'application/json'])->assertCreated();
 
         $this->actingAs($this->applicant)->postJson("/api/gym-applications/{$gym->id}/submit")->assertOk()

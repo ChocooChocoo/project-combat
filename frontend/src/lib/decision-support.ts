@@ -388,3 +388,9 @@ export function rangeQuery(range: Range, join: '?' | '&' = '&'): string {
   const text = query.toString()
   return text ? `${join}${text}` : ''
 }
+
+// (R-141) suggestions: a link, or a prepared call to an existing endpoint the owner confirms.
+export type SuggestionAction =
+  | { type: 'link'; label: string; to: string }
+  | { type: 'request'; label: string; confirm: string; method: 'POST'; path: string; body: Record<string, unknown>; permission: string }
+export type Suggestion = { code: string; title: string; reason: string; action: SuggestionAction }

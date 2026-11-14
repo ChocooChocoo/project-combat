@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, ChevronDown, Clock, Dumbbell, Mail, MapPin, Phone } from 'lucide-react'
+import { ArrowLeft, Check, ChevronDown, Clock, Dumbbell, FileText, Mail, MapPin, Phone } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { BrandLogo } from '@/components/brand-logo'
@@ -14,7 +14,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/u
 import { Skeleton } from '@/components/ui/skeleton'
 import { api, ApiError } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
-import { planLength, type GymDetailPayload, labelKey, type PublicCoach, type PublicGymDetail, type PublicPlan, type PublicService, readGymDetail } from '@/lib/discovery'
+import { fileSizeText, planLength, type GymDetailPayload, labelKey, type PublicCoach, type PublicGymDetail, type PublicPlan, type PublicService, readGymDetail } from '@/lib/discovery'
 import { approvedGym, canOpenWorkspace } from '@/lib/gym-access'
 import { LIVE_STATUSES, STATUS_LABELS, type Membership } from '@/lib/membership'
 import { DAYS } from '@/lib/gyms'
@@ -181,7 +181,7 @@ export default function GymPublic() {
 
   const access = approvedGym(user, id)
   const manage = access ? canOpenWorkspace(access) : false
-  // R-117: member accounts that do not already work here can apply to coach.
+  // R-117, R-138: member accounts that do not already work here can apply to coach or for a job.
   const canApplyCoach = user?.account_type === 'member' && !user.is_platform_admin && !access?.roles.some((role) => role === 'employee' || role === 'owner')
   const canApply = !mine && !access?.roles.includes('owner') && (!user || user.account_type === 'member')
 
@@ -269,6 +269,11 @@ export default function GymPublic() {
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-8 wrap-anywhere px-4 py-8 md:px-8">
       <BrandBar signedIn={Boolean(user)} showBack />
+
+      {/* (R-134) */}
+      {gym.cover_photo_url && (
+        <img className="aspect-[21/9] w-full rounded-xl border object-cover" src={gym.cover_photo_url} alt={`${gym.name} cover`} />
+      )}
 
       <section className="flex flex-col gap-6 border-b pt-2 pb-8 lg:flex-row lg:items-end lg:justify-between" aria-labelledby="gym-name">
           <div className="flex min-w-0 flex-1 flex-col items-start">
@@ -405,9 +410,37 @@ export default function GymPublic() {
             ) : (
               <p className="text-muted-foreground text-sm">The gym has not published its policies yet.</p>
             )}
+            {gym.policy_files.length > 0 && (
+              <ul className="mt-4 flex flex-col gap-2 text-sm">
+                {gym.policy_files.map((file) => (
+                  <li key={file.id}>
+                    <a className="inline-flex min-h-11 items-center gap-2 underline-offset-4 hover:underline" href={file.url} target="_blank" rel="noreferrer">
+                      <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                      <span>{file.name}</span>
+                      <span className="text-muted-foreground">({fileSizeText(file.size)})</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
         </div>
       </div>
+
+      {gym.photos.length > 0 && (
+        <section className="flex flex-col gap-4" aria-labelledby="gym-photos">
+          <h2 id="gym-photos" className="font-semibold text-xl tracking-tight">Photos</h2>
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {gym.photos.map((photo) => (
+              <li key={photo.id}>
+                <a href={photo.url} target="_blank" rel="noreferrer">
+                  <img className="aspect-[4/3] w-full rounded-lg border object-cover" src={photo.url} alt={`${gym.name} photo`} loading="lazy" />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="flex flex-col gap-4" aria-labelledby="gym-services">
         <div className="flex flex-wrap items-baseline gap-2">
@@ -690,6 +723,26 @@ export default function GymPublic() {
           </ul>
         )}
       </section>
+
+      {gym.job_postings.length > 0 && (
+        <section className="flex flex-col gap-4" aria-labelledby="gym-jobs">
+          <h2 id="gym-jobs" className="font-semibold text-xl tracking-tight">Jobs</h2>
+          <ul className="grid gap-4 md:grid-cols-2">
+            {gym.job_postings.map((job) => (
+              <li key={job.id} className="flex min-w-0 flex-col gap-2 rounded-xl border p-4 text-sm">
+                <h3 className="font-semibold text-base wrap-anywhere">{job.title}</h3>
+                <p className="whitespace-pre-wrap text-muted-foreground wrap-anywhere">{job.description}</p>
+                {job.requirements && <p className="whitespace-pre-wrap wrap-anywhere"><span className="font-medium">Requirements: </span>{job.requirements}</p>}
+                {canApplyCoach ? (
+                  <Button className="mt-1 self-start" variant="outline" render={<Link to={`/gyms/${id}/jobs/${job.id}/apply`} />}>Apply</Button>
+                ) : !access?.roles.some((role) => role === 'employee' || role === 'owner') && (
+                  <p className="text-muted-foreground text-xs">Sign in with a member account to apply.</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <Dialog open={gallery !== null} onOpenChange={(open) => !open && setGallery(null)}>
         <DialogPopup className="max-w-3xl">

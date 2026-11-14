@@ -57,6 +57,53 @@ class GeoController extends Controller
         return response()->json(['results' => $results]);
     }
 
+    /** (R-130) Coordinates to a city, province and street, for "Use my location" and the map pin. */
+    public function reverse(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'lat' => ['required', 'numeric', 'between:-90,90'],
+            'lng' => ['required', 'numeric', 'between:-180,180'],
+        ]);
+
+        $key = 'geo-reverse:'.round((float) $data['lat'], 3).','.round((float) $data['lng'], 3);
+
+        if (Cache::has($key)) {
+            return response()->json(['place' => Cache::get($key)]);
+        }
+
+        try {
+            $response = Http::withHeaders([
+                'User-Agent' => config('app.name').' gym discovery ('.config('app.url').')',
+            ])->timeout(5)->get('https://nominatim.openstreetmap.org/reverse', [
+                'format' => 'jsonv2',
+                'lat' => $data['lat'],
+                'lon' => $data['lng'],
+                'zoom' => 18,
+                'addressdetails' => 1,
+            ]);
+        } catch (Throwable) {
+            return $this->unavailable();
+        }
+
+        if (! $response->successful() || ! is_array($response->json())) {
+            return $this->unavailable();
+        }
+
+        $a = $response->json('address') ?? [];
+        $place = [
+            'city' => $a['city'] ?? $a['town'] ?? $a['municipality'] ?? null,
+            'province' => $a['province'] ?? $a['state'] ?? null,
+            'barangay' => $a['quarter'] ?? $a['village'] ?? $a['suburb'] ?? $a['neighbourhood'] ?? null,
+            'street' => trim(($a['house_number'] ?? '').' '.($a['road'] ?? '')),
+            'postcode' => $a['postcode'] ?? null,
+            'label' => (string) ($response->json('display_name') ?? ''),
+        ];
+
+        Cache::put($key, $place, now()->addDay());
+
+        return response()->json(['place' => $place]);
+    }
+
     private function unavailable(): JsonResponse
     {
         return response()->json([

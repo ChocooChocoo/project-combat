@@ -24,6 +24,7 @@ class AccountTypeTest extends TestCase
             'email' => 'ana@example.com',
             'password' => 'Secret123',
             'password_confirmation' => 'Secret123',
+            'birthdate' => '1995-05-10',
             ...$extra,
         ]);
     }

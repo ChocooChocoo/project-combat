@@ -182,4 +182,36 @@ class MembershipApplicationTest extends TestCase
         $other->addPerson($approver, GymPersonType::Owner);
         $this->actingAs($approver)->getJson("/api/gyms/{$other->id}/memberships/{$own->id}")->assertNotFound();
     }
+
+    public function test_the_medical_clearance_is_required(): void
+    {
+        $payload = $this->applicationPayload();
+        unset($payload['medical_file']);
+
+        $this->actingAs($this->applicant)->postJson($this->url('membership-applications'), $payload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['medical_file']);
+    }
+
+    public function test_gym_terms_must_be_accepted_when_the_gym_has_policies(): void
+    {
+        $this->gym->forceFill(['policies' => 'No street fighting.'])->save();
+
+        $this->actingAs($this->applicant)->postJson($this->url('membership-applications'), $this->applicationPayload())
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['waivers.gym_terms']);
+
+        $payload = $this->applicationPayload(['waivers' => ['gym_terms' => true]]);
+        $id = $this->actingAs($this->applicant)->postJson($this->url('membership-applications'), $payload)
+            ->assertCreated()->json('membership.id');
+
+        $this->assertContains('gym_terms', $this->membership($id)->waivers);
+    }
+
+    public function test_a_gym_without_policies_needs_no_gym_terms(): void
+    {
+        $membership = $this->apply();
+
+        $this->assertNotContains('gym_terms', $membership->waivers);
+    }
 }

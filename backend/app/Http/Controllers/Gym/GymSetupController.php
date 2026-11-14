@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Gym;
 
+use App\Http\Controllers\Concerns\PresentsGymMedia;
 use App\Http\Controllers\Controller;
 use App\Models\Gym;
 use App\Rules\ClosingTime;
@@ -15,6 +16,8 @@ use Illuminate\Validation\ValidationException;
 /** R-20: the gym's workspace settings. */
 class GymSetupController extends Controller
 {
+    use PresentsGymMedia;
+
     /** Plain-language messages for the fields whose default wording shows raw field names. */
     private const MESSAGES = [
         'operating_hours.array' => 'Operating hours can only be set for Monday to Sunday.',
@@ -98,6 +101,7 @@ class GymSetupController extends Controller
             'overtime_min_minutes' => $gym->overtime_min_minutes,
             'services' => $gym->services ?? [],
             'facilities' => $gym->facilities ?? [],
+            'media' => $this->gymMedia($gym), // (R-134)
             'options' => $this->optionLists($gym),
         ];
     }
@@ -122,6 +126,8 @@ class GymSetupController extends Controller
             'frequencies' => config('offer.frequencies'),
             'plan_billing' => config('offer.plan_billing'),
             'service_photos' => config('offer.service_photos'),
+            'gym_photos' => config('offer.gym_photos'),
+            'policy_files' => config('offer.policy_files'),
         ];
     }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\GymPersonType;
 use App\Enums\GymStatus;
 use App\Enums\MembershipStatus;
+use App\Http\Controllers\Concerns\PresentsGymMedia;
 use App\Http\Controllers\Concerns\PresentsMemberships;
 use App\Models\Gym;
 use App\Models\Membership;
@@ -24,7 +25,7 @@ use Illuminate\Validation\ValidationException;
  */
 class MembershipApplicationController extends Controller
 {
-    use PresentsMemberships;
+    use PresentsGymMedia, PresentsMemberships;
 
     public function form(): JsonResponse
     {
@@ -49,6 +50,8 @@ class MembershipApplicationController extends Controller
         $data = $request->validate($this->rules($gym), [
             'plan_id.exists' => 'Choose one of this gym\'s plans.',
             'waivers.*.accepted' => 'Accept this waiver to continue.',
+            'waivers.gym_terms.accepted' => 'Accept the gym\'s policies and waiver to continue.',
+            'medical_file.required' => 'Upload your medical clearance.',
             'emergency_contacts.required' => 'Add at least one emergency contact.',
             'emergency_contacts.min' => 'Add at least one emergency contact.',
             'emergency_contacts.*.phone.regex' => 'Enter a valid phone number, for example 0917 123 4567.',
@@ -74,7 +77,7 @@ class MembershipApplicationController extends Controller
             'training_history' => $data['training_history'] ?? null,
             'health_answers' => array_map(fn ($answer) => filter_var($answer, FILTER_VALIDATE_BOOLEAN), $data['health_answers']),
             'health_notes' => $data['health_notes'] ?? null,
-            'waivers' => array_keys(config('membership.waivers')),
+            'waivers' => [...array_keys(config('membership.waivers')), ...($this->needsTerms($gym) ? ['gym_terms'] : [])],
             'signature_name' => $data['signature_name'],
             'signed_on' => today()->toDateString(),
         ]);
@@ -127,7 +130,7 @@ class MembershipApplicationController extends Controller
             'health_answers' => ['required', 'array:'.implode(',', array_keys(config('membership.health_questions')))],
             'health_notes' => ['nullable', 'string', 'max:2000'],
             'medical_file' => [
-                'nullable', 'file',
+                config('membership.medical_file.required') ? 'required' : 'nullable', 'file', // (R-136)
                 'mimes:'.implode(',', config('membership.medical_file.mimes')),
                 'max:'.config('membership.medical_file.max_kb'),
             ],
@@ -145,7 +148,16 @@ class MembershipApplicationController extends Controller
             $rules["waivers.{$key}"] = ['accepted'];
         }
 
+        if ($this->needsTerms($gym)) {
+            $rules['waivers.gym_terms'] = ['accepted']; // (R-135)
+        }
+
         return $rules;
+    }
+
+    private function needsTerms(Gym $gym): bool
+    {
+        return filled($gym->policies) || $this->gymMedia($gym)['policy_files'] !== [];
     }
 
     /** Owners, and employees whose roles give membership approval (R-33). */

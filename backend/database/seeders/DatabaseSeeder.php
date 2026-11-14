@@ -161,6 +161,10 @@ class DatabaseSeeder extends Seeder
         Schema::disableForeignKeyConstraints();
 
         $tables = [
+            'job_applications',
+            'job_postings',
+            'walk_ins',
+            'gym_files',
             'subscription_payments',
             'offer_plan',
             'offers',
@@ -255,6 +259,8 @@ class DatabaseSeeder extends Seeder
         Storage::disk('local')->deleteDirectory('leave-attachments');
         Storage::disk('local')->deleteDirectory('medical-files');
         Storage::disk('local')->deleteDirectory('purchase-proofs');
+        Storage::disk('local')->deleteDirectory('job-applications');
+        Storage::disk('public')->deleteDirectory('gyms');
     }
 
     /** @return array<string, User> */
@@ -1595,6 +1601,7 @@ SVG;
                     'original_name' => $originalName,
                     'mime' => $mime,
                     'size' => strlen($contents),
+                    'expires_on' => in_array($type, ['dti', 'mayors_permit', 'barangay_clearance'], true) ? now()->addYear()->toDateString() : null,
                 ]);
             }
         }

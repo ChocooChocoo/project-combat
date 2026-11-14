@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Enums\GymPersonType;
 use App\Enums\GymStatus;
+use App\Http\Controllers\Concerns\PresentsGymMedia;
 use App\Models\EmployeeProfile;
 use App\Models\Gym;
 use App\Models\GymService;
 use App\Models\GymServicePhoto;
+use App\Models\JobPosting;
 use App\Models\MembershipPlan;
 use App\Models\MembershipPlanAddon;
 use App\Support\Geo;
@@ -20,6 +22,8 @@ use Illuminate\Validation\Rule;
 /** R-18, R-30 and R-97: approved gyms, their search, and the public gym page. */
 class PublicGymController extends Controller
 {
+    use PresentsGymMedia;
+
     public function index(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -111,6 +115,7 @@ class PublicGymController extends Controller
                 'distance_km' => $distance,
                 'service_names' => $gym->gymServices->pluck('name')->values()->all(),
                 'min_price' => $this->minPrice($gym->membershipPlans),
+                'cover_photo_url' => $gym->cover_photo_path ? Storage::disk('public')->url($gym->cover_photo_path) : null, // (R-134)
             ];
         });
 
@@ -162,8 +167,12 @@ class PublicGymController extends Controller
             ->orderBy('name')
             ->get();
 
+        $media = $this->gymMedia($gym);
+
         return response()->json([
             'gym' => [
+                ...$media,
+                'needs_terms' => filled($gym->policies) || $media['policy_files'] !== [], // (R-135)
                 'id' => $gym->id,
                 'name' => $gym->name,
                 'badge' => config("verification.tiers.{$gym->approved_tier}.badge"),
@@ -186,6 +195,8 @@ class PublicGymController extends Controller
                 'services' => $services->map(fn (GymService $service) => $this->servicePayload($service, $gym))->all(),
                 'plans' => $plans->map(fn (MembershipPlan $plan) => $this->planPayload($plan))->all(),
                 'coaches' => $this->coaches($gym),
+                // (R-138)
+                'job_postings' => JobPosting::withoutGlobalScope('gym')->where('gym_id', $gym->id)->where('status', 'open')->orderBy('id')->get(['id', 'title', 'description', 'requirements']),
             ],
         ]);
     }

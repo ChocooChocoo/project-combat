@@ -101,12 +101,23 @@ export const ATHLETE_LEVELS: Record<AthleteLevel, string> = {
   advanced: 'Advanced',
 }
 
+/** (R-140) */
+export type SparringDetails = {
+  weight_kg: number | null
+  height_cm: number | null
+  wins: number
+  losses: number
+  draws: number
+  experience_years: number | null
+}
+
 export type AthleteRecord = {
   athlete: { id: number; name: string; email: string; phone: string | null }
   background: string | null
   starting_rank: string | null
   /** D-35: booking needs this level or higher; null counts as beginner. */
   level: AthleteLevel | null
+  sparring: SparringDetails
   training_history: string | null
   ranks: { discipline: string; rank: string; since: string }[]
   entries: AthleteEntry[]
@@ -121,7 +132,7 @@ export type MembershipForm = {
   health_questions: Record<string, string>
   waivers: Record<string, string>
   emergency_contacts_max: number
-  medical_file: { mimes: string[]; max_kb: number }
+  medical_file: { required: boolean; mimes: string[]; max_kb: number }
 }
 
 export const STATUS_LABELS: Record<MembershipStatus, string> = {

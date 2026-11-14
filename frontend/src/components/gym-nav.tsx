@@ -1,4 +1,4 @@
-import { BadgeCheck, Banknote, TicketPercent, UserPlus, ChartColumn, CalendarDays, ClipboardList, Clock, CreditCard, DoorOpen, Dumbbell, Inbox, Megaphone, Package, Receipt, Settings2, ShoppingCart, UserCheck, Users, UsersRound, Wallet, type LucideIcon } from 'lucide-react'
+import { BadgeCheck, BriefcaseBusiness, Banknote, TicketPercent, UserPlus, ChartColumn, CalendarDays, ClipboardList, Clock, CreditCard, DoorOpen, Dumbbell, Inbox, Megaphone, Package, Receipt, Settings2, ShoppingCart, UserCheck, Users, UsersRound, Wallet, type LucideIcon } from 'lucide-react'
 import type { GymAccess } from '@/lib/auth'
 import { can, type Permission } from '@/lib/gym-access'
 
@@ -13,6 +13,7 @@ const ITEMS: ItemDefinition[] = [
   { segment: 'staff', label: 'Staff', icon: Users, permissions: ['hr.staff.view', 'hr.roles.view'], group: 'HR / Employee Management' },
   { segment: 'staff-attendance', label: 'Staff attendance', icon: Clock, permissions: ['hr.attendance.view', 'hr.overtime.approve'], group: 'HR / Employee Management' },
   { segment: 'coach-applications', label: 'Coach applications', icon: UserPlus, permissions: ['hr.coach_applications.view', 'hr.coach_applications.approve'], group: 'HR / Employee Management' },
+  { segment: 'hiring', label: 'Hiring', icon: BriefcaseBusiness, permissions: ['hr.job_postings.view', 'hr.job_applications.view', 'hr.job_applications.approve'], group: 'HR / Employee Management' }, // (R-138)
   { segment: 'leave', label: 'Leave', icon: CalendarDays, permissions: ['hr.leave.view', 'hr.leave.manage', 'hr.holidays.manage'], group: 'HR / Employee Management' },
   { segment: 'payroll', label: 'Payroll', icon: Banknote, permissions: ['payroll.runs.view'], group: 'Finance' },
   { segment: 'schedule', label: 'Schedule', icon: CalendarDays, permissions: ['training.sessions.view'], group: 'Training' },
@@ -33,7 +34,7 @@ const ITEMS: ItemDefinition[] = [
   { segment: 'settings', label: 'Setup', icon: Settings2, permissions: ['gym_setup.settings.view'], group: 'Setup' },
   { segment: 'rooms', label: 'Rooms', icon: DoorOpen, permissions: ['gym_setup.rooms.view'], group: 'Setup' },
   { segment: 'dashboard', label: 'Dashboard', icon: ChartColumn, permissions: ['decision_support.general.view'], group: 'Business' },
-  { segment: 'decision-support', label: 'Decision support', icon: ClipboardList, permissions: ['decision_support.general.view'], group: 'Business' },
+  { segment: 'decision-support', label: 'Analytics', icon: ClipboardList, permissions: ['decision_support.general.view'], group: 'Business' },
 ]
 
 const GROUP_ORDER: GroupName[] = ['HR / Employee Management', 'Training', 'Members', 'Finance', 'Business', 'Setup']

@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/page-header'
 import { AttendanceList } from '@/components/schedule/attendance-list'
 import { BookingEmpty, BookingError, BookingLoading } from '@/components/schedule/booking-parts'
 import { CameraScanner } from '@/components/schedule/camera-scanner'
+import { WalkInDesk } from '@/components/schedule/walk-in-desk'
 import { TextField } from '@/components/text-field'
 import { Button } from '@/components/ui/button'
 import { api, ApiError } from '@/lib/api'
@@ -102,5 +103,6 @@ export default function GymCheckIn() {
     <section className="flex min-w-0 flex-col gap-3"><h2 className="text-xl font-semibold">Today's check-ins</h2>
       {error ? <BookingError message={error} retry={() => setVersion((v) => v + 1)} /> : !rows ? <BookingLoading /> : <AttendanceList rows={rows} checkOut={{ busy, run: (row) => void checkOut(row), allow: (row) => !row.booking_id || Boolean(gym && can(gym, 'training.attendance.manage')) }} />}
     </section>
+    <WalkInDesk gymId={gymId} canPay={Boolean(gym && can(gym, 'finance.payments.manage'))} />
   </div>
 }

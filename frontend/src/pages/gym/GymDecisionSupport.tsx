@@ -16,6 +16,7 @@ import { ForecastView } from '@/components/decision-support/forecast-view'
 import { ProblemsView } from '@/components/decision-support/problems-view'
 import { SustainabilityView } from '@/components/decision-support/sustainability-view'
 import { PrintSheet } from '@/components/decision-support/print-sheet'
+import { SuggestionsCard } from '@/components/decision-support/suggestions-card'
 import { RangePicker } from '@/components/decision-support/range-picker'
 import { Button } from '@/components/ui/button'
 import { Activity, Users, ChartNoAxesCombined, Printer } from 'lucide-react'
@@ -23,7 +24,7 @@ import { Card, CardPanel } from '@/components/ui/card'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Select, SelectGroup, SelectGroupLabel, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { api } from '@/lib/api'
-import { useAuth } from '@/lib/auth'
+import { useAuth, type GymAccess } from '@/lib/auth'
 import { approvedGym, can } from '@/lib/gym-access'
 import { readOptions, validRange, VIEWS, type AttendancePayload, type AthletePayload, type ServicePayload, type MembershipPayload, type CustomerPayload, type EmployeePayload, type MoneyPayload, type StockPayload, type TrendPayload, type ForecastPayload, type ProblemPayload, type SustainabilityPayload, type Basis, type Payload, type Options, type Range, type View } from '@/lib/decision-support'
 import { useDecisionSupport } from '@/hooks/use-decision-support'
@@ -75,11 +76,11 @@ export default function GymDecisionSupport() {
   const { gymId } = useParams()
   const { user } = useAuth()
   const gym = approvedGym(user, Number(gymId))
-  if (!gym || !can(gym, 'decision_support.general.view')) return <p>You do not have permission to view decision support.</p>
-  return <DecisionWorkspace key={`${gym.id}:${user?.id}:${gym.permissions.join(',')}`} gymId={gym.id} gymName={gym.name} />
+  if (!gym || !can(gym, 'decision_support.general.view')) return <p>You do not have permission to view analytics.</p>
+  return <DecisionWorkspace key={`${gym.id}:${user?.id}:${gym.permissions.join(',')}`} gym={gym} gymId={gym.id} gymName={gym.name} />
 }
 
-function DecisionWorkspace({ gymId, gymName }: { gymId: number; gymName: string }) {
+function DecisionWorkspace({ gym, gymId, gymName }: { gym: GymAccess; gymId: number; gymName: string }) {
   const [options, setOptions] = useState<Options | null>(null)
   const [range, setRange] = useState<Range>({ from: '', to: '' })
   const [error, setError] = useState('')
@@ -102,7 +103,8 @@ function DecisionWorkspace({ gymId, gymName }: { gymId: number; gymName: string 
   }, [gymId, version])
 
   return <div className="flex min-w-0 flex-col gap-6">
-    <PageHeader title="Decision support" description="Your gym, in perspective. Activity, business performance and what comes next." actions={<Button variant="outline" disabled={!dashboard.data} onClick={() => window.print()}><Printer aria-hidden="true" />Print report</Button>} />
+    <PageHeader title="Analytics" description="Your gym, in perspective. Activity, business performance and what comes next." actions={<Button variant="outline" disabled={!dashboard.data} onClick={() => window.print()}><Printer aria-hidden="true" />Print report</Button>} />
+    <SuggestionsCard gym={gym} />
     {!options ? error ? <DashboardError message={error} retry={() => { setError(''); setVersion((value) => value + 1) }} /> : <DashboardLoading /> : <div className="grid min-w-0 items-start gap-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
       <ViewMenu view={view} onChange={setView} />
       <div className="flex min-w-0 flex-col gap-6">
@@ -139,14 +141,14 @@ function ViewMenu({ view, onChange }: { view: View; onChange: (view: View) => vo
     <Field name="decision-view" className="lg:hidden">
       <FieldLabel>View</FieldLabel>
       <Select name="decision-view" items={VIEW_ITEMS} value={view} onValueChange={(value) => { if (VIEWS.some(({ key }) => key === value)) onChange(value as View) }}>
-        <SelectTrigger aria-label="Decision support view"><SelectValue /></SelectTrigger>
+        <SelectTrigger aria-label="Analytics view"><SelectValue /></SelectTrigger>
         <SelectPopup>{VIEW_GROUPS.map((group) => <SelectGroup key={group.title}>
           <SelectGroupLabel>{group.title}</SelectGroupLabel>
           {group.keys.map((key) => <SelectItem key={key} value={key}>{VIEWS.find((item) => item.key === key)!.label}</SelectItem>)}
         </SelectGroup>)}</SelectPopup>
       </Select>
     </Field>
-    <Card render={<nav aria-label="Decision support views" />} className="sticky top-4 hidden p-2 lg:flex">
+    <Card render={<nav aria-label="Analytics views" />} className="sticky top-4 hidden p-2 lg:flex">
       {VIEW_GROUPS.map((group, index) => <div key={group.title} className={index > 0 ? 'mt-2 border-t pt-2' : undefined}>
         <h2 className="flex items-center gap-2 px-2 py-1.5 font-medium text-muted-foreground text-xs"><group.icon aria-hidden="true" className="size-3.5" />{group.title}</h2>
         <div className="flex flex-col gap-0.5">

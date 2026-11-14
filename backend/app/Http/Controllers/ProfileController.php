@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\UserResource;
+use App\Models\User;
 use App\Support\OneTimeCodes;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,7 +26,11 @@ class ProfileController extends Controller
         $user = $request->user();
         $data = $request->validate([
             'first_name' => ['required', 'string', 'max:100'],
+            'middle_name' => ['nullable', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
+            'suffix' => ['nullable', Rule::in(User::SUFFIXES)],
+            'city' => ['nullable', 'string', 'max:120'],
+            'province' => ['nullable', 'string', 'max:120'],
             'phone' => ['nullable', 'string', 'max:30'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
         ]);

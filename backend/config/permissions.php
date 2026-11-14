@@ -16,6 +16,9 @@ return [
             'performance' => ['view', 'manage'],
             // R-117: members who apply to coach here.
             'coach_applications' => ['view', 'approve'],
+            // (R-138) Job postings and staff applications.
+            'job_postings' => ['view', 'manage'],
+            'job_applications' => ['view', 'approve'],
         ],
         'gym_setup' => [
             'settings' => ['view', 'manage'],

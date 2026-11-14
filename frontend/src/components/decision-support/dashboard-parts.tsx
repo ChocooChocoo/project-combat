@@ -19,7 +19,7 @@ export function DashboardLoading() {
 }
 
 export function DashboardError({ message, retry }: { message: string; retry: () => void }) {
-  return <Alert variant="error"><AlertTitle>Could not load decision support</AlertTitle><AlertDescription>{message}<div className="mt-3"><Button variant="outline" onClick={retry}>Retry</Button></div></AlertDescription></Alert>
+  return <Alert variant="error"><AlertTitle>Could not load analytics</AlertTitle><AlertDescription>{message}<div className="mt-3"><Button variant="outline" onClick={retry}>Retry</Button></div></AlertDescription></Alert>
 }
 
 export function DashboardEmpty() {

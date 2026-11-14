@@ -15,7 +15,13 @@ export type GymAccess = {
 export type User = {
   id: number
   first_name: string
+  middle_name: string | null
   last_name: string
+  suffix: string | null
+  full_name: string
+  birthdate: string | null
+  city: string | null
+  province: string | null
   email: string
   account_type: 'member' | 'owner'
   has_member_records: boolean

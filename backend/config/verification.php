@@ -12,14 +12,17 @@ $tier1 = [
 
 return [
     // "max" is how many files of that type one application may hold (default 1).
+    // "expiry" (required|optional) asks for an expiry date; "match" lists the names the browser reads for (owner, gym) (R-133).
     'documents' => [
-        'dti' => ['label' => 'DTI certificate', 'proves' => 'The business name is registered to a sole owner.', 'who' => 'Sole owner'],
-        'sec' => ['label' => 'SEC certificate', 'proves' => 'The company or partnership is registered.', 'who' => 'Company or partnership'],
-        'mayors_permit' => ['label' => "Mayor's or business permit", 'proves' => 'The gym may operate in its city this year.', 'who' => 'Every applicant'],
-        'barangay_clearance' => ['label' => 'Barangay clearance', 'proves' => 'The barangay allows the business at this address.', 'who' => 'Every applicant'],
-        'facility_photo' => ['label' => 'Facility photos', 'proves' => 'The facility exists as described.', 'who' => 'Every Tier 2 applicant', 'max' => 30],
+        'dti' => ['label' => 'DTI certificate', 'proves' => 'The business name is registered to a sole owner.', 'who' => 'Sole owner', 'expiry' => 'required', 'match' => ['owner', 'gym']],
+        'sec' => ['label' => 'SEC certificate', 'proves' => 'The company or partnership is registered.', 'who' => 'Company or partnership', 'match' => ['gym']],
+        'mayors_permit' => ['label' => "Mayor's or business permit", 'proves' => 'The gym may operate in its city this year.', 'who' => 'Every applicant', 'expiry' => 'required', 'match' => ['gym']],
+        'barangay_clearance' => ['label' => 'Barangay clearance', 'proves' => 'The barangay allows the business at this address.', 'who' => 'Every applicant', 'expiry' => 'required', 'match' => ['gym']],
+        'facility_photo' => ['label' => 'Facility photos', 'proves' => 'The facility exists as described.', 'who' => 'Every Tier 2 applicant', 'max' => 30,
+            // Thumbnails are enough; every other file must be opened before the checklist (R-132).
+            'must_open' => false],
         'video_tour' => ['label' => 'Video tour', 'proves' => 'The facility and equipment are real and current.', 'who' => 'Every Tier 2 applicant', 'kind' => 'video'],
-        'owner_id' => ['label' => "Owner's valid ID", 'proves' => 'Who the owner is.', 'who' => 'The owner'],
+        'owner_id' => ['label' => "Owner's valid ID", 'proves' => 'Who the owner is.', 'who' => 'The owner', 'expiry' => 'optional', 'match' => ['owner']],
         'owner_selfie' => ['label' => 'Owner selfie', 'proves' => 'The owner is the person on the ID.', 'who' => 'The owner'],
         'utility_bill' => ['label' => 'Recent electricity or water bill', 'proves' => 'The business runs at the declared address.', 'who' => 'Every Tier 2 applicant'],
     ],

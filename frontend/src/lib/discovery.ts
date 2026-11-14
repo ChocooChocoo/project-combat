@@ -1,5 +1,6 @@
 /** Shared types for gym discovery, search and athlete recommendations. */
 import type { Day } from '@/lib/gyms'
+import type { PublicJobPosting } from '@/lib/hiring'
 
 export type PreferredTime = 'morning' | 'afternoon' | 'evening'
 
@@ -17,6 +18,17 @@ export type PublicGym = {
   service_names?: string[] | null
   services?: (string | { name?: string | null })[] | null
   min_price?: string | number | null
+  cover_photo_url?: string | null
+}
+
+export const fileSizeText = (bytes: number) =>
+  bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`
+
+/** R-134, R-135: a gym's cover photo, gallery and policy PDFs. */
+export type GymMedia = {
+  cover_photo_url: string | null
+  photos: { id: number; url: string }[]
+  policy_files: { id: number; name: string; size: number; url: string }[]
 }
 
 export type SearchResult = {
@@ -206,9 +218,14 @@ export type GymDetailPayload = Partial<GymAddress> & {
   activity_types?: string[] | null
   facilities?: string[] | null
   policies?: string | null
+  cover_photo_url?: string | null
+  photos?: GymMedia['photos'] | null
+  policy_files?: GymMedia['policy_files'] | null
+  needs_terms?: boolean | null
   services?: PublicService[] | null
   plans?: PublicPlan[] | null
   coaches?: PublicCoachPayload[] | null
+  job_postings?: PublicJobPosting[] | null
   staff?: PublicCoachPayload[] | null
   employees?: PublicCoachPayload[] | null
 }
@@ -223,9 +240,14 @@ export type PublicGymDetail = GymAddress & {
   activity_types: string[]
   facilities: string[]
   policies: string | null
+  cover_photo_url: string | null
+  photos: GymMedia['photos']
+  policy_files: GymMedia['policy_files']
+  needs_terms: boolean
   services: PublicService[]
   plans: PublicPlan[]
   coaches: PublicCoach[]
+  job_postings: PublicJobPosting[]
 }
 
 function readCoach(coach: PublicCoachPayload): PublicCoach {
@@ -271,8 +293,13 @@ export function readGymDetail(payload: GymDetailPayload): PublicGymDetail {
     activity_types: payload.activity_types ?? [],
     facilities: payload.facilities ?? [],
     policies: payload.policies ?? null,
+    cover_photo_url: payload.cover_photo_url ?? null,
+    photos: payload.photos ?? [],
+    policy_files: payload.policy_files ?? [],
+    needs_terms: payload.needs_terms ?? Boolean(payload.policies),
     services: payload.services ?? [],
     plans: payload.plans ?? [],
+    job_postings: payload.job_postings ?? [],
     coaches: coaches.map(readCoach),
   }
 }

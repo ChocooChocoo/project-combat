@@ -6,9 +6,11 @@ use App\Enums\AccountType;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Support\Guardian;
 use App\Support\OneTimeCodes;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
@@ -25,13 +27,20 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'first_name' => ['required', 'string', 'max:100'],
+            'middle_name' => ['nullable', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
+            'suffix' => ['nullable', Rule::in(User::SUFFIXES)],
+            'city' => ['nullable', 'string', 'max:120'],
+            'province' => ['nullable', 'string', 'max:120'],
+            ...Guardian::rules(),
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
             'account_type' => ['required', Rule::enum(AccountType::class)],
         ]);
 
-        $user = User::create($data);
+        $guardian = Guardian::check($data, AccountType::from($data['account_type']));
+        $user = User::create(Arr::except($data, ['guardian_name', 'guardian_phone', 'guardian_relationship', 'guardian_consent']));
+        $user->forceFill($guardian)->save();
         $this->codes->issue($user, OneTimeCodes::VERIFY);
 
         return response()->json(['message' => 'Account created. Check your email for a code.'], 201);

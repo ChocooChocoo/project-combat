@@ -158,7 +158,7 @@ class PublicGymTest extends TestCase
             'id', 'name', 'badge', 'tier', 'address_line', 'barangay', 'city', 'province', 'zip_code',
             'latitude', 'longitude', 'contact_phone', 'contact_email', 'disciplines',
             'activity_types', 'operating_hours', 'working_days', 'policies', 'facilities',
-            'services', 'plans', 'coaches',
+            'services', 'plans', 'coaches', 'cover_photo_url', 'photos', 'policy_files', 'needs_terms', 'job_postings',
         ], array_keys($payload));
 
         foreach ([

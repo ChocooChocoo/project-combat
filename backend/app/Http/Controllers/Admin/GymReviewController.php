@@ -62,6 +62,11 @@ class GymReviewController extends Controller
             'checklist.*' => ['nullable', 'boolean'],
         ]);
 
+        // (R-132)
+        if (Verification::unopened($gym)->isNotEmpty()) {
+            throw ValidationException::withMessages(['checklist' => 'Open every document before you mark the checklist.']);
+        }
+
         $gym->forceFill(['checklist' => array_merge($gym->checklist ?? [], $data['checklist'])])->save();
 
         return response()->json(['checklist' => $gym->checklist]);

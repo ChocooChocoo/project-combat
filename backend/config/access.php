@@ -32,6 +32,7 @@ return [
                 'hr.schedules.view', 'hr.schedules.manage', 'hr.leave.view', 'hr.leave.manage',
                 'hr.holidays.manage', 'hr.attendance.view', 'hr.attendance.manage', 'hr.overtime.approve',
                 'hr.performance.view', 'hr.performance.manage', 'hr.coach_applications.view',
+                'hr.job_postings.view', 'hr.job_postings.manage', 'hr.job_applications.view',
             ],
             'payroll' => 'manage',
         ],

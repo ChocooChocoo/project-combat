@@ -34,6 +34,7 @@ class GymApplicationTest extends TestCase
         return $this->actingAs($as ?? $this->applicant)->post("/api/gym-applications/{$gym->id}/documents", [
             'type' => $type,
             'file' => $file ?? UploadedFile::fake()->create('doc.pdf', 100, 'application/pdf'),
+            'expires_on' => today()->addYear()->toDateString(),
         ], ['Accept' => 'application/json']);
     }
 
