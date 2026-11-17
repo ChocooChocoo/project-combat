@@ -9,9 +9,9 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/u
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { toastManager } from '@/components/ui/toast'
-import { api, ApiError } from '@/lib/api'
+import { api, apiFile, ApiError } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
-import { coachStatus, slotLabel, type CoachApplication } from '@/lib/coach'
+import { attachedFiles, coachStatus, slotLabel, type CoachApplication } from '@/lib/coach'
 import { approvedGym, can } from '@/lib/gym-access'
 import { dateLabel } from '@/lib/membership'
 import { pageMetaFrom, type PageMeta } from '@/lib/pagination'
@@ -88,6 +88,16 @@ export default function GymCoachApplications() {
                 <p className="whitespace-pre-wrap break-words">{row.experience}</p>
                 <p className="text-muted-foreground">{[row.rank, row.specialisation].filter(Boolean).join(' · ')}</p>
                 <p><span className="text-muted-foreground">Hours: </span>{row.availability.map(slotLabel).join(' · ')}</p>
+                {attachedFiles(row).length > 0 && (
+                  <ul className="flex flex-col gap-1">
+                    {attachedFiles(row).map((file) => (
+                      <li key={file.kind} className="flex flex-wrap items-center gap-2">
+                        <span className="text-muted-foreground text-xs">{file.label}: <span className="wrap-anywhere">{file.name}</span></span>
+                        <Button size="xs" variant="outline" onClick={() => apiFile(`/gyms/${gymId}/coach-applications/${row.id}/files/${file.kind}`)}>View</Button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 {row.conflicts.length > 0 ? (
                   <Alert variant="error"><AlertTitle>Clashes with another gym</AlertTitle><AlertDescription>
                     <ul className="list-disc ps-5">{row.conflicts.map((line) => <li key={line}>{line}</li>)}</ul>

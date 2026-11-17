@@ -163,6 +163,9 @@ class DatabaseSeeder extends Seeder
         Schema::disableForeignKeyConstraints();
 
         $tables = [
+            // (R-145) Chat before the people who write in it.
+            'chat_messages',
+            'chat_conversations',
             'job_applications',
             'job_postings',
             'walk_ins',
@@ -176,6 +179,8 @@ class DatabaseSeeder extends Seeder
             'goal_milestones',
             'training_goals',
             'injury_updates',
+            // (R-147) Proof files before the injuries they belong to.
+            'injury_files',
             'injuries',
             'equipment_checks',
             'platform_notices',
@@ -262,6 +267,9 @@ class DatabaseSeeder extends Seeder
         Storage::disk('local')->deleteDirectory('medical-files');
         Storage::disk('local')->deleteDirectory('purchase-proofs');
         Storage::disk('local')->deleteDirectory('job-applications');
+        // (R-146) Coach application documents and (R-147) injury proof files.
+        Storage::disk('local')->deleteDirectory('coach-applications');
+        Storage::disk('local')->deleteDirectory('injury-files');
         Storage::disk('public')->deleteDirectory('gyms');
         Storage::disk('public')->deleteDirectory('training-sessions');
     }
@@ -2322,7 +2330,7 @@ SVG;
                         ],
                     ],
                     [
-                        'name' => 'Annual Athlete Pass',
+                        'name' => 'Annual Member Pass',
                         'billing_type' => 'time',
                         'duration_months' => 12,
                         'session_count' => null,

@@ -52,6 +52,15 @@ trait DemoScenarios
         return strlen($contents);
     }
 
+    /** (R-146) A believable file name for a seeded application document: "Resume - Ana Cruz.pdf". */
+    private function demoDocumentName(string $kind, User $user, string $asset): string
+    {
+        $label = ['resume' => 'Resume', 'certifications' => 'Certificates', 'valid_id' => 'Valid-ID', 'medical_clearance' => 'Medical-Clearance'][$kind] ?? Str::headline($kind);
+        $suffix = in_array($kind, ['resume', 'certifications'], true) ? 'pdf' : pathinfo($asset, PATHINFO_EXTENSION);
+
+        return $label.'-'.Str::slug(trim("{$user->first_name} {$user->last_name}")).'.'.$suffix;
+    }
+
     /** Adds a person as staff the way an approved coach or job application does (R-117, R-138). */
     private function hireMember(Gym $gym, User $user, array $profile, ?GymRole $role, Carbon $on): void
     {
@@ -132,7 +141,7 @@ trait DemoScenarios
             ]],
             'background' => $backgrounds[$index % count($backgrounds)],
             'training_history' => $history[$index % count($history)],
-            'current_rank' => ['Beginner', 'Novice', 'Intermediate', 'Recreational athlete'][$index % 4],
+            'current_rank' => ['Beginner', 'Novice', 'Intermediate', 'Recreational member'][$index % 4],
             'health_answers' => $answers,
             'health_notes' => $answers['recent_injury']
                 ? 'Recovering from an ankle sprain. No jumping or contact drills until reviewed by the therapist.'

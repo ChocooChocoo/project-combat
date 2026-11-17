@@ -73,7 +73,7 @@ class SparringTest extends TestCase
         $this->assertContains('1 year more experience', $adultRow['reasons']);
 
         $minorResponse = $this->getMatches(target: $minor)->assertOk();
-        $this->assertContains('This athlete is under 18, so only other athletes under 18 are suggested.', $minorResponse->json('notes'));
+        $this->assertContains('This member is under 18, so only other members under 18 are suggested.', $minorResponse->json('notes'));
         $forMinor = collect($minorResponse->json('matches'))->pluck('user_id');
         $this->assertFalse($forMinor->contains($adult->id));
         $this->assertFalse($forMinor->contains($this->applicant->id));
@@ -122,7 +122,7 @@ class SparringTest extends TestCase
         $this->athlete(['weight_kg' => 60]);
 
         $this->getMatches()->assertOk()
-            ->assertJsonPath('notes.0', "Add this athlete's weight for safer matches.")
+            ->assertJsonPath('notes.0', "Add this member's weight for safer matches.")
             ->assertJsonCount(1, 'matches');
     }
 

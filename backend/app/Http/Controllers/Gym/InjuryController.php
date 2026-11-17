@@ -6,13 +6,16 @@ use App\Enums\GymPersonType;
 use App\Http\Controllers\Controller;
 use App\Models\Gym;
 use App\Models\Injury;
+use App\Models\InjuryFile;
 use App\Models\InjuryUpdate;
 use App\Models\User;
 use App\Notifications\GymNotice;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * R-119: injuries. Details need health_records.records.view (or being the athlete); writing needs
@@ -43,16 +46,47 @@ class InjuryController extends Controller
             'severity' => ['required', Rule::in(['minor', 'moderate', 'severe'])],
             'occurred_on' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
             'restrictions' => ['nullable', 'string', 'max:2000'],
+            // (R-147) proof of injury: a medical certificate or other supporting documents.
+            'files' => ['nullable', 'array', 'max:3'],
+            'files.*' => ['file', 'mimes:'.implode(',', config('membership.medical_file.mimes')), 'max:'.config('membership.medical_file.max_kb')],
+        ], [
+            'files.max' => 'Attach up to 3 files.',
+            'files.*.mimes' => 'Upload a PDF, JPG or PNG file.',
+            'files.*.max' => 'Each file can be up to 5 MB.',
         ]);
 
-        DB::transaction(function () use ($user, $viewer, $data) {
-            $injury = new Injury($data);
-            $injury->user_id = $user->id;
-            $injury->status = 'active';
-            $injury->reported_by = $viewer->id;
-            $injury->save();
-            $this->log($injury, 'active', $viewer, 'Reported');
-        });
+        $files = $data['files'] ?? [];
+        unset($data['files']);
+        $stored = [];
+
+        try {
+            DB::transaction(function () use ($user, $viewer, $gym, $data, $files, &$stored) {
+                $injury = new Injury($data);
+                $injury->user_id = $user->id;
+                $injury->status = 'active';
+                $injury->reported_by = $viewer->id;
+                $injury->save();
+                $this->log($injury, 'active', $viewer, 'Reported');
+
+                foreach ($files as $file) {
+                    $path = $file->store("injury-files/{$gym->id}", 'local');
+                    $stored[] = $path;
+                    $proof = new InjuryFile;
+                    $proof->forceFill([
+                        'injury_id' => $injury->id,
+                        'path' => $path,
+                        'original_name' => mb_substr($file->getClientOriginalName(), 0, 255),
+                        'mime' => $file->getMimeType(),
+                        'size' => $file->getSize(),
+                        'uploaded_by' => $viewer->id,
+                    ])->save();
+                }
+            });
+        } catch (\Throwable $error) {
+            // Nothing half-saved: files written before the failure are removed again.
+            Storage::disk('local')->delete($stored);
+            throw $error;
+        }
 
         if ($self) {
             $name = trim("{$user->first_name} {$user->last_name}");
@@ -106,6 +140,18 @@ class InjuryController extends Controller
         return response()->json(['injuries' => $this->injuries($model->user_id)]);
     }
 
+    /** (R-147) proof files stay private: the member themself, or staff with health records access. */
+    public function file(Request $request, Gym $gym, int $injury, int $file): StreamedResponse
+    {
+        $model = Injury::findOrFail($injury);
+        $viewer = $request->user();
+        abort_unless($viewer->id === $model->user_id || $viewer->hasPermission($gym, 'health_records.records.view'), 403);
+
+        $proof = InjuryFile::where('injury_id', $model->id)->findOrFail($file);
+
+        return Storage::disk('local')->response($proof->path, $proof->original_name);
+    }
+
     private function log(Injury $injury, string $status, User $by, ?string $note): void
     {
         $update = new InjuryUpdate;
@@ -116,7 +162,7 @@ class InjuryController extends Controller
     {
         $name = fn (?User $user) => $user ? trim("{$user->first_name} {$user->last_name}") : null;
 
-        return Injury::with(['reportedBy', 'updates.recordedBy'])->where('user_id', $userId)
+        return Injury::with(['reportedBy', 'updates.recordedBy', 'files'])->where('user_id', $userId)
             ->orderByRaw("case when status = 'cleared' then 1 else 0 end")->orderByDesc('occurred_on')->orderByDesc('id')->get()
             ->map(fn (Injury $injury) => [
                 'id' => $injury->id,
@@ -128,6 +174,9 @@ class InjuryController extends Controller
                 'restrictions' => $injury->restrictions,
                 'cleared_on' => $injury->cleared_on?->toDateString(),
                 'reported_by' => $name($injury->reportedBy),
+                'files' => $injury->files->map(fn (InjuryFile $file) => [
+                    'id' => $file->id, 'name' => $file->original_name, 'mime' => $file->mime, 'size' => $file->size,
+                ])->values(),
                 'updates' => $injury->updates->map(fn (InjuryUpdate $update) => [
                     'id' => $update->id, 'status' => $update->status, 'note' => $update->note,
                     'by' => $name($update->recordedBy), 'at' => $update->created_at?->toIso8601String(),

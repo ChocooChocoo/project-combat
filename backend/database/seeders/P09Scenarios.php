@@ -82,6 +82,15 @@ trait P09Scenarios
             ['approved', 'Licensed boxing instructor with eight years of amateur bouts. Coaches a barangay youth program on weekends.', 'Assistant coach', 'technique', [['mon', '17:00', '20:00'], ['wed', '17:00', '20:00']], null],
         ];
 
+        // (R-146) Real sample files from the repo-root assets/ folder. Applications that were
+        // rejected or withdrawn never met the required-document rule that new ones follow, so
+        // two of them are left without files on purpose, as an older application would be.
+        $documents = [
+            0 => ['resume' => 'documents/job-credentials.pdf', 'valid_id' => 'images/job-valid-id-scan.png', 'medical_clearance' => 'documents/medical-certificate.pdf', 'certifications' => null],
+            1 => ['resume' => 'documents/job-credentials.pdf', 'valid_id' => 'documents/job-valid-id.pdf', 'medical_clearance' => 'images/medical-certificate-scan.png', 'certifications' => 'images/job-credentials-scan.png'],
+            4 => ['resume' => 'documents/job-credentials.pdf', 'valid_id' => 'documents/job-valid-id.pdf', 'medical_clearance' => 'documents/medical-certificate.pdf', 'certifications' => null],
+        ];
+
         foreach ($rows as $index => [$status, $experience, $rank, $specialisation, $slots, $reason]) {
             $user = $applicants[$status === 'approved' ? 7 : $index + 3] ?? null;
             if (! $user) {
@@ -96,6 +105,19 @@ trait P09Scenarios
                 'experience' => $experience, 'rank' => $rank, 'specialisation' => $specialisation,
                 'availability' => array_map(fn ($slot) => ['weekday' => $slot[0], 'start' => $slot[1], 'end' => $slot[2]], $slots),
             ]);
+
+            foreach ($documents[$index] ?? [] as $kind => $asset) {
+                if ($asset === null) {
+                    continue;
+                }
+                $path = "coach-applications/{$gym->id}/{$kind}-{$user->id}.".pathinfo($asset, PATHINFO_EXTENSION);
+                $this->putDemoAsset('local', $path, $asset);
+                $application->forceFill([
+                    "{$kind}_path" => $path,
+                    "{$kind}_name" => $this->demoDocumentName($kind, $user, $asset),
+                ]);
+            }
+
             $application->forceFill([
                 'gym_id' => $gym->id, 'user_id' => $user->id, 'status' => $status,
                 'decided_by' => $decided ? $owner->id : null,
@@ -193,12 +215,12 @@ trait P09Scenarios
     {
         $therapist = GymRole::where('name', 'Sports Therapist')->first()?->users()->first() ?? $owner;
         $specs = [
-            [2, 'Left ankle', 'Sprain after a jumping drill.', 'moderate', 'active', 'No jumping, skipping or contact drills until cleared.', 5, [['active', 'Reported after class. Ice and rest advised.', 5]]],
-            [4, 'Right wrist', 'Strain from heavy bag work.', 'minor', 'recovering', 'No heavy bag work. Pad work with light gloves only.', 18, [['active', 'Swelling after training.', 18], ['recovering', 'Swelling down; light pad work allowed.', 8]]],
-            [5, 'Shoulder', 'Dislocation during grappling; reduced and rested.', 'severe', 'cleared', null, 60, [['active', 'Seen by a doctor; sling for two weeks.', 60], ['recovering', 'Physio started.', 35], ['cleared', 'Full range of motion. Doctor note received.', 10]]],
+            [2, 'Left ankle', 'Sprain after a jumping drill.', 'moderate', 'active', 'No jumping, skipping or contact drills until cleared.', 5, [['active', 'Reported after class. Ice and rest advised.', 5]], ['documents/medical-certificate.pdf', 'images/medical-certificate-scan.png']],
+            [4, 'Right wrist', 'Strain from heavy bag work.', 'minor', 'recovering', 'No heavy bag work. Pad work with light gloves only.', 18, [['active', 'Swelling after training.', 18], ['recovering', 'Swelling down; light pad work allowed.', 8]], ['images/medical-certificate-scan.png']],
+            [5, 'Shoulder', 'Dislocation during grappling; reduced and rested.', 'severe', 'cleared', null, 60, [['active', 'Seen by a doctor; sling for two weeks.', 60], ['recovering', 'Physio started.', 35], ['cleared', 'Full range of motion. Doctor note received.', 10]], ['documents/medical-certificate.pdf', 'images/medical-certificate-scan.png']],
         ];
 
-        foreach ($specs as [$index, $part, $description, $severity, $status, $restrictions, $daysAgo, $log]) {
+        foreach ($specs as [$index, $part, $description, $severity, $status, $restrictions, $daysAgo, $log, $proofs]) {
             $member = $active[$index] ?? null;
             if (! $member) {
                 continue;
@@ -210,6 +232,22 @@ trait P09Scenarios
                 'reported_by' => $index === 2 ? $member->user_id : $therapist->id,
                 'created_at' => now()->subDays($daysAgo), 'updated_at' => now()->subDays(end($log)[2]),
             ])->save();
+
+            // (R-147) Real sample proof files from the repo-root assets/ folder: a doctor's
+            // certificate as a PDF and as a phone photo of the same paper. A minor injury keeps
+            // only the photo, so both a one-file and a two-file injury exist in the demo data.
+            foreach ($proofs as $position => $asset) {
+                $extension = pathinfo($asset, PATHINFO_EXTENSION);
+                $mime = $extension === 'pdf' ? 'application/pdf' : 'image/'.$extension;
+                $path = "injury-files/{$gym->id}/injury-{$injury->id}-{$position}.{$extension}";
+                $size = $this->putDemoAsset('local', $path, $asset);
+                DB::table('injury_files')->insert([
+                    'gym_id' => $gym->id, 'injury_id' => $injury->id, 'path' => $path,
+                    'original_name' => 'Medical-Certificate-'.Str::slug(trim("{$member->user->first_name} {$member->user->last_name}")).'.'.$extension,
+                    'mime' => $mime, 'size' => $size, 'uploaded_by' => $member->user_id,
+                    'created_at' => now()->subDays($daysAgo), 'updated_at' => now()->subDays($daysAgo),
+                ]);
+            }
 
             foreach ($log as [$logStatus, $note, $logDaysAgo]) {
                 $update = new InjuryUpdate;

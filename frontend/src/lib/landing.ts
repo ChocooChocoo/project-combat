@@ -145,13 +145,13 @@ export const PHOTOS = {
   },
   muayThai: {
     id: 39969614,
-    alt: 'Two athletes sparring Muay Thai in a smoky gym',
+    alt: 'Two members sparring Muay Thai in a smoky gym',
     width: 900,
     height: 620,
   },
   bjj: {
     id: 38678590,
-    alt: 'Two athletes grappling in gi on a training mat',
+    alt: 'Two members grappling in gi on a training mat',
     width: 640,
     height: 620,
   },

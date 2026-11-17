@@ -50,6 +50,28 @@ export function fileProblem(file: File, accept: string | undefined, maxKb: numbe
 /** (R-128) Name endings the API accepts. */
 export const SUFFIXES = ['Jr.', 'Sr.', 'II', 'III', 'IV', 'V']
 
+/**
+ * (R-142) The suffix to send to the API. The sign-up Select keeps its "None" placeholder in the form
+ * data, so it must be left out rather than sent as text: the API only accepts a real suffix or nothing.
+ */
+export function chosenSuffix(value: unknown, none = 'none'): string | undefined {
+  const text = String(value ?? '').trim()
+  return text && text !== none ? text : undefined
+}
+
+/**
+ * (R-143) The relationship choices for one emergency contact. `legacy` is the value the row started
+ * with: an older free-text value stays selectable as "<value> (old entry)" so an edit never drops it.
+ * Callers memoize the result, because a new list on every render makes the Select forget its value.
+ */
+export function relationshipChoices(relationships: readonly string[], legacy: string): { value: string; label: string }[] {
+  if (!legacy || relationships.includes(legacy)) {
+    return relationships.map((value) => ({ value, label: value }))
+  }
+
+  return [{ value: legacy, label: `${legacy} (old entry)` }, ...relationships.map((value) => ({ value, label: value }))]
+}
+
 /** (R-129) Youngest allowed age, and the age below which a guardian is needed. */
 export const MIN_AGE = 7
 export const ADULT_AGE = 18

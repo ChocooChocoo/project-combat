@@ -211,7 +211,7 @@ function ComposeDialog({ gymId, onClose, onSent }: { gymId: number; onClose: () 
                   <SelectTrigger aria-label={audience === 'session' ? 'Class occurrence' : 'Customer group'}><SelectValue placeholder={audience === 'session' ? 'Choose a class' : 'Choose a group'} /></SelectTrigger>
                   <SelectPopup className="w-(--anchor-width) max-w-[calc(100vw-2rem)]">{targetItems.map((item) => <SelectItem className="whitespace-normal break-words" key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectPopup>
                 </Select>
-                <FieldDescription>{audience === 'session' ? 'Only booked athletes receive the notice. Showing upcoming scheduled classes within 90 days.' : 'Customers without an account are skipped and counted after sending.'}</FieldDescription><FieldError />
+                <FieldDescription>{audience === 'session' ? 'Only booked members receive the notice. Showing upcoming scheduled classes within 90 days.' : 'Customers without an account are skipped and counted after sending.'}</FieldDescription><FieldError />
               </Field>
             )}
             {emptyAudience && <p role="status" className="text-sm text-muted-foreground">{audience === 'all_members' ? 'No active or frozen members to notify.' : audience === 'session' ? 'No upcoming scheduled classes available.' : 'No customer groups available.'}</p>}

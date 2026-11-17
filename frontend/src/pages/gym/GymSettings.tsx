@@ -520,7 +520,7 @@ export default function GymSettings() {
                       {[30, 60, 120, 1440].map((minutes) => <SelectItem key={minutes} value={String(minutes)}>{minutes} minutes</SelectItem>)}
                     </SelectPopup>
                   </Select>
-                  <FieldDescription>Booked athletes get an in-app reminder this long before the session starts.</FieldDescription>
+                  <FieldDescription>Booked members get an in-app reminder this long before the session starts.</FieldDescription>
                   <FieldError />
                 </Field>
                 <TextField name="membership_reminder_days" label="Membership expiry reminders (days before)"

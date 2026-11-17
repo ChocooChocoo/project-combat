@@ -179,7 +179,7 @@ export default function GymApplications() {
       <header className="flex flex-wrap items-end justify-between gap-4 border-b pb-6">
         <div>
           <h1 className="font-semibold text-3xl tracking-tight sm:text-4xl">Membership applications</h1>
-          <p className="mt-3 max-w-prose text-muted-foreground text-sm leading-relaxed">Approve or reject people who applied to join. Approval creates their athlete profile; their membership starts once the fee is paid.</p>
+          <p className="mt-3 max-w-prose text-muted-foreground text-sm leading-relaxed">Approve or reject people who applied to join. Approval creates their member profile; their membership starts once the fee is paid.</p>
         </div>
         <div className="flex items-center gap-4">
           {canDecide && <Badge variant="outline">Can decide</Badge>}

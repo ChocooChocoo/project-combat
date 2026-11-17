@@ -64,7 +64,7 @@ const MEMBER_MODULES = [
   { title: 'Find your gym', body: 'Use maps, distance, best-match recommendations, and full gym pages.' },
   { title: 'Apply and pay', body: 'Complete health questionnaires and waivers, then pay online through PayMongo.' },
   { title: 'Book and check in', body: 'Reserve sessions, join waiting lists, and use QR check-in codes.' },
-  { title: 'Track your progress', body: 'Keep athlete records, promotions, assessments, and competitions together.' },
+  { title: 'Track your progress', body: 'Keep member records, promotions, assessments, and competitions together.' },
 ]
 
 const OWNER_MODULES = [

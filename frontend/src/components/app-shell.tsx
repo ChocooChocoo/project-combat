@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { Building2, CalendarDays, ChartColumn, Check, CreditCard, ChevronsUpDown, ClipboardCheck, FilePlus2, FileText, House, IdCard, LogOut, Medal, UserRound } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { Building2, CalendarDays, ChartColumn, Check, CreditCard, ChevronsUpDown, ClipboardCheck, FilePlus2, FileText, House, IdCard, LogOut, Medal, MessageCircle, UserRound } from 'lucide-react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { BrandLogo } from '@/components/brand-logo'
 import { myDashboardNav, myWorkNav, workspaceNavGroups } from '@/components/gym-nav'
@@ -18,6 +18,7 @@ import {
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
@@ -25,10 +26,12 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { useNotifications } from '@/lib/notifications'
+import { usePolling } from '@/hooks/use-polling'
+import { api } from '@/lib/api'
 import { useAuth, type GymAccess } from '@/lib/auth'
 import { approvedGym, gymEntry, rememberGym } from '@/lib/gym-access'
 
-type Item = { to: string; label: string; icon: React.ComponentType; end?: boolean }
+type Item = { to: string; label: string; icon: React.ComponentType; end?: boolean; badge?: number }
 
 function NavGroup({ label, items }: { label?: string; items: Item[] }) {
   const { pathname } = useLocation()
@@ -39,7 +42,7 @@ function NavGroup({ label, items }: { label?: string; items: Item[] }) {
       {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
       <SidebarGroupContent>
         <SidebarMenu>
-          {items.map(({ to, label: text, icon: Icon, end }) => {
+          {items.map(({ to, label: text, icon: Icon, end, badge }) => {
             const active = end ? pathname === to : pathname === to || pathname.startsWith(`${to}/`)
             return (
               <SidebarMenuItem key={to}>
@@ -51,6 +54,7 @@ function NavGroup({ label, items }: { label?: string; items: Item[] }) {
                   <Icon />
                   <span>{text}</span>
                 </SidebarMenuButton>
+                {badge ? <SidebarMenuBadge>{badge > 99 ? '99+' : badge}<span className="sr-only"> unread</span></SidebarMenuBadge> : null}
               </SidebarMenuItem>
             )
           })}
@@ -159,12 +163,28 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
   const { user } = useAuth()
   const { pathname } = useLocation()
   const { unread } = useNotifications()
+  const [chatUnread, setChatUnread] = useState(0)
 
   const approvedGyms = user?.gyms.filter((gym) => gym.status === 'approved') ?? []
   const currentGym = approvedGym(user, Number(pathname.match(/^\/gyms\/(\d+)(?:\/|$)/)?.[1]))
   useEffect(() => {
     if (user && currentGym) rememberGym(user.id, currentGym.id)
   }, [user, currentGym])
+
+  // (R-145) Unread chat in the gym being shown, so the sidebar can badge it. No gym, no poll.
+  const pollChat = useCallback(async () => {
+    if (!currentGym) {
+      setChatUnread(0)
+      return
+    }
+    try {
+      setChatUnread((await api<{ unread_count: number }>(`/gyms/${currentGym.id}/chat/unread-count`)).unread_count)
+    } catch {
+      // A background refresh must not interrupt the screen the person is using.
+    }
+  }, [currentGym])
+  usePolling(pollChat, 60_000, Boolean(currentGym))
+
   const roleLabel = user?.is_platform_admin
     ? 'Platform administrator'
     : currentGym
@@ -187,6 +207,8 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
   if (currentGym?.roles.includes('employee') && !currentGym.subscription?.locked_modules.includes('hr')) general.push(myDashboardNav(currentGym.id), myWorkNav(currentGym.id))
   if (currentGym?.roles.includes('member')) general.push({ to: `/gyms/${currentGym.id}/my-record`, label: 'My record', icon: Medal })
   if (currentGym?.roles.includes('member')) general.push({ to: `/gyms/${currentGym.id}/sessions`, label: 'Sessions', icon: CalendarDays })
+  // (R-145) Everyone in a gym can chat: a member with the staff and the owner, staff and the owner with everyone.
+  if (currentGym) general.push({ to: `/gyms/${currentGym.id}/messages`, label: 'Messages', icon: MessageCircle, badge: chatUnread })
 
   const workspaceGroups = currentGym ? workspaceNavGroups(currentGym) : []
   const owner: Item[] = [

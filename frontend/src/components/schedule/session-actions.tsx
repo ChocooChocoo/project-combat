@@ -37,7 +37,7 @@ export function CancelSessionDialog({ gymId, session, onClose, onSaved }: {
         <Form onSubmit={save}>
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel {session.name}?</AlertDialogTitle>
-            <AlertDialogDescription>All bookings and waiting-list places will be cancelled. Athletes and the coach will be notified. Full refund entries will be recorded for payments; staff must hand the money back. PayMongo will not refund automatically.</AlertDialogDescription>
+            <AlertDialogDescription>All bookings and waiting-list places will be cancelled. Members and the coach will be notified. Full refund entries will be recorded for payments; staff must hand the money back. PayMongo will not refund automatically.</AlertDialogDescription>
           </AlertDialogHeader>
           <div className="flex flex-col gap-4 overflow-y-auto px-6 pb-6">
             {error && <Alert variant="error"><AlertTitle>Cancellation failed</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
@@ -60,7 +60,7 @@ export function ClearFlagButton({ gymId, sessionId, onSaved }: { gymId: number |
     setBusy(true)
     try {
       await api(`/gyms/${gymId}/sessions/${sessionId}/clear-flag`, { method: 'POST' })
-      toastManager.add({ title: 'Session confirmed. Booked athletes notified.', type: 'success' })
+      toastManager.add({ title: 'Session confirmed. Booked members notified.', type: 'success' })
       onSaved()
     } catch (failure) {
       toastManager.add({
@@ -96,7 +96,7 @@ export function ReassignCoachDialog({ gymId, session, onClose, onSaved }: {
     setError('')
     try {
       await api(`/gyms/${gymId}/sessions/${session.id}`, { method: 'PUT', body: { ...session, coach_id: Number(coachId) } })
-      toastManager.add({ title: 'Coach reassigned. Athletes and coaches notified.', type: 'success' })
+      toastManager.add({ title: 'Coach reassigned. Members and coaches notified.', type: 'success' })
       onSaved()
     } catch (failure) {
       setError(failure instanceof ApiError ? Object.values(failure.errors).flat().join(' ') || failure.message : 'Could not reassign the coach.')
@@ -106,7 +106,7 @@ export function ReassignCoachDialog({ gymId, session, onClose, onSaved }: {
   return (
     <Dialog open onOpenChange={(open) => !open && !busy && onClose()}>
       <DialogPopup><Form onSubmit={save}>
-        <DialogHeader><DialogTitle>Reassign coach</DialogTitle><DialogDescription>{session.name}. Booked athletes and the coach will be notified.</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>Reassign coach</DialogTitle><DialogDescription>{session.name}. Booked members and the coach will be notified.</DialogDescription></DialogHeader>
         <DialogPanel className="flex flex-col gap-4">
           {error && <Alert variant="error"><AlertTitle>Coach could not be assigned</AlertTitle><AlertDescription>{error} <Button type="button" variant="outline" onClick={() => { setCoaches(null); setError(''); setVersion((v) => v + 1) }}>Reload coaches</Button></AlertDescription></Alert>}
           {!coaches && !error ? <p role="status">Checking coach availability…</p> : coaches?.length === 0 ? <p>No other coaches are free at this time. Move or cancel the session instead.</p> : coaches && <Field name="coach_id"><FieldLabel>Free coach</FieldLabel><Select items={items} value={coachId} onValueChange={(next) => setCoachId(String(next ?? ''))}><SelectTrigger><SelectValue placeholder="Choose a coach" /></SelectTrigger><SelectPopup>{items.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectPopup></Select><FieldError /></Field>}

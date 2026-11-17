@@ -37,8 +37,8 @@ class Sparring
             'athlete' => $this->payload($target),
             'matches' => $matches,
             'notes' => array_values(array_filter([
-                $target->weight_kg === null ? "Add this athlete's weight for safer matches." : null,
-                $targetMinor ? 'This athlete is under 18, so only other athletes under 18 are suggested.' : null,
+                $target->weight_kg === null ? "Add this member's weight for safer matches." : null,
+                $targetMinor ? 'This member is under 18, so only other members under 18 are suggested.' : null,
             ])),
         ];
     }

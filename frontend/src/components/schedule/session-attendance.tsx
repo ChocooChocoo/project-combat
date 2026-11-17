@@ -68,7 +68,7 @@ export function SessionNoteDialog({ gymId, sessionId, target, onClose, onSaved }
   }
   return <Dialog open onOpenChange={(open) => !open && !busy && onClose()}>
     <DialogContent finalFocus={() => returnFocus?.isConnected ? returnFocus : false}>
-      <DialogHeader><DialogTitle>Add progress note</DialogTitle><DialogDescription>{target.name}. {target.userId ? 'This note also appears in the athlete’s own record.' : 'Whole-session notes are visible to staff only.'}</DialogDescription></DialogHeader>
+      <DialogHeader><DialogTitle>Add progress note</DialogTitle><DialogDescription>{target.name}. {target.userId ? 'This note also appears in the member’s own record.' : 'Whole-session notes are visible to staff only.'}</DialogDescription></DialogHeader>
       <form onSubmit={submit}>
         <DialogPanel className="flex flex-col gap-3">
           {error && <p role="alert" className="text-sm">{error}</p>}

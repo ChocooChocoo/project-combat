@@ -1,4 +1,4 @@
-/** Shared types for gym discovery, search and athlete recommendations. */
+/** Shared types for gym discovery, search and member recommendations. */
 import type { Day } from '@/lib/gyms'
 import type { PublicJobPosting } from '@/lib/hiring'
 

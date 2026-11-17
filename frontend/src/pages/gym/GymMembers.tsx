@@ -57,7 +57,7 @@ export default function GymMembers() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Members" description="Each member's plan, status and balance. Open a member to renew, freeze or cancel, take payments and keep their athlete record." />
+      <PageHeader title="Members" description="Each member's plan, status and balance. Open a member to renew, freeze or cancel, take payments and keep their member record." />
       <Card>
         <CardHeader>
           <CardTitle render={<h2 />} className="sr-only">

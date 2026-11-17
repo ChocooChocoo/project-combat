@@ -254,7 +254,7 @@ export default function MembershipApply() {
             <CardDescription>At least one person the gym can call if you get hurt. Only staff allowed to see health details can see them.</CardDescription>
           </CardHeader>
           <CardPanel>
-            <ContactsEditor contacts={contacts} max={form.emergency_contacts_max} onChange={setContacts} />
+            <ContactsEditor contacts={contacts} relationships={form.emergency_relationships} max={form.emergency_contacts_max} onChange={setContacts} />
           </CardPanel>
         </Card>
 

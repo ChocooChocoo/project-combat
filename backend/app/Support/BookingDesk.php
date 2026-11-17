@@ -71,7 +71,7 @@ class BookingDesk
             return null;
         }
 
-        return 'This session is for '.config("offer.athlete_levels.{$session->level}").' athletes and above.';
+        return 'This session is for '.config("offer.athlete_levels.{$session->level}").' members and above.';
     }
 
     public function needsApproval(TrainingSession $session): bool

@@ -43,7 +43,7 @@ export function AthleteRecordView({ record, action, onLevelChange }: {
   return (
     <Card className="min-w-0">
       <CardHeader>
-        <CardTitle render={<h2 />} className="text-xl tracking-tight">Athlete record</CardTitle>
+        <CardTitle render={<h2 />} className="text-xl tracking-tight">Member record</CardTitle>
         <CardDescription>Rank, skill assessments, competitions and achievements recorded by the gym's coaches.</CardDescription>
         {action && <CardAction>{action}</CardAction>}
       </CardHeader>
@@ -111,7 +111,7 @@ export function AthleteRecordView({ record, action, onLevelChange }: {
   )
 }
 
-/** Health answers and emergency contacts, for the athlete or staff with health permission (R-40). */
+/** Health answers and emergency contacts, for the member or staff with health permission (R-40). */
 export function HealthSummary({
   health,
   form,

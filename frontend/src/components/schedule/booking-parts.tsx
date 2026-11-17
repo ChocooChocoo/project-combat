@@ -159,8 +159,8 @@ export function BookingActionDialog({ target, onClose, onSaved }: { target: Book
           <DialogTitle>{verb} booking?</DialogTitle>
           <DialogDescription>
             {target.name}. {target.action === 'cancel'
-              ? 'A freed place goes to the first athlete on the waiting list.'
-              : 'The athlete will be notified of this decision.'}
+              ? 'A freed place goes to the first member on the waiting list.'
+              : 'The member will be notified of this decision.'}
           </DialogDescription>
         </DialogHeader>
         <Form errors={errors} onSubmit={submit}>
@@ -253,14 +253,14 @@ export function StaffBookingList({ bookings, canApprove, canManage, onAction, on
     }
     return <p className="text-muted-foreground text-sm wrap-anywhere">{bookingPaymentLabel(booking)}</p>
   }
-  if (bookings.length === 0) return <BookingEmpty title="No bookings here" description="Bookings will appear here when athletes join a session." />
+  if (bookings.length === 0) return <BookingEmpty title="No bookings here" description="Bookings will appear here when members join a session." />
   return (
     <>
       <div className="hidden overflow-x-auto lg:block">
         <Table variant="card">
           <TableHeader>
             <TableRow>
-              <TableHead>Athlete</TableHead>
+              <TableHead>Member</TableHead>
               <TableHead>Session</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Fee</TableHead>

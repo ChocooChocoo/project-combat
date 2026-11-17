@@ -16,17 +16,24 @@ use App\Support\Paging;
 use App\Support\SystemRoles;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * R-117: members apply to coach at a gym. Hours that overlap their shifts at another gym block the
  * application. Approval adds them as an employee with a coach profile, schedule and the Coach starter role.
  * The account type stays member.
+ * (R-146) The application carries a resume, a valid ID, a medical clearance and optional certifications.
  */
 class CoachApplicationController extends Controller
 {
+    /** (R-146) The files an application can carry. Certifications are optional; the others are required. */
+    private const KINDS = ['resume', 'certifications', 'valid_id', 'medical_clearance'];
+
     /** Member: apply to coach at an approved gym. */
     public function store(Request $request, int $gym): JsonResponse
     {
@@ -53,18 +60,42 @@ class CoachApplicationController extends Controller
             'availability.*.weekday' => ['required', 'distinct', Rule::in(array_keys(config('hr.weekdays')))],
             'availability.*.start' => ['required', 'date_format:H:i'],
             'availability.*.end' => ['required', 'date_format:H:i', 'after:availability.*.start'],
+            // (R-146) The resume, a valid ID and a medical clearance are needed; certifications are optional.
+            'resume' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'certifications' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'valid_id' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'medical_clearance' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
         ], [
             'availability.required' => 'Add at least one day you can coach.',
             'availability.*.weekday.distinct' => 'Add each day once.',
             'availability.*.end.after' => 'The end time must be after the start time.',
+            'resume.required' => 'Attach your resume.',
+            'resume.mimes' => 'Upload a PDF, JPG or PNG file.',
+            'resume.max' => 'The file is too big. The largest accepted size is 5 MB.',
+            'certifications.mimes' => 'Upload a PDF, JPG or PNG file.',
+            'certifications.max' => 'The file is too big. The largest accepted size is 5 MB.',
+            'valid_id.required' => 'Attach a valid ID.',
+            'valid_id.mimes' => 'Upload a PDF, JPG or PNG file.',
+            'valid_id.max' => 'The file is too big. The largest accepted size is 5 MB.',
+            'medical_clearance.required' => 'Attach your medical clearance.',
+            'medical_clearance.mimes' => 'Upload a PDF, JPG or PNG file.',
+            'medical_clearance.max' => 'The file is too big. The largest accepted size is 5 MB.',
         ]);
 
         $availability = $this->slots($data['availability']);
         CoachScheduleConflicts::assertNone($user, $gym, $availability);
 
-        $application = new CoachApplication([...$data, 'availability' => $availability]);
+        $application = new CoachApplication([...Arr::except($data, self::KINDS), 'availability' => $availability]);
         $application->user_id = $user->id;
         $application->status = 'pending';
+        foreach (self::KINDS as $kind) {
+            $file = $request->file($kind);
+            if (! $file) {
+                continue;
+            }
+            $application->{"{$kind}_path"} = $file->store("coach-applications/{$gym->id}", 'local');
+            $application->{"{$kind}_name"} = $file->getClientOriginalName();
+        }
         $application->save();
 
         $gym->peopleWithPermission('hr.coach_applications.approve')->each(fn (User $person) => $person->notify(new GymNotice(
@@ -105,6 +136,16 @@ class CoachApplicationController extends Controller
             ->orderByRaw("case when status = 'pending' then 0 else 1 end")->orderByDesc('id'), $request);
 
         return response()->json(['applications' => $rows->map(fn (CoachApplication $row) => $this->payload($row, $gym, true))->values(), ...($meta ? ['meta' => $meta] : [])]);
+    }
+
+    /** (R-146) Staff: open one of the files the applicant sent. */
+    public function file(Gym $gym, int $application, string $kind): StreamedResponse
+    {
+        abort_unless(in_array($kind, self::KINDS, true), 404);
+        $row = CoachApplication::findOrFail($application);
+        abort_unless($row->{"{$kind}_path"}, 404);
+
+        return Storage::disk('local')->response($row->{"{$kind}_path"}, $row->{"{$kind}_name"});
     }
 
     public function decide(Request $request, Gym $gym, int $application): JsonResponse
@@ -196,6 +237,11 @@ class CoachApplicationController extends Controller
             'specialisation' => $row->specialisation,
             'bio' => $row->bio,
             'availability' => $row->availability,
+            // (R-146) Names only: the stored paths stay private.
+            'resume_name' => $row->resume_name,
+            'certifications_name' => $row->certifications_name,
+            'valid_id_name' => $row->valid_id_name,
+            'medical_clearance_name' => $row->medical_clearance_name,
             'conflicts' => $withConflicts && $row->status === 'pending' && $gym && $row->user
                 ? CoachScheduleConflicts::find($row->user, $gym, $row->availability)
                 : [],

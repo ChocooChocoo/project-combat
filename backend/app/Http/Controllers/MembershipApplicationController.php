@@ -33,6 +33,8 @@ class MembershipApplicationController extends Controller
             'health_questions' => config('membership.health_questions'),
             'waivers' => config('membership.waivers'),
             'emergency_contacts_max' => config('membership.emergency_contacts_max'),
+            // (R-143) The relationship dropdown reads this list, so it lives on the server only.
+            'emergency_relationships' => config('membership.emergency_relationships'),
             'medical_file' => config('membership.medical_file'),
         ]);
     }
@@ -54,6 +56,7 @@ class MembershipApplicationController extends Controller
             'medical_file.required' => 'Upload your medical clearance.',
             'emergency_contacts.required' => 'Add at least one emergency contact.',
             'emergency_contacts.min' => 'Add at least one emergency contact.',
+            'emergency_contacts.*.relationship.in' => 'Choose the relationship from the list.',
             'emergency_contacts.*.phone.regex' => 'Enter a valid phone number, for example 0917 123 4567.',
         ]);
 
@@ -122,7 +125,7 @@ class MembershipApplicationController extends Controller
             'emergency_contacts' => ['required', 'array', 'min:1', 'max:'.config('membership.emergency_contacts_max')],
             'emergency_contacts.*' => ['array:name,relationship,phone'],
             'emergency_contacts.*.name' => ['required', 'string', 'max:150'],
-            'emergency_contacts.*.relationship' => ['required', 'string', 'max:60'],
+            'emergency_contacts.*.relationship' => ['required', 'string', Rule::in(config('membership.emergency_relationships'))],
             'emergency_contacts.*.phone' => ['required', 'string', 'max:30', 'regex:/^\+?[\d\s()-]{7,30}$/'],
             'background' => ['nullable', 'string', 'max:2000'],
             'current_rank' => ['nullable', 'string', 'max:150'],

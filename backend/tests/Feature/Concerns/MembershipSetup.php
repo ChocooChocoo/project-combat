@@ -62,7 +62,7 @@ trait MembershipSetup
     {
         return array_replace_recursive([
             'plan_id' => $this->plan->id,
-            'emergency_contacts' => [['name' => 'Maria Cruz', 'relationship' => 'Mother', 'phone' => '0917 123 4567']],
+            'emergency_contacts' => [['name' => 'Maria Cruz', 'relationship' => 'Parent', 'phone' => '0917 123 4567']],
             'background' => 'Two years of boxing.',
             'current_rank' => 'None',
             'training_history' => 'Weekend classes.',

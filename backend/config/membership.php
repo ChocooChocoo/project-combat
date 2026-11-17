@@ -22,6 +22,10 @@ return [
 
     'emergency_contacts_max' => 3,
 
+    // (R-143) The relationship choices on an emergency contact. Stored as shown, so an older
+    // free-text value still reads correctly; new entries must pick from this list.
+    'emergency_relationships' => ['Parent', 'Spouse', 'Sibling', 'Child', 'Relative', 'Friend', 'Other'],
+
     // R-32: the optional medical clearance, kept privately (as in R-15).
     'medical_file' => [
         'required' => true, // (R-136)

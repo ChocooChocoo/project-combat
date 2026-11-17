@@ -58,8 +58,24 @@ class MembershipApplicationTest extends TestCase
             ->assertJsonValidationErrors(['signature_name']);
     }
 
-    public function test_unpublished_plans_unapproved_gyms_and_second_applications_are_refused(): void
+    /** (R-143) The relationship is a choice from the server's list; free text is refused. */
+    public function test_the_emergency_contact_relationship_must_be_one_of_the_choices(): void
     {
+        $this->actingAs($this->applicant)->getJson('/api/membership-form')
+            ->assertOk()
+            ->assertJsonPath('emergency_relationships', config('membership.emergency_relationships'));
+
+        $this->actingAs($this->applicant)->postJson($this->url('membership-applications'),
+            $this->applicationPayload(['emergency_contacts' => [['name' => 'Maria Cruz', 'relationship' => 'Godmother', 'phone' => '0917 123 4567']]]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['emergency_contacts.0.relationship']);
+
+        $this->actingAs($this->applicant)->postJson($this->url('membership-applications'),
+            $this->applicationPayload(['emergency_contacts' => [['name' => 'Maria Cruz', 'relationship' => 'Friend', 'phone' => '0917 123 4567']]]))
+            ->assertCreated();
+    }
+
+    public function test_unpublished_plans_unapproved_gyms_and_second_applications_are_refused(): void    {
         $draft = MembershipPlan::factory()->forGym($this->gym)->create(['published_at' => null]);
         $this->actingAs($this->applicant)
             ->postJson($this->url('membership-applications'), $this->applicationPayload(['plan_id' => $draft->id]))

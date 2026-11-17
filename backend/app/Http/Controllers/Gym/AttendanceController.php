@@ -66,7 +66,7 @@ class AttendanceController extends Controller
         ]);
         $row = DB::transaction(function () use ($request, $booking, $ledger, $data) {
             $model = SessionBooking::lockForUpdate()->findOrFail($booking);
-            abort_unless($model->status === BookingStatus::Booked, 422, 'Only booked athletes can be marked.');
+            abort_unless($model->status === BookingStatus::Booked, 422, 'Only booked members can be marked.');
             abort_if($model->session->starts_at->isFuture() && ! $model->session->starts_at->isToday(), 422, 'Attendance opens on the session date.');
             $at = ! empty($data['check_in_at']) ? Carbon::parse(strlen($data['check_in_at']) === 5 ? $model->session->starts_at->toDateString().' '.$data['check_in_at'] : $data['check_in_at']) : now();
             abort_if($data['attendance'] !== 'absent' && $model->check_out_at && $at->gt($model->check_out_at), 422, 'Check-in cannot be after check-out.');

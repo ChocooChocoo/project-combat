@@ -41,6 +41,56 @@ trait P10P11Scenarios
         $this->seedSparringProfiles();                            // (R-140)
         $this->seedJobs($gym, $owner);                            // (R-138)
         $this->seedWalkIns($gym, $owner);                         // (R-137)
+        $this->seedChat($gym, $owner, $active);                   // (R-145)
+    }
+
+    /**
+     * (R-145) A member asking the staff a question, and the owner writing to a member, so both
+     * chat directions are visible in the demo. The member's thread keeps one unread answer.
+     */
+    private function seedChat(Gym $gym, User $owner, $active): void
+    {
+        $desk = GymRole::where('name', 'Front Desk')->first()?->users()->first() ?? $owner;
+        $coach = $gym->employees()->where('coach_public', true)->first()?->user ?? $desk;
+        $member = $active->get(1)?->user?->id ? $active->get(1)->user : null;
+
+        if (! $member) {
+            return;
+        }
+
+        // Someone dropped the member's question if the ids match; keep each pair two different people.
+        $memberId = $member->id;
+        foreach ([
+            [$memberId, $coach->id === $memberId ? $desk->id : $coach->id, [
+                ['member', 'Hi, I missed Tuesday class because of work. Can I still join Thursday?', 2, true],
+                ['staff', 'Yes, your place is still open on Thursday. Just come 10 minutes early.', 2, false],
+                ['member', 'Thank you! See you then.', 1, true],
+            ]],
+            [$memberId, $owner->id, [
+                ['owner', 'Hi! Your membership renews next month. Would you like to keep the same plan?', 4, true],
+                ['member', 'Yes please, same plan. Thank you for asking.', 3, false],
+            ]],
+        ] as [$one, $two, $messages]) {
+            if ($one === $two) {
+                continue;
+            }
+            [$first, $second] = $one < $two ? [$one, $two] : [$two, $one];
+            $conversationId = DB::table('chat_conversations')->insertGetId([
+                'gym_id' => $gym->id, 'user_one_id' => $first, 'user_two_id' => $second,
+                'last_message_at' => now()->subDays(min(array_column($messages, 2))),
+                'created_at' => now()->subDays(max(array_column($messages, 2))),
+                'updated_at' => now()->subDays(min(array_column($messages, 2))),
+            ]);
+
+            foreach ($messages as [$side, $body, $daysAgo, $read]) {
+                $sender = $side === 'member' ? $memberId : ($side === 'owner' ? $owner->id : $coach->id);
+                DB::table('chat_messages')->insert([
+                    'gym_id' => $gym->id, 'chat_conversation_id' => $conversationId, 'sender_id' => $sender,
+                    'body' => $body, 'read_at' => $read ? now()->subDays(max(0, $daysAgo - 1)) : null,
+                    'created_at' => now()->subDays($daysAgo), 'updated_at' => now()->subDays($daysAgo),
+                ]);
+            }
+        }
     }
 
     /** (R-121) Digits only; saved through the model so the encrypted cast applies. */

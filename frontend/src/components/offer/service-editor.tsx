@@ -311,7 +311,7 @@ export function ServiceEditor({
     <div className="flex flex-col gap-6">
       <PageHeader
         title={current ? 'Edit service' : 'New service'}
-        description="What the gym sells, what it includes and what an athlete should bring. Only published services appear on the public gym page."
+        description="What the gym sells, what it includes and what a member should bring. Only published services appear on the public gym page."
         meta={current && <Badge variant={published ? 'success' : 'secondary'}>{published ? 'Published' : 'Draft'}</Badge>}
         actions={
           <Button size="sm" variant="outline" onClick={onBack}>

@@ -123,7 +123,7 @@ export default function Profile() {
                 <TextField name="middle_name" label="Middle name (optional)" maxLength={100} defaultValue={user.middle_name ?? ''} autoComplete="additional-name" />
                 <TextField name="last_name" label="Last name" maxLength={100} defaultValue={user.last_name} required autoComplete="family-name" />
                 <Field name="suffix" className="w-full">
-                  <FieldLabel>Suffix</FieldLabel>
+                  <FieldLabel>Suffix (optional)</FieldLabel>
                   <Select items={suffixItems} value={suffix} onValueChange={(value) => setSuffix(value ?? NO_SUFFIX)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectPopup>

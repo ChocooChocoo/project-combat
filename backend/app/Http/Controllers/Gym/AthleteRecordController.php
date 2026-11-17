@@ -33,7 +33,7 @@ class AthleteRecordController extends Controller
         abort_unless(
             $viewer->hasPermission($gym, 'members.memberships.view', 'training.athletes.view'),
             403,
-            'You do not have access to athlete records.',
+            'You do not have access to member records.',
         );
 
         return response()->json(['record' => $this->record($gym, $user, $viewer->hasPermission($gym, 'health_records.records.view'))]);
@@ -123,7 +123,7 @@ class AthleteRecordController extends Controller
             'emergency_contacts' => ['required', 'array', 'min:1', 'max:'.config('membership.emergency_contacts_max')],
             'emergency_contacts.*' => ['array:name,relationship,phone'],
             'emergency_contacts.*.name' => ['required', 'string', 'max:150'],
-            'emergency_contacts.*.relationship' => ['required', 'string', 'max:60'],
+            'emergency_contacts.*.relationship' => ['required', 'string', Rule::in(config('membership.emergency_relationships'))],
             'emergency_contacts.*.phone' => ['required', 'string', 'max:30', 'regex:/^\+?[\d\s()-]{7,30}$/'],
             'health_answers' => ['required', 'array:'.implode(',', array_keys(config('membership.health_questions')))],
             'health_notes' => ['nullable', 'string', 'max:2000'],
@@ -139,6 +139,7 @@ class AthleteRecordController extends Controller
 
         $data = $request->validate($rules, [
             'emergency_contacts.min' => 'Add at least one emergency contact.',
+            'emergency_contacts.*.relationship.in' => 'Choose the relationship from the list.',
             'emergency_contacts.*.phone.regex' => 'Enter a valid phone number, for example 0917 123 4567.',
         ]);
 

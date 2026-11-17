@@ -50,6 +50,7 @@ import GymStaffAttendance from '@/pages/gym/GymStaffAttendance'
 import GymStock from '@/pages/gym/GymStock'
 import GymSubscription from '@/pages/gym/GymSubscription'
 import MemberRecord from '@/pages/gym/MemberRecord'
+import Messages from '@/pages/gym/Messages'
 import MyDashboard from '@/pages/gym/MyDashboard'
 import MyWork from '@/pages/gym/MyWork'
 import PurchaseOrder from '@/pages/gym/PurchaseOrder'
@@ -205,6 +206,9 @@ export default function App() {
             <Route path="/gyms/:gymId/sessions" element={<Timetable />} />
             <Route path="/gyms/:gymId/sessions/:sessionId" element={<SessionDetails />} />
             <Route path="/gyms/:gymId/private-coaching" element={<PrivateCoaching />} />
+            {/* (R-145) Chat inside one gym: members with staff and the owner. */}
+            <Route path="/gyms/:gymId/messages" element={<Messages />} />
+            <Route path="/gyms/:gymId/messages/:conversationId" element={<Messages />} />
             <Route path="/gyms/:gymId/manage" element={<GymWorkspaceLayout />}>
               <Route index element={<WorkspaceHome />} />
               <Route path="settings" element={<GymSettings />} />

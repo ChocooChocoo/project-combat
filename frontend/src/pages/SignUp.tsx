@@ -14,7 +14,7 @@ import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '@/c
 import { Separator } from '@/components/ui/separator'
 import { api, ApiError, formValues, type FieldErrors } from '@/lib/api'
 import { currentPosition } from '@/lib/geolocation'
-import { ADULT_AGE, ageOn, MIN_AGE, passwordRule, phoneRule, sameAs, SUFFIXES } from '@/lib/validation'
+import { ADULT_AGE, ageOn, chosenSuffix, MIN_AGE, passwordRule, phoneRule, sameAs, SUFFIXES } from '@/lib/validation'
 
 const accountTypes = [
   { value: 'member', title: 'Gym Member', icon: Dumbbell, points: ['Browse approved gyms', 'Join gyms and book sessions', 'Find your best matches'] },
@@ -65,7 +65,10 @@ export default function SignUp() {
     setBusy(true)
     try {
       const body: Record<string, string> = { ...values, city, province }
-      if (suffix !== NO_SUFFIX) body.suffix = suffix
+      // (R-142) The Select writes its placeholder into the form, so "None" is removed rather than sent.
+      const picked = chosenSuffix(suffix, NO_SUFFIX)
+      if (picked) body.suffix = picked
+      else delete body.suffix
       if (needsGuardian && consent) body.guardian_consent = '1'
       await api('/auth/register', { body })
       navigate(`/verify-email?email=${encodeURIComponent(values.email)}`)
@@ -121,7 +124,7 @@ export default function SignUp() {
             <TextField name="middle_name" label="Middle name (optional)" size="lg" maxLength={100} autoComplete="additional-name" />
             <TextField name="last_name" label="Last name" size="lg" maxLength={100} autoComplete="family-name" required />
             <Field name="suffix" className="w-full">
-              <FieldLabel>Suffix</FieldLabel>
+              <FieldLabel>Suffix (optional)</FieldLabel>
               <Select items={suffixItems} value={suffix} onValueChange={(value) => setSuffix(value ?? NO_SUFFIX)}>
                 <SelectTrigger size="lg"><SelectValue /></SelectTrigger>
                 <SelectPopup>

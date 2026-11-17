@@ -547,7 +547,7 @@ function CoachSection({
     <Card>
       <CardHeader>
         <CardTitle render={<h2 />}>Coach profile</CardTitle>
-        <CardDescription>The public face athletes see on the gym page and session pages when this is on.</CardDescription>
+        <CardDescription>The public face members see on the gym page and session pages when this is on.</CardDescription>
       </CardHeader>
       <CardPanel>
         <Form errors={errors} onSubmit={save} className="flex flex-col gap-6">
@@ -625,7 +625,7 @@ function CoachSection({
           <Field name="coach_bio" className="w-full">
             <FieldLabel>Short profile</FieldLabel>
             <Textarea name="coach_bio" rows={5} maxLength={5000} value={bio} onChange={(e) => setBio(e.target.value)} disabled={!canEdit} />
-            <FieldDescription>Two or three sentences athletes will read before booking.</FieldDescription>
+            <FieldDescription>Two or three sentences members will read before booking.</FieldDescription>
             <FieldError />
           </Field>
 
@@ -633,7 +633,7 @@ function CoachSection({
             <FieldLabel>Show this profile publicly</FieldLabel>
             <div className="flex items-center gap-2">
               <Switch checked={isPublic} onCheckedChange={setIsPublic} disabled={!canEdit} />
-              <span className="text-muted-foreground text-sm">{isPublic ? 'Visible to athletes' : 'Hidden from athletes'}</span>
+              <span className="text-muted-foreground text-sm">{isPublic ? 'Visible to members' : 'Hidden from members'}</span>
             </div>
             <FieldError />
           </Field>

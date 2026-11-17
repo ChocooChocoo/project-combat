@@ -42,6 +42,16 @@ class RegistrationIdentityTest extends TestCase
         $this->actingAs($user)->getJson('/api/me')->assertOk()->assertJsonPath('data.full_name', 'Ana Maria Reyes Jr.');
     }
 
+    /** (R-142) The suffix is optional: an account without one is created, and the name has no stray space. */
+    public function test_an_account_can_be_created_without_a_suffix(): void
+    {
+        $this->register()->assertCreated();
+
+        $user = User::firstWhere('email', 'ana@example.com');
+        $this->assertNull($user->suffix);
+        $this->actingAs($user)->getJson('/api/me')->assertOk()->assertJsonPath('data.full_name', 'Ana Reyes');
+    }
+
     public function test_bad_suffix_and_missing_birthdate_are_refused(): void
     {
         $this->register(['suffix' => 'Esq.'])->assertUnprocessable()->assertJsonValidationErrors('suffix');

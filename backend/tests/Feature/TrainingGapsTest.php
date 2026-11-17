@@ -47,7 +47,7 @@ class TrainingGapsTest extends TestCase
     {
         $intermediate = $this->levelSession('intermediate');
         $this->actingAs($this->applicant)->postJson($this->url("timetable/{$intermediate}/book"))
-            ->assertUnprocessable()->assertSee('Intermediate athletes and above');
+            ->assertUnprocessable()->assertSee('Intermediate members and above');
 
         $this->actingAs($this->owner)->putJson($this->url("athletes/{$this->applicant->id}/level"), ['level' => 'advanced'])
             ->assertOk()->assertJsonPath('level', 'advanced');

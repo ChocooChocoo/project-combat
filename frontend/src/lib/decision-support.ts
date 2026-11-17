@@ -1,7 +1,7 @@
 export const VIEWS = [
   { key: 'attendance', label: 'Attendance' },
   { key: 'memberships', label: 'Membership activity' },
-  { key: 'athletes', label: 'Athlete performance' },
+  { key: 'athletes', label: 'Member performance' },
   { key: 'services', label: 'Service use' },
   { key: 'customers', label: 'Customer engagement' },
   { key: 'employees', label: 'Employees' },

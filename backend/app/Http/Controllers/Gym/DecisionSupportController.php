@@ -67,7 +67,7 @@ class DecisionSupportController extends Controller
         $data = $training->athletes($gym, $period);
 
         return response()->json(['meta' => $this->meta($period, count($data['results']) > 0 || $data['summary']['attending_athletes'] > 0, [
-            'coach based on attendance: each athlete is assigned to their most attended coach in this period; ties use latest attendance then lowest coach ID. This link is inferred from attendance, not a causal claim or the person who recorded progress. Athletes without attendance remain unassigned.',
+            'coach based on attendance: each member is assigned to their most attended coach in this period; ties use latest attendance then lowest coach ID. This link is inferred from attendance, not a causal claim or the person who recorded progress. Members without attendance remain unassigned.',
             'Training effectiveness is distinct attendees with at least one progress entry divided by distinct attendees. Present/late markers include subsequently cancelled bookings or sessions. Results are shown as recorded, not inferred wins or losses.',
         ]), ...$data]);
     }

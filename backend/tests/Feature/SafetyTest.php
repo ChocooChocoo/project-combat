@@ -2,15 +2,19 @@
 
 namespace Tests\Feature;
 
+use App\Enums\GymPersonType;
 use App\Models\StockItem;
+use App\Models\User;
 use App\Support\CurrentGym;
 use App\Support\StockLedger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Tests\Feature\Concerns\MembershipSetup;
 use Tests\TestCase;
 
-/** R-119 injuries (coaches see only a restricted flag) and R-120 equipment safety checks. */
+/** R-119 injuries (coaches see only a restricted flag), (R-147) proof documents, R-120 equipment safety checks. */
 class SafetyTest extends TestCase
 {
     use MembershipSetup, RefreshDatabase;
@@ -58,6 +62,56 @@ class SafetyTest extends TestCase
 
         $row = collect($this->actingAs($this->owner)->getJson($this->url('memberships?view=members'))->json('memberships'))->firstWhere('member.id', $this->applicant->id);
         $this->assertFalse($row['restricted']);
+    }
+
+    /** (R-147) a report may carry a medical certificate or other proof, opened by the member or health staff. */
+    public function test_a_report_can_carry_proof_documents(): void
+    {
+        Storage::fake('local');
+        $reported = $this->actingAs($this->applicant)->post($this->url("athletes/{$this->applicant->id}/injuries"), [
+            'body_part' => 'Left knee', 'severity' => 'moderate', 'occurred_on' => '2026-11-18',
+            'files' => [
+                UploadedFile::fake()->create('medical-certificate.pdf', 100, 'application/pdf'),
+                UploadedFile::fake()->create('x-ray.jpg', 80, 'image/jpeg'),
+            ],
+        ], ['Accept' => 'application/json'])->assertCreated()
+            ->assertJsonPath('injuries.0.files.0.name', 'medical-certificate.pdf')
+            ->assertJsonPath('injuries.0.files.1.name', 'x-ray.jpg');
+
+        $id = $reported->json('injuries.0.id');
+        $first = $reported->json('injuries.0.files.0.id');
+
+        $this->actingAs($this->applicant)->get($this->url("injuries/{$id}/files/{$first}"))->assertOk();
+        $this->actingAs($this->owner)->get($this->url("injuries/{$id}/files/{$first}"))->assertOk();
+
+        $coach = $this->employeeWith(['training' => 'manage', 'members' => 'view']);
+        $this->actingAs($coach)->get($this->url("injuries/{$id}/files/{$first}"))->assertForbidden();
+
+        $other = User::factory()->create();
+        $this->gym->addPerson($other, GymPersonType::Member);
+        $this->actingAs($other)->get($this->url("injuries/{$id}/files/{$first}"))->assertForbidden();
+    }
+
+    public function test_too_many_or_wrong_proof_files_are_refused(): void
+    {
+        Storage::fake('local');
+        $payload = fn (array $files) => [
+            'body_part' => 'Left knee', 'severity' => 'moderate', 'occurred_on' => '2026-11-18', 'files' => $files,
+        ];
+
+        $this->actingAs($this->applicant)->post($this->url("athletes/{$this->applicant->id}/injuries"), $payload([
+            UploadedFile::fake()->create('a.pdf', 10, 'application/pdf'),
+            UploadedFile::fake()->create('b.pdf', 10, 'application/pdf'),
+            UploadedFile::fake()->create('c.pdf', 10, 'application/pdf'),
+            UploadedFile::fake()->create('d.pdf', 10, 'application/pdf'),
+        ]), ['Accept' => 'application/json'])->assertJsonValidationErrors('files');
+
+        $this->actingAs($this->applicant)->post($this->url("athletes/{$this->applicant->id}/injuries"), $payload([
+            UploadedFile::fake()->create('notes.txt', 10, 'text/plain'),
+        ]), ['Accept' => 'application/json'])->assertJsonValidationErrors('files.0');
+
+        $this->actingAs($this->applicant)->post($this->url("athletes/{$this->applicant->id}/injuries"), $payload([]), ['Accept' => 'application/json'])
+            ->assertCreated()->assertJsonCount(0, 'injuries.0.files');
     }
 
     public function test_checks_update_status_and_unsafe_alerts_the_owner(): void

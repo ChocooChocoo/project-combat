@@ -25,7 +25,7 @@ type Goal = {
 
 const STATUS = { active: { label: 'Active', variant: 'info' }, achieved: { label: 'Achieved', variant: 'success' }, dropped: { label: 'Dropped', variant: 'secondary' } } as const
 
-/** R-118: an athlete's goals and milestones. The same card serves coaches (member record) and the athlete (My record). */
+/** R-118: a member's goals and milestones. The same card serves coaches (member record) and the member (My record). */
 export function GoalsCard({ gymId, athleteId, canEdit }: { gymId: number; athleteId: number; canEdit: boolean }) {
   const [goals, setGoals] = useState<Goal[] | null>(null)
   const [error, setError] = useState('')
@@ -60,7 +60,7 @@ export function GoalsCard({ gymId, athleteId, canEdit }: { gymId: number; athlet
     <Card>
       <CardHeader>
         <CardTitle render={<h2 />}>Goals</CardTitle>
-        <CardDescription>Coach and athlete see the same goals. A goal is achieved when its last milestone is done.</CardDescription>
+        <CardDescription>Coach and member see the same goals. A goal is achieved when its last milestone is done.</CardDescription>
       </CardHeader>
       <CardPanel className="flex flex-col gap-4">
         {error && <p className="text-destructive text-sm">{error}</p>}

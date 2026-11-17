@@ -16,6 +16,7 @@ use App\Http\Controllers\Gym\AnnouncementController;
 use App\Http\Controllers\Gym\AttendanceController;
 use App\Http\Controllers\Gym\BookingController;
 use App\Http\Controllers\Gym\BudgetController;
+use App\Http\Controllers\Gym\ChatController;
 use App\Http\Controllers\Gym\CoachCalendarController;
 use App\Http\Controllers\Gym\CustomerController;
 use App\Http\Controllers\Gym\CustomerGroupController;
@@ -245,6 +246,16 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::delete('media/files/{file}', [GymMediaController::class, 'destroyFile'])->whereNumber('file')->middleware('permission:gym_setup.settings.manage');
                 Route::get('options', [GymSetupController::class, 'options']);
 
+                // (R-145) Chat inside this gym: members with staff, the owner with staff and members.
+                // The controller checks that the viewer is one of the two people in the thread.
+                Route::get('chat/partners', [ChatController::class, 'partners']);
+                Route::get('chat/conversations', [ChatController::class, 'index']);
+                Route::get('chat/unread-count', [ChatController::class, 'unreadCount']);
+                Route::post('chat/conversations', [ChatController::class, 'store']);
+                Route::get('chat/conversations/{conversation}', [ChatController::class, 'show'])->whereNumber('conversation');
+                Route::post('chat/conversations/{conversation}/messages', [ChatController::class, 'send'])->whereNumber('conversation');
+                Route::post('chat/conversations/{conversation}/read', [ChatController::class, 'markRead'])->whereNumber('conversation');
+
                 // Rooms (R-21).
                 Route::get('rooms', [RoomController::class, 'index'])->middleware('permission:gym_setup.rooms.view');
                 Route::post('rooms', [RoomController::class, 'store'])->middleware('permission:gym_setup.rooms.manage');
@@ -299,6 +310,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
                 // Leave (R-25, R-26). Own requests are open; HR sees all. The controller checks.
                 Route::get('coach-applications', [CoachApplicationController::class, 'index'])->middleware('permission:hr.coach_applications.view,hr.coach_applications.approve');
+                // (R-146) The resume, certifications, valid ID and medical clearance the applicant sent.
+                Route::get('coach-applications/{application}/files/{kind}', [CoachApplicationController::class, 'file'])->whereNumber('application')->whereIn('kind', ['resume', 'certifications', 'valid_id', 'medical_clearance'])->middleware('permission:hr.coach_applications.view,hr.coach_applications.approve');
                 Route::post('coach-applications/{application}/decision', [CoachApplicationController::class, 'decide'])->whereNumber('application')->middleware('permission:hr.coach_applications.approve');
                 // (R-138) Job postings and the applications they get.
                 Route::get('job-postings', [JobPostingController::class, 'index'])->middleware('permission:hr.job_postings.view,hr.job_postings.manage');
@@ -496,6 +509,8 @@ Route::middleware('auth:sanctum')->group(function () {
                 // R-119: injuries; the athlete reads and reports their own, the controller checks the rest.
                 Route::get('athletes/{user}/injuries', [InjuryController::class, 'index']);
                 Route::post('athletes/{user}/injuries', [InjuryController::class, 'store']);
+                // (R-147) A medical certificate or other proof: the member themself, or health staff.
+                Route::get('injuries/{injury}/files/{file}', [InjuryController::class, 'file'])->whereNumber(['injury', 'file']);
                 Route::put('injuries/{injury}', [InjuryController::class, 'update'])->whereNumber('injury')->middleware('permission:health_records.injuries.manage');
                 Route::get('my-record', [AthleteRecordController::class, 'mine']);
                 // POST as well as PUT: browsers send file uploads as POST.

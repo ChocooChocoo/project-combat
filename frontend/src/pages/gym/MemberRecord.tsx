@@ -455,7 +455,7 @@ export default function MemberRecord() {
           <Form errors={entryErrors} onSubmit={addEntry} className="flex min-h-0 flex-col">
             <DialogHeader>
               <DialogTitle>Add to {membership.member.name}'s record</DialogTitle>
-              <DialogDescription>Recorded with your name and kept in the athlete's history.</DialogDescription>
+              <DialogDescription>Recorded with your name and kept in the member's history.</DialogDescription>
             </DialogHeader>
             <DialogPanel className="flex flex-col gap-4">
               <Field name="type" className="w-full">
@@ -492,7 +492,7 @@ export default function MemberRecord() {
               <Field name="notes" className="w-full">
                 <FieldLabel>Notes (optional)</FieldLabel>
                 <Textarea name="notes" rows={3} maxLength={2000} />
-                <FieldDescription>The athlete can read these notes.</FieldDescription>
+                <FieldDescription>The member can read these notes.</FieldDescription>
                 <FieldError />
               </Field>
             </DialogPanel>

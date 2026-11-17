@@ -20,7 +20,7 @@ import { useAuth } from '@/lib/auth'
 import { appendForm, periodLabel, type AthleteRecord, type EmergencyContact, type MembershipForm } from '@/lib/membership'
 import { fileProblem } from '@/lib/validation'
 
-/** S-43, R-40 and R-41: the athlete's own record, with their health details to keep up to date. */
+/** S-43, R-40 and R-41: the member's own record, with their health details to keep up to date. */
 export default function MyRecord() {
   const { gymId } = useParams()
   const id = Number(gymId)
@@ -51,7 +51,7 @@ export default function MyRecord() {
         if (!live) return
         setError(
           failure instanceof ApiError && failure.status === 404
-            ? 'You do not have an athlete record at this gym yet. It is made when your membership is approved.'
+            ? 'You do not have a member record at this gym yet. It is made when your membership is approved.'
             : failure instanceof ApiError
               ? failure.message
               : 'Try again in a moment.',
@@ -192,7 +192,7 @@ export default function MyRecord() {
             <DialogPanel className="flex flex-col gap-5">
               <section className="flex flex-col gap-2">
                 <h3 className="font-medium text-sm">Emergency contacts</h3>
-                <ContactsEditor contacts={contacts} max={form.emergency_contacts_max} onChange={setContacts} />
+                <ContactsEditor contacts={contacts} relationships={form.emergency_relationships} max={form.emergency_contacts_max} onChange={setContacts} />
               </section>
               <section className="flex flex-col gap-2">
                 <h3 className="font-medium text-sm">Health questions</h3>

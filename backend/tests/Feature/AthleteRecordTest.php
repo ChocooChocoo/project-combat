@@ -94,7 +94,7 @@ class AthleteRecordTest extends TestCase
         $answers['medication'] = '1';
 
         $this->actingAs($this->applicant)->post($this->url('my-record/health'), [
-            'emergency_contacts' => [['name' => 'Jose Cruz', 'relationship' => 'Father', 'phone' => '+63 917 000 1111']],
+            'emergency_contacts' => [['name' => 'Jose Cruz', 'relationship' => 'Parent', 'phone' => '+63 917 000 1111']],
             'health_answers' => $answers,
             'health_notes' => 'Asthma inhaler',
             'medical_file' => UploadedFile::fake()->create('clearance.pdf', 50, 'application/pdf'),
@@ -108,6 +108,12 @@ class AthleteRecordTest extends TestCase
 
         $this->actingAs($this->applicant)->putJson($this->url('my-record/health'), ['emergency_contacts' => [], 'health_answers' => $answers])
             ->assertJsonValidationErrors(['emergency_contacts']);
+
+        // (R-143) The relationship is a choice, so a typed one is refused.
+        $this->actingAs($this->applicant)->putJson($this->url('my-record/health'), [
+            'emergency_contacts' => [['name' => 'Jose Cruz', 'relationship' => 'Godfather', 'phone' => '+63 917 000 1111']],
+            'health_answers' => $answers,
+        ])->assertJsonValidationErrors(['emergency_contacts.0.relationship']);
     }
 
     public function test_an_athlete_never_sees_another_athletes_record(): void

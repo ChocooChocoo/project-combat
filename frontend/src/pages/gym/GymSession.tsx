@@ -81,7 +81,7 @@ export default function GymSession() {
             <TabsPanel value="roster" keepMounted className="pt-4">
               <section className="flex min-w-0 flex-col gap-4">
                 <h2 className="font-semibold text-xl">Roster</h2>
-                <p className="text-muted-foreground text-sm">Booked athletes, requests, waiting-list positions, then cancelled or rejected bookings.</p>
+                <p className="text-muted-foreground text-sm">Booked members, requests, waiting-list positions, then cancelled or rejected bookings.</p>
                 <StaffBookingList
                   bookings={data.bookings}
                   canApprove={can(gym, 'training.bookings.approve')}

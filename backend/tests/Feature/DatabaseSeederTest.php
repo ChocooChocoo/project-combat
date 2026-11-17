@@ -123,6 +123,27 @@ class DatabaseSeederTest extends TestCase
             foreach (['pending', 'approved', 'rejected', 'withdrawn'] as $status) {
                 $this->assertDatabaseHas('coach_applications', ['gym_id' => $gym->id, 'status' => $status]);
             }
+            // (R-146) An application carries real documents, and an older one may have none.
+            $withDocuments = DB::table('coach_applications')->where('gym_id', $gym->id)->whereNotNull('resume_path')->first();
+            $this->assertNotNull($withDocuments);
+            foreach (['resume', 'valid_id', 'medical_clearance'] as $kind) {
+                $this->assertNotNull($withDocuments->{"{$kind}_path"}, $kind);
+                $this->assertNotNull($withDocuments->{"{$kind}_name"}, $kind);
+                Storage::disk('local')->assertExists($withDocuments->{"{$kind}_path"});
+            }
+            $this->assertNotNull(DB::table('coach_applications')->where('gym_id', $gym->id)->whereNotNull('certifications_path')->value('certifications_path'));
+            $this->assertTrue(DB::table('coach_applications')->where('gym_id', $gym->id)->whereNull('resume_path')->exists());
+            // (R-147) An injury report carries its proof files: one injury has two, a minor one has one.
+            $injuryWithProof = DB::table('injuries')->where('gym_id', $gym->id)->where('status', 'cleared')->value('id');
+            $proofs = DB::table('injury_files')->where('gym_id', $gym->id)->where('injury_id', $injuryWithProof)->get();
+            $this->assertCount(2, $proofs);
+            $this->assertSame(['application/pdf', 'image/png'], $proofs->pluck('mime')->sort()->values()->all());
+            foreach ($proofs as $proof) {
+                Storage::disk('local')->assertExists($proof->path);
+            }
+            $perInjury = DB::table('injury_files')->where('gym_id', $gym->id)->selectRaw('injury_id, count(*) as total')->groupBy('injury_id')->pluck('total');
+            $this->assertContains(1, $perInjury->map(fn ($total) => (int) $total)->all());
+            $this->assertContains(2, $perInjury->map(fn ($total) => (int) $total)->all());
             // The approved coach holds the gym's Coach role.
             $approvedCoach = DB::table('coach_applications')->where('gym_id', $gym->id)->where('status', 'approved')->value('user_id');
             $this->assertTrue(DB::table('gym_role_user')->join('gym_roles', 'gym_roles.id', '=', 'gym_role_user.gym_role_id')
@@ -194,6 +215,15 @@ class DatabaseSeederTest extends TestCase
             $this->assertTrue(DB::table('walk_ins')->where('gym_id', $gym->id)->whereNotNull('payment_id')->exists());
             $this->assertTrue(DB::table('walk_ins')->where('gym_id', $gym->id)->whereNull('payment_id')->exists());
             $this->assertGreaterThanOrEqual(3, DB::table('payments')->where('gym_id', $gym->id)->where('income_type', 'walk_in')->count());
+            // (R-145) Demo conversations in both directions, with at least one unread answer.
+            $conversations = DB::table('chat_conversations')->where('gym_id', $gym->id)->count();
+            $this->assertGreaterThanOrEqual(1, $conversations);
+            $this->assertGreaterThan(0, DB::table('chat_messages')->where('gym_id', $gym->id)->count());
+            $this->assertTrue(DB::table('chat_messages')->where('gym_id', $gym->id)->whereNull('read_at')->exists());
+            foreach (DB::table('chat_conversations')->where('gym_id', $gym->id)->get() as $conversation) {
+                $this->assertLessThan($conversation->user_two_id, $conversation->user_one_id);
+                $this->assertGreaterThan(0, DB::table('chat_messages')->where('chat_conversation_id', $conversation->id)->count());
+            }
             $this->assertSame(0, DB::table('memberships')->where('gym_id', $gym->id)->whereIn('status', ['active', 'awaiting_payment', 'frozen'])->whereNull('locked_fee')->count());
             $lastRun = DB::table('payroll_runs')->where('gym_id', $gym->id)->min('starts_on');
             $freeStart = Carbon::parse($lastRun)->subMonthNoOverflow()->startOfMonth();

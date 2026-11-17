@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardPanel, CardTitle } from '@/components/ui/card'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
-import { Field, FieldError, FieldLabel } from '@/components/ui/field'
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 import { Form } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -16,12 +16,23 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { toastManager } from '@/components/ui/toast'
 import { api, ApiError, type FieldErrors } from '@/lib/api'
-import { coachStatus, slotLabel, WEEKDAYS, type CoachApplication, type Slot } from '@/lib/coach'
-import { dateLabel } from '@/lib/membership'
+import {
+  attachedFiles, coachStatus, COACH_FILE_ACCEPT, COACH_FILE_MAX_KB, slotLabel, WEEKDAYS, type CoachApplication, type Slot,
+} from '@/lib/coach'
+import { appendForm, dateLabel } from '@/lib/membership'
+import { fileProblem } from '@/lib/validation'
 
 const DAY_ITEMS = Object.entries(WEEKDAYS).map(([value, label]) => ({ value, label }))
 
-/** R-117: a member applies to coach at a gym, with the weekly hours they can give. */
+/** (R-146) The files an applicant sends. Certifications are optional; the others are needed. */
+const FILES = [
+  { name: 'resume', label: 'Resume', description: 'PDF, JPG or PNG, up to 5 MB.', required: true },
+  { name: 'certifications', label: 'Certifications (optional)', description: 'Certificates you already hold. PDF, JPG or PNG, up to 5 MB.', required: false },
+  { name: 'valid_id', label: 'Valid ID', description: 'PDF, JPG or PNG, up to 5 MB.', required: true },
+  { name: 'medical_clearance', label: 'Medical clearance', description: 'PDF, JPG or PNG, up to 5 MB.', required: true },
+]
+
+/** R-117: a member applies to coach at a gym, with the weekly hours they can give. (R-146) Files go with it. */
 export default function CoachApply() {
   const { gymId } = useParams()
   const navigate = useNavigate()
@@ -35,13 +46,38 @@ export default function CoachApply() {
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const values = Object.fromEntries(new FormData(event.currentTarget)) as Record<string, string>
+    const form = new FormData(event.currentTarget)
+    const values = Object.fromEntries(form) as Record<string, string>
+
+    // (R-146) Check the picked files in the browser first, so the person sees the problem at the field.
+    const problems: FieldErrors = {}
+    for (const file of FILES) {
+      const upload = form.get(file.name)
+      if (!(upload instanceof File) || upload.size === 0) {
+        if (file.required) problems[file.name] = ['Choose a file.']
+        continue
+      }
+      const problem = fileProblem(upload, COACH_FILE_ACCEPT, COACH_FILE_MAX_KB)
+      if (problem) problems[file.name] = [problem]
+    }
+    setErrors(problems)
+    if (Object.keys(problems).length > 0) return
+
+    // Files cannot be JSON, so the body is a form. Laravel reads the nested names appendForm writes.
+    const body = new FormData()
+    appendForm(body, 'experience', values.experience)
+    appendForm(body, 'rank', values.rank || null)
+    appendForm(body, 'specialisation', values.specialisation || null)
+    appendForm(body, 'bio', values.bio || null)
+    appendForm(body, 'availability', slots)
+    for (const file of FILES) {
+      const upload = form.get(file.name)
+      if (upload instanceof File && upload.size > 0) body.append(file.name, upload)
+    }
+
     setBusy(true)
-    setErrors({})
     try {
-      await api(`/gyms/${gymId}/coach-applications`, { body: {
-        experience: values.experience, rank: values.rank || null, specialisation: values.specialisation || null, bio: values.bio || null, availability: slots,
-      } })
+      await api(`/gyms/${gymId}/coach-applications`, { body })
       toastManager.add({ title: 'Application sent. The gym will tell you its decision.', type: 'success' })
       navigate('/coach-applications')
     } catch (failure) {
@@ -69,6 +105,14 @@ export default function CoachApply() {
               <TextField name="specialisation" label="Specialisation (optional)" maxLength={150} />
             </div>
             <Field name="bio"><FieldLabel>Short bio (optional)</FieldLabel><Textarea name="bio" rows={3} maxLength={5000} /><FieldError /></Field>
+            {FILES.map((file) => (
+              <Field key={file.name} name={file.name}>
+                <FieldLabel>{file.label}</FieldLabel>
+                <Input type="file" name={file.name} accept={COACH_FILE_ACCEPT} required={file.required} />
+                <FieldDescription>{file.description}</FieldDescription>
+                <FieldError />
+              </Field>
+            ))}
           </CardPanel>
         </Card>
         <Card>
@@ -148,6 +192,11 @@ export function MyCoachApplications() {
                 <div className="min-w-0 break-words">
                   <div className="flex flex-wrap items-center gap-2"><h2 className="font-medium text-base">{row.gym?.name}</h2><Badge variant={coachStatus[row.status].variant}>{coachStatus[row.status].label}</Badge></div>
                   <p className="mt-1 text-muted-foreground">{row.availability.map(slotLabel).join(' · ')}</p>
+                  {attachedFiles(row).length > 0 && (
+                    <p className="mt-1 text-muted-foreground text-xs wrap-anywhere">
+                      Attached: {attachedFiles(row).map((file) => `${file.label} (${file.name})`).join(' · ')}
+                    </p>
+                  )}
                   <p className="mt-1 text-muted-foreground text-xs">Sent {dateLabel(row.created_at)}{row.decision_reason && ` · ${row.decision_reason}`}</p>
                 </div>
                 {row.status === 'pending' && <Button size="sm" variant="outline" onClick={() => withdraw(row)}>Withdraw</Button>}

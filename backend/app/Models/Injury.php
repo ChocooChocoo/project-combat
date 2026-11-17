@@ -36,6 +36,12 @@ class Injury extends Model
         return $this->hasMany(InjuryUpdate::class)->orderByDesc('id');
     }
 
+    /** (R-147) the proof files: a medical certificate or other supporting documents. */
+    public function files(): HasMany
+    {
+        return $this->hasMany(InjuryFile::class)->orderBy('id');
+    }
+
     /**
      * Users among $userIds with an active or recovering injury in the gym: the "restricted" flag coaches see.
      *

@@ -265,7 +265,7 @@ class ServiceController extends Controller
         }
 
         if (blank($service->bring)) {
-            $errors['bring'] = 'List at least one thing the athlete should bring.';
+            $errors['bring'] = 'List at least one thing the member should bring.';
         }
 
         if (blank($service->cover_photo_path)) {

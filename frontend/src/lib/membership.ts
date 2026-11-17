@@ -1,4 +1,4 @@
-// Shapes and helpers for memberships, payments and athlete records (R-31 to R-41).
+// Shapes and helpers for memberships, payments and member records (R-31 to R-41).
 
 export type MembershipStatus = 'applied' | 'rejected' | 'awaiting_payment' | 'active' | 'frozen' | 'expired' | 'cancelled'
 
@@ -132,6 +132,8 @@ export type MembershipForm = {
   health_questions: Record<string, string>
   waivers: Record<string, string>
   emergency_contacts_max: number
+  /** (R-143) The relationship choices for an emergency contact, from the server. */
+  emergency_relationships: string[]
   medical_file: { required: boolean; mimes: string[]; max_kb: number }
 }
 

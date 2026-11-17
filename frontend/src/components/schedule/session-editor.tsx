@@ -233,7 +233,7 @@ export function SessionEditor({
         }
       />
       <Form errors={errors} onSubmit={save} className="flex flex-col gap-6">
-        {sendsNotice && <Alert variant="info"><AlertTitle>Session change</AlertTitle><AlertDescription>Booked athletes and the coach will be notified.</AlertDescription></Alert>}
+        {sendsNotice && <Alert variant="info"><AlertTitle>Session change</AlertTitle><AlertDescription>Booked members and the coach will be notified.</AlertDescription></Alert>}
         {messages.length > 0 && (
           <Alert variant="error">
             <AlertTitle>Check these fields</AlertTitle>

@@ -1,10 +1,12 @@
 import { Plus, Trash2 } from 'lucide-react'
+import { useMemo, useRef } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Radio, RadioGroup } from '@/components/ui/radio-group'
+import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import {
   dateLabel,
@@ -21,7 +23,7 @@ import {
   type MembershipStatus,
   type Payment,
 } from '@/lib/membership'
-import { phoneRule } from '@/lib/validation'
+import { phoneRule, relationshipChoices } from '@/lib/validation'
 
 export function MembershipStatusBadge({ status }: { status: MembershipStatus }) {
   return <Badge variant={STATUS_VARIANTS[status] ?? 'outline'}>{STATUS_LABELS[status] ?? status}</Badge>
@@ -168,44 +170,84 @@ export function EntriesList({ entries, type }: { entries: AthleteEntry[]; type: 
   )
 }
 
+/** One emergency-contact row. Its own component so the choices keep one identity between renders. */
+function ContactRow({
+  contact,
+  index,
+  choices,
+  removable,
+  onUpdate,
+  onRemove,
+}: {
+  contact: EmergencyContact
+  index: number
+  choices: { value: string; label: string }[]
+  removable: boolean
+  onUpdate: (patch: Partial<EmergencyContact>) => void
+  onRemove: () => void
+}) {
+  // (R-143) An older free-text relationship stays visible so an edit never loses it. The list is
+  // memoized on the value the row started with: rebuilding it whenever the choice changes makes the
+  // Select drop the new value, which showed up as an empty relationship on save.
+  const legacy = useRef(contact.relationship).current
+  const items = useMemo(() => relationshipChoices(choices.map((item) => item.value), legacy), [choices, legacy])
+
+  return (
+    <fieldset className="grid gap-3 rounded-lg border p-3 sm:grid-cols-[1fr_10rem_11rem_auto] sm:items-start">
+      <legend className="sr-only">Emergency contact {index + 1}</legend>
+      <Field name={`emergency_contacts.${index}.name`} className="w-full">
+        <FieldLabel>Name</FieldLabel>
+        <Input value={contact.name} onChange={(e) => onUpdate({ name: e.target.value })} maxLength={150} required autoComplete="off" />
+        <FieldError />
+      </Field>
+      <Field name={`emergency_contacts.${index}.relationship`} className="w-full">
+        <FieldLabel>Relationship</FieldLabel>
+        <Select items={items} value={contact.relationship} onValueChange={(value) => onUpdate({ relationship: String(value ?? '') })}>
+          <SelectTrigger aria-label={`Relationship of emergency contact ${index + 1}`}><SelectValue placeholder="Choose one" /></SelectTrigger>
+          <SelectPopup>{items.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectPopup>
+        </Select>
+        <FieldError />
+      </Field>
+      <Field name={`emergency_contacts.${index}.phone`} className="w-full" validate={phoneRule}>
+        <FieldLabel>Phone</FieldLabel>
+        <Input type="tel" value={contact.phone} onChange={(e) => onUpdate({ phone: e.target.value })} maxLength={30} required inputMode="tel" />
+        <FieldError />
+      </Field>
+      {removable && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          className="sm:mt-6"
+          aria-label={`Remove emergency contact ${index + 1}`}
+          onClick={onRemove}
+        >
+          <Trash2 aria-hidden />
+        </Button>
+      )}
+    </fieldset>
+  )
+}
+
 /** One to `max` emergency contacts. Field names match the server's errors. */
-export function ContactsEditor({ contacts, max, onChange }: { contacts: EmergencyContact[]; max: number; onChange: (next: EmergencyContact[]) => void }) {
+export function ContactsEditor({ contacts, relationships, max, onChange }: { contacts: EmergencyContact[]; relationships: string[]; max: number; onChange: (next: EmergencyContact[]) => void }) {
   const update = (index: number, patch: Partial<EmergencyContact>) =>
     onChange(contacts.map((contact, position) => (position === index ? { ...contact, ...patch } : contact)))
+
+  const choices = useMemo(() => relationships.map((value) => ({ value, label: value })), [relationships])
 
   return (
     <div className="flex flex-col gap-3">
       {contacts.map((contact, index) => (
-        <fieldset key={index} className="grid gap-3 rounded-lg border p-3 sm:grid-cols-[1fr_10rem_11rem_auto] sm:items-start">
-          <legend className="sr-only">Emergency contact {index + 1}</legend>
-          <Field name={`emergency_contacts.${index}.name`} className="w-full">
-            <FieldLabel>Name</FieldLabel>
-            <Input value={contact.name} onChange={(e) => update(index, { name: e.target.value })} maxLength={150} required autoComplete="off" />
-            <FieldError />
-          </Field>
-          <Field name={`emergency_contacts.${index}.relationship`} className="w-full">
-            <FieldLabel>Relationship</FieldLabel>
-            <Input value={contact.relationship} onChange={(e) => update(index, { relationship: e.target.value })} maxLength={60} required placeholder="Parent, partner…" />
-            <FieldError />
-          </Field>
-          <Field name={`emergency_contacts.${index}.phone`} className="w-full" validate={phoneRule}>
-            <FieldLabel>Phone</FieldLabel>
-            <Input type="tel" value={contact.phone} onChange={(e) => update(index, { phone: e.target.value })} maxLength={30} required inputMode="tel" />
-            <FieldError />
-          </Field>
-          {contacts.length > 1 && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className="sm:mt-6"
-              aria-label={`Remove emergency contact ${index + 1}`}
-              onClick={() => onChange(contacts.filter((_, position) => position !== index))}
-            >
-              <Trash2 aria-hidden />
-            </Button>
-          )}
-        </fieldset>
+        <ContactRow
+          key={index}
+          contact={contact}
+          index={index}
+          choices={choices}
+          removable={contacts.length > 1}
+          onUpdate={(patch) => update(index, patch)}
+          onRemove={() => onChange(contacts.filter((_, position) => position !== index))}
+        />
       ))}
       {contacts.length < max && (
         <Button type="button" variant="outline" size="sm" className="self-start" onClick={() => onChange([...contacts, { name: '', relationship: '', phone: '' }])}>

@@ -90,7 +90,7 @@ class AccountTypeTest extends TestCase
 
         $this->actingAs($owner)->getJson('/api/membership-form')
             ->assertOk()
-            ->assertJsonStructure(['health_questions', 'waivers', 'emergency_contacts_max', 'medical_file']);
+            ->assertJsonStructure(['health_questions', 'waivers', 'emergency_contacts_max', 'emergency_relationships', 'medical_file']);
 
         $this->actingAs($owner)->postJson("/api/gyms/{$gym->id}/membership-applications", [])
             ->assertForbidden()
