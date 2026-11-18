@@ -282,7 +282,9 @@ cd ~/combat/backend
 3. Log in and click through a few screens. Refresh a deep page like `/gyms/...` — it should not 404.
 4. Upload a profile photo and check it shows.
 5. Open `https://www.combatpro.site` — it should jump to `https://combatpro.site`.
-6. Problems? Read `~/combat/backend/storage/logs/laravel.log`.
+6. In Services, upload a cover and a gallery photo to a test draft. Both must show after
+   upload and after you reload and reopen the draft. Delete the draft when finished.
+7. Problems? Read `~/combat/backend/storage/logs/laravel.log`.
 
 ## Updating later
 
@@ -295,6 +297,23 @@ cd backend && /opt/alt/php84/usr/bin/php $(which composer) install --no-dev --op
 ```
 
 Frontend (on your PC): `pnpm build`, then the two `scp` lines from Step 9.
+
+### Repair service-photo permissions on Hostinger
+
+Run this after restoring or copying service photos, or if their URLs return the React page
+(`200 text/html`) while other `/storage` images work. PHP can save files in owner-only directories,
+but the web server needs permission to pass through them to serve the images.
+
+```bash
+photos="$HOME/combat/backend/storage/app/public/gym-services"
+if [ -d "$photos" ]; then
+    find "$photos" -type d ! -perm -011 -exec chmod go+x {} +
+fi
+```
+
+This changes only directories under the public service-photo path. It does not grant directory
+listing or change the photos. Open an existing cover and gallery photo and confirm the responses
+are images, then repeat the upload check in Step 11.
 
 ### Going live with gym subscriptions (P05)
 
