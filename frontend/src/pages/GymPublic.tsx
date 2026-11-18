@@ -19,6 +19,7 @@ import { approvedGym, canOpenWorkspace } from '@/lib/gym-access'
 import { LIVE_STATUSES, STATUS_LABELS, type Membership } from '@/lib/membership'
 import { DAYS } from '@/lib/gyms'
 import { cn } from '@/lib/utils'
+import { GymPublicReviews } from './GymPublicReviews'
 
 const ACTIVITY_LABELS: Record<string, string> = {
   classes: 'Classes',
@@ -697,6 +698,10 @@ export default function GymPublic() {
           </ul>
         )}
       </section>
+
+      {user?.account_type === 'member' && user.email_verified && !user.is_platform_admin && !user.password_change_required && (
+        <GymPublicReviews key={`${id}:${user.id}`} gymId={id} />
+      )}
 
       <section className="flex flex-col gap-4" aria-labelledby="gym-coaches">
         <div className="flex flex-wrap items-baseline gap-2">

@@ -10,6 +10,7 @@ use App\Http\Controllers\CoachApplicationController;
 use App\Http\Controllers\JobApplicationController;
 use App\Http\Controllers\Gym\JobPostingController;
 use App\Http\Controllers\DiscoveryController;
+use App\Http\Controllers\GymMemberReviewController;
 use App\Http\Controllers\GeoController;
 use App\Http\Controllers\Gym\AthleteRecordController;
 use App\Http\Controllers\Gym\AnnouncementController;
@@ -144,6 +145,11 @@ Route::middleware('auth:sanctum')->group(function () {
             // Discovery (R-30, R-97, R-98). Recommendations must come before the gym id route.
             Route::get('gyms', [PublicGymController::class, 'index']);
             Route::get('gyms/recommendations', [DiscoveryController::class, 'recommendations'])->middleware('account:member');
+            Route::prefix('gyms/{gym}/reviews')->whereNumber('gym')->group(function () {
+                Route::get('/', [GymMemberReviewController::class, 'index']);
+                Route::put('mine', [GymMemberReviewController::class, 'save']);
+                Route::delete('mine', [GymMemberReviewController::class, 'destroy']);
+            });
             Route::get('discovery/options', [DiscoveryController::class, 'options']);
             Route::get('geo/search', [GeoController::class, 'search'])->middleware('throttle:geo');
             Route::get('locations/cavite', fn () => response()->json(CaviteLocations::all()));
